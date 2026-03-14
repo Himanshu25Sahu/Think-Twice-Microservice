@@ -1,42 +1,110 @@
-version: "3.9"
-
 services:
 
   redis:
     image: redis:latest
-    container_name: jd-redis
+    container_name: tt-redis
     ports:
       - "6379:6379"
     networks:
-      - judgementcall-network
-  server:
+      - tt-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: tt-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
+    networks:
+      - tt-network
+
+  api-gateway:
     build:
-      context: ./server
-    container_name: jd-server
+      context: ./services/api-gateway
+    container_name: tt-gateway
     env_file:
-      - ./server/.env.docker
+      - .env.docker
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      DECISION_SERVICE_URL: http://decision-service:5001
+      ANALYTICS_SERVICE_URL: http://analytics-service:5002
+      JWT_SECRET: wuqppqpsancesfjgsdfsldfs
+      FRONTEND_URL: http://localhost:3000
+      MONGO_URI: mongodb://root:password@mongodb:27017/think-twice
+      REDIS_URL: redis://redis:6379
     ports:
       - "5000:5000"
+    depends_on:
+      - redis
+      - mongodb
+      - decision-service
+      - analytics-service
     networks:
-      - judgementcall-network
+      - tt-network
+    restart: unless-stopped
+
+  decision-service:
+    build:
+      context: ./services/decision-service
+    container_name: tt-decision-service
+    env_file:
+      - .env.docker
+    environment:
+      NODE_ENV: development
+      PORT: 5001
+      MONGO_URI: mongodb://root:password@mongodb:27017/think-twice
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: wuqppqpsancesfjgsdfsldfs
+      JWT_EXPIRES_IN: 3d
+    ports:
+      - "5001:5001"
+    depends_on:
+      - redis
+      - mongodb
+    networks:
+      - tt-network
+    restart: unless-stopped
+
+  analytics-service:
+    build:
+      context: ./services/analytics-service
+    container_name: tt-analytics-service
+    env_file:
+      - .env.docker
+    environment:
+      NODE_ENV: development
+      PORT: 5002
+      MONGO_URI: mongodb://root:password@mongodb:27017/think-twice
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: wuqppqpsancesfjgsdfsldfs
+      JWT_EXPIRES_IN: 3d
+    ports:
+      - "5002:5002"
+    depends_on:
+      - redis
+      - mongodb
+    networks:
+      - tt-network
+    restart: unless-stopped
 
   client:
     build:
       context: ./client
       args:
-        NEXT_PUBLIC_API_URL: "http://jd-server:5000"
-    container_name: jd-client
-    env_file:
-      - ./client/.env.docker
+        NEXT_PUBLIC_API_URL: "http://localhost:5000"
+    container_name: tt-client
     environment:
-      - NEXT_PUBLIC_API_URL=http://jd-server:5000
+      NEXT_PUBLIC_API_URL: http://localhost:5000
     ports:
       - "3000:3000"
     depends_on:
-      - server
+      - api-gateway
     networks:
-      - judgementcall-network
+      - tt-network
+    restart: unless-stopped
 
 networks:
-  judgementcall-network:
+  tt-network:
     driver: bridge
