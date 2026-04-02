@@ -1,102 +1,329 @@
-# 🧠 Think Twice — Decision Analytics & Performance Engineering Platform
+# Think Twice 🧠
 
-**Think Twice** is a full-stack web application designed to help users make, log, and analyze decisions — all while being an experiment in **production readiness**, **DevOps automation**, and **system scalability**.
+A multi-tenant knowledge logging platform for engineering teams. Document architecture decisions, debugging playbooks, and best practices. Built with Node.js microservices and Next.js 14.
 
-> 🚀 Built with modern web technologies, fully automated CI/CD pipelines, containerized services, and tested under real-world load conditions — from a simple idea to a production-grade system.
-
----
-
-## 🌐 Live Demo
-
-🔗 **Live:** [think-twice-six.vercel.app/about](https://think-twice-six.vercel.app/about)
-💻 **GitHub Repo:** [github.com/Himanshu25Sahu/think-twice](https://github.com/Himanshu25Sahu/think-twice)
-
----
-
-## 🧩 Key Highlights
-
-✅ **4x faster performance** after Redis caching (800 ms → 218 ms)
-✅ **300+ concurrent users handled** during load testing with 0 failures
-✅ **CI/CD pipeline** automated from Git push → Docker build → Render + Vercel deploy
-✅ **Containerized architecture** using Docker & Docker Compose
-✅ **Load-balanced backend** using Nginx with round-robin routing
-✅ **Real-time performance monitoring** via Prometheus
-
----
-
-## ⚙️ Tech Stack
-
-| Layer              | Technologies                              |
-| ------------------ | ----------------------------------------- |
-| **Frontend**       | Next.js, TailwindCSS, Redux               |
-| **Backend**        | Node.js, Express.js, MongoDB              |
-| **Caching**        | Redis                                     |
-| **Infrastructure** | Docker, Docker Compose, Nginx, Prometheus |
-| **Deployment**     | Render (Backend), Vercel (Frontend)       |
-| **CI/CD Pipeline** | GitHub Actions + Docker Hub + Webhooks    |
-| **Testing**        | Jest, Local Load Testing                  |
-
----
-
-## 🧠 Architecture Overview
+## 🏗️ Architecture
 
 ```
-                ┌──────────────────────────┐
-                │        Vercel App        │
-                │ (Next.js + TailwindCSS)  │
-                └────────────┬─────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                   Frontend (Next.js 14)                 │
+│                   localhost:3000                        │
+└────────────────────────────┬────────────────────────────┘
                              │
-                             ▼
-              ┌───────────────────────────┐
-              │     Nginx Load Balancer    │
-              │   (Round-Robin Routing)    │
-              └──────┬───────────┬────────┘
-                     │           │
-           ┌─────────▼─┐     ┌───▼────────┐
-           │ Backend 1 │ ... │ Backend 3  │
-           │ Node.js + │     │ Node.js +  │
-           │ Express   │     │ Express    │
-           └─────┬─────┘     └─────┬─────┘
-                 ▼                 ▼
-              ┌───────────────────────────┐
-              │   MongoDB + Redis Cache    │
-              └───────────────────────────┘
+┌────────────────────────────▼────────────────────────────┐
+│                API Gateway (Express)                    │
+│              localhost:5000 | Port 5000                 │
+└────────┬────────────┬────────────┬────────────┬─────────┘
+         │            │            │            │
+    ┌────▼──┐  ┌─────▼──┐  ┌──────▼──┐  ┌─────▼──┐  ┌────────▼───┐
+    │ Auth  │  │  Org   │  │ Entry  │  │Analytics│  │ (Internal) │
+    │ 5001  │  │  5003  │  │ 5002   │  │ 5004   │  │ Services   │
+    └───────┘  └────────┘  └────────┘  └────────┘  └────────────┘
+         │            │            │            │
+    ┌────┴────────────┴────────────┴────────────┴─────────┐
+    │           MongoDB (Docker)                         │
+    │          Port 27017                                │
+    └───────────────────────────────────────────────────┘
+         │
+    ┌────▼───────────────────────────────────────────────┐
+    │          Redis (Docker)                            │
+    │          Port 6379                                 │
+    └────────────────────────────────────────────────────┘
 ```
 
+## 📋 Services
+
+| Service   | Port | Database | Purpose |
+|-----------|------|----------|---------|
+| Gateway   | 5000 | -        | HTTP proxy, JWT verification, rate limiting |
+| Auth      | 5001 | MongoDB (tt-auth) | User registration, login, JWT |
+| Entry     | 5002 | MongoDB (tt-entries) | Knowledge entries CRUD, caching |
+| Org       | 5003 | MongoDB (tt-orgs) | Organization management, multi-tenancy |
+| Analytics | 5004 | MongoDB (tt-analytics) | Event-driven metrics aggregation |
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Node.js 18+**
+- **Docker & Docker Compose**
+- **npm 9+**
+
+### 1. Install all dependencies
+
+```bash
+npm run install:all
+```
+
+### 2. Start infrastructure (MongoDB + Redis)
+
+```bash
+npm run infra
+```
+
+This starts MongoDB and Redis in Docker. Verify they're running:
+
+```bash
+docker ps | grep tt-
+```
+
+### 3. Open 6 terminal tabs and start each service
+
+**Terminal 1 - Auth Service:**
+```bash
+npm run dev:auth  # Port 5001
+```
+
+**Terminal 2 - Org Service:**
+```bash
+npm run dev:org  # Port 5003
+```
+
+**Terminal 3 - Entry Service:**
+```bash
+npm run dev:entry  # Port 5002
+```
+
+**Terminal 4 - Analytics Service:**
+```bash
+npm run dev:analytics  # Port 5004
+```
+
+**Terminal 5 - Gateway:**
+```bash
+npm run dev:gateway  # Port 5000
+```
+
+**Terminal 6 - Client:**
+```bash
+npm run dev:client  # Port 3000
+```
+
+Wait ~10 seconds for all services to start.
+
+### 4. Verify everything works
+
+```bash
+bash verify.sh
+```
+
+This script will:
+- Check all service health endpoints
+- Create a test user
+- Create an organization
+- Create a knowledge entry
+- Verify analytics aggregation
+- Check frontend accessibility
+
+### 5. Open in browser
+
+Navigate to **http://localhost:3000**
+
+**Test credentials:**
+- Email: `test@example.com`
+- Password: `password123`
+
+## 📝 Local Development Environment Files
+
+All `.env` files are created automatically during setup:
+
+- `gateway/.env` - Gateway configuration
+- `services/auth-service/.env` - Auth service configuration
+- `services/org-service/.env` - Org service configuration
+- `services/entry-service/.env` - Entry service configuration
+- `services/analytics-service/.env` - Analytics service configuration
+- `client/.env.local` - Frontend configuration
+
+**IMPORTANT:** All services use the same `JWT_SECRET` for token verification.
+
+## 🛠️ Tech Stack
+
+### Backend
+- **Server Framework:** Express.js
+- **Database:** MongoDB (Mongoose ODM)
+- **Caching:** Redis (Streams for async events)
+- **Authentication:** JWT (httpOnly cookies)
+- **Runtime:** Node.js 18+
+- **Architecture:** Microservices with API Gateway
+
+### Frontend
+- **Framework:** Next.js 14 (App Router)
+- **State Management:** Redux Toolkit
+- **HTTP Client:** Axios
+- **Styling:** TailwindCSS
+- **UI:** Custom components (no libraries)
+- **Icons:** Inline SVGs
+
+## 🔄 Communication Patterns
+
+### Synchronous (HTTP)
+- Client → Gateway (rewrites to `/api/*`)
+- Gateway → Auth/Entry/Org/Analytics services
+- Service-to-service calls (e.g., Entry → Org for membership check)
+
+### Asynchronous (Redis Streams)
+- Entry Service publishes `entry:created`, `entry:updated`, `entry:deleted` events
+- Org Service publishes `org:member.joined` events
+- Analytics Service consumes events and aggregates metrics
+
+## 📚 API Endpoints Summary
+
+### Auth Service
+```
+POST   /auth/register          Create user account
+POST   /auth/login             Login and receive JWT
+POST   /auth/logout            Invalidate JWT
+GET    /auth/me                Get current user
+PUT    /auth/profile           Update user profile
+```
+
+### Org Service
+```
+POST   /org/create             Create organization
+POST   /org/join               Join by invite code
+GET    /org/my-orgs            List user's organizations
+GET    /org/:id                Get org details
+PUT    /org/switch/:id         Set active organization
+```
+
+### Entry Service
+```
+GET    /entries                List entries (with filters)
+GET    /entries/:id            Get entry details
+POST   /entries                Create entry
+PUT    /entries/:id            Update entry
+DELETE /entries/:id            Delete entry
+POST   /entries/:id/upvote     Toggle upvote
+```
+
+### Analytics Service
+```
+GET    /analytics/org/:orgId         Get org metrics
+GET    /analytics/user/:userId       Get user activity
+GET    /analytics/overview           Get combined dashboard
+```
+
+## 🎯 Resume Highlights
+
+This project showcases:
+
+- **Microservices Architecture:** Independent, scalable services with clear boundaries
+- **Event-Driven Design:** Redis Streams consumer pattern for async processing
+- **Multi-Tenancy:** Org-based data isolation with proper security checks
+- **Production Code:** Error handling, logging, middleware patterns
+- **Full-Stack:** Backend microservices + modern frontend framework
+- **Database Patterns:** Mongoose schemas, indexing, query optimization
+- **Caching Strategy:** Redis with TTL and cache invalidation
+- **API Design:** RESTful endpoints with proper HTTP status codes
+- **Security:** JWT authentication, httpOnly cookies, CORS, rate limiting
+- **Testing:** Integration test suite (verify.sh)
+
+## 📝 Development Workflow
+
+### Adding a new feature
+
+1. Create a new endpoint in relevant service
+2. Add Redux thunk in frontend
+3. Create component to call the thunk
+4. Test via frontend UI
+5. Run `bash verify.sh` to ensure no regressions
+
+### Service-to-service communication
+
+Example: Entry Service calling Org Service to verify membership
+
+```javascript
+// entry-service - controllers/entryController.js
+async function createEntry(req, res) {
+  const { orgId } = req.body;
+  const userId = req.headers['x-user-id'];
+
+  // Call org service to verify membership
+  const org = await axios.get(`http://localhost:5003/org/${orgId}`, {
+    headers: { 'x-user-id': userId, 'x-trace-id': traceId }
+  });
+
+  if (!org.data.members.includes(userId)) {
+    return res.status(403).json({ success: false, message: 'Not a member' });
+  }
+
+  // Proceed with entry creation
+}
+```
+
+### Publishing events
+
+Example: Entry Service publishing entry creation event
+
+```javascript
+// entry-service - controllers/entryController.js
+await redisClient.xAdd('entry-events', '*', 'data', JSON.stringify({
+  eventType: 'entry:created',
+  orgId,
+  authorId: userId,
+  entryId: entry._id,
+  type: entry.type,
+  timestamp: new Date().toISOString(),
+}));
+```
+
+## 🐛 Troubleshooting
+
+### Port already in use
+
+Kill process on specific port (Linux/Mac):
+```bash
+lsof -i :5000 | grep LISTEN | awk '{print $2}' | xargs kill -9
+```
+
+Or on Windows PowerShell:
+```powershell
+Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue | Stop-Process -Force
+```
+
+### Services can't connect to MongoDB/Redis
+
+Ensure Docker containers are running:
+```bash
+docker ps | grep tt-
+```
+
+### JWT authentication fails
+
+Ensure `JWT_SECRET` is the same in:
+- `gateway/.env`
+- `services/auth-service/.env`
+
+### Frontend shows 401 errors
+
+1. Check if gateway is running: `curl http://localhost:5000/health`
+2. Check if auth service is running: `curl http://localhost:5001/health`
+3. Clear browser cookies and try logging in again
+
+## 📦 Deployment
+
+### Docker Compose Production
+
+Build images and deploy all services:
+
+```bash
+docker compose up --build
+```
+
+### Environment Variables for Production
+
+Update `.env` files with:
+- Real `JWT_SECRET` (use `openssl rand -base64 32`)
+- Production database URIs
+- CORS origins
+- Rate limit settings
+
+## 📄 License
+
+MIT
+
 ---
 
-## 🔄 CI/CD Pipeline
-
-A **zero-click DevOps pipeline** built with GitHub Actions, Docker, and webhooks — fully automated from push to production.
-
-**Pipeline Stages:**
-
-1. 🧩 **Code Push:** Developer pushes changes to `main`
-2. ⚙️ **CI:** GitHub Actions builds, lints, and tests both frontend & backend inside Docker
-3. 🐳 **Build & Push:** Backend Docker image pushed to Docker Hub
-4. 🚀 **CD:** Render automatically redeploys backend with new image
-5. ⚡ **Frontend Deploy:** Vercel rebuilds and redeploys the Next.js app
-
-⏱️ **Total pipeline time:** ~3 minutes from push → live deployment
-
----
-
-## 📊 Load Testing Results
-
-| Users     | Avg Response Time | Success Rate |
-| --------- | ----------------- | ------------ |
-| 10 users  | 3–6 ms            | ✅ 100%       |
-| 100 users | 2–39 ms           | ✅ 100%       |
-| 300 users | 2–13 ms           | ✅ 100%       |
-
-**Highlights:**
-
-* 95% of requests under 8 ms (vs. ~200 ms industry average)
-* 0 failed requests at 300 concurrent users
-* Stable throughput at 10 req/sec for over 30 seconds
-* Automatic failover and health checks ensured 100% uptime
-
----
+**Questions?** Check the service README files in each service directory for more details.
 
 ## 🧠 Key Learnings
 

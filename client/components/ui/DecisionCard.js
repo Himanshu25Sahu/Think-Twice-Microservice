@@ -4,7 +4,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { decisionService } from "../../services/decisionService";
 
-export default function DecisionCard({ decision, onLike, isLiked, showInteractions = true }) {
+export function DecisionCard({ decision, onLike, isLiked, showInteractions = true }) {
   const [currentDecision, setCurrentDecision] = useState(decision);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);

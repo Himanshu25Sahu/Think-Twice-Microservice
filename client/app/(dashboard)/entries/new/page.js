@@ -1,0 +1,335 @@
+'use client';
+
+import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useRouter } from 'next/navigation';
+import { createEntry } from '@/redux/slices/entrySlice';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Toast } from '@/components/ui/Toast';
+import { XIcon, PlusIcon } from '@/components/icons';
+
+const TYPES = ['architecture', 'debugging', 'feature', 'best-practice', 'incident'];
+
+export default function NewEntryPage() {
+  const dispatch = useDispatch();
+  const router = useRouter();
+  const { loading, error } = useSelector((state) => state.entries);
+  const { activeOrg } = useSelector((state) => state.orgs);
+  const [toast, setToast] = useState(null);
+
+  const [formData, setFormData] = useState({
+    title: '',
+    type: 'architecture',
+    what: '',
+    why: '',
+    dos: [''],
+    donts: [''],
+    tags: [],
+    context: '',
+  });
+
+  const [tagInput, setTagInput] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleArrayChange = (field, index, value) => {
+    const newArray = [...formData[field]];
+    newArray[index] = value;
+    setFormData((prev) => ({ ...prev, [field]: newArray }));
+  };
+
+  const addArrayItem = (field) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: [...prev[field], ''],
+    }));
+  };
+
+  const removeArrayItem = (field, index) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleAddTag = (tag) => {
+    if (tag && !formData.tags.includes(tag)) {
+      setFormData((prev) => ({
+        ...prev,
+        tags: [...prev.tags, tag],
+      }));
+      setTagInput('');
+    }
+  };
+
+  const handleRemoveTag = (tag) => {
+    setFormData((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((t) => t !== tag),
+    }));
+  };
+
+  const handleAddTagOnKeydown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      handleAddTag(tagInput.trim());
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.title.trim()) {
+      setToast({ type: 'error', message: 'Title is required' });
+      return;
+    }
+
+    try {
+      const result = await dispatch(createEntry({
+        orgId: activeOrg,
+        title: formData.title,
+        type: formData.type,
+        what: formData.what,
+        why: formData.why,
+        dos: formData.dos.filter((d) => d.trim()),
+        donts: formData.donts.filter((d) => d.trim()),
+        tags: formData.tags,
+        context: formData.context,
+      }));
+
+      if (result.payload.success) {
+        setToast({ type: 'success', message: 'Entry created successfully!' });
+        setTimeout(() => router.push('/dashboard'), 1000);
+      } else {
+        setToast({ type: 'error', message: result.payload.message || 'Failed to create entry' });
+      }
+    } catch (err) {
+      setToast({ type: 'error', message: 'An error occurred. Please try again.' });
+    }
+  };
+
+  return (
+    <div className="max-w-2xl">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-primary">Create New Entry</h1>
+      </div>
+
+      <div className="card-base">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Title */}
+          <Input
+            label="Title"
+            type="text"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            placeholder="e.g., Caching Strategy for User Sessions"
+            required
+            disabled={loading}
+          />
+
+          {/* Type */}
+          <div>
+            <label className="block text-sm font-medium text-primary mb-2">Type</label>
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              disabled={loading}
+              className="input-base"
+            >
+              {TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' ')}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* What */}
+          <div>
+            <label className="block text-sm font-medium text-primary mb-2">What happened?</label>
+            <textarea
+              name="what"
+              value={formData.what}
+              onChange={handleChange}
+              placeholder="Describe the situation or decision..."
+              rows={3}
+              disabled={loading}
+              className="input-base"
+            />
+          </div>
+
+          {/* Why */}
+          <div>
+            <label className="block text-sm font-medium text-primary mb-2">Why?</label>
+            <textarea
+              name="why"
+              value={formData.why}
+              onChange={handleChange}
+              placeholder="Explain the reasoning and context..."
+              rows={3}
+              disabled={loading}
+              className="input-base"
+            />
+          </div>
+
+          {/* Do's */}
+          <div>
+            <label className="block text-sm font-medium text-primary mb-2">Do's</label>
+            <div className="space-y-2">
+              {formData.dos.map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={item}
+                    onChange={(e) => handleArrayChange('dos', index, e.target.value)}
+                    placeholder={`Do #${index + 1}`}
+                    disabled={loading}
+                    className="input-base flex-1"
+                  />
+                  {formData.dos.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeArrayItem('dos', index)}
+                      className="p-2 rounded hover:bg-red-600/10 transition"
+                    >
+                      <XIcon className="w-5 h-5 text-red-400" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => addArrayItem('dos')}
+                className="text-sm text-accent hover:text-indigo-400 flex items-center gap-1 mt-2"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Add do
+              </button>
+            </div>
+          </div>
+
+          {/* Don'ts */}
+          <div>
+            <label className="block text-sm font-medium text-primary mb-2">Don'ts</label>
+            <div className="space-y-2">
+              {formData.donts.map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={item}
+                    onChange={(e) => handleArrayChange('donts', index, e.target.value)}
+                    placeholder={`Don't #${index + 1}`}
+                    disabled={loading}
+                    className="input-base flex-1"
+                  />
+                  {formData.donts.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeArrayItem('donts', index)}
+                      className="p-2 rounded hover:bg-red-600/10 transition"
+                    >
+                      <XIcon className="w-5 h-5 text-red-400" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => addArrayItem('donts')}
+                className="text-sm text-accent hover:text-indigo-400 flex items-center gap-1 mt-2"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Add don't
+              </button>
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-sm font-medium text-primary mb-2">Tags</label>
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleAddTagOnKeydown}
+                placeholder="Type and press Enter or comma"
+                disabled={loading}
+                className="input-base"
+              />
+              {formData.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formData.tags.map((tag) => (
+                    <div
+                      key={tag}
+                      className="tag-base flex items-center gap-1 pr-1"
+                    >
+                      <span>{tag}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="hover:opacity-70"
+                      >
+                        <XIcon className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Context */}
+          <div>
+            <label className="block text-sm font-medium text-primary mb-2">Additional Context (optional)</label>
+            <textarea
+              name="context"
+              value={formData.context}
+              onChange={handleChange}
+              placeholder="Links, references, or additional notes..."
+              rows={2}
+              disabled={loading}
+              className="input-base"
+            />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-3 pt-4 border-t border-border">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => router.push('/dashboard')}
+              disabled={loading}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={loading}
+              className="flex-1"
+            >
+              Create Entry
+            </Button>
+          </div>
+        </form>
+      </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </div>
+  );
+}

@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import FormInput from "../../components/ui/FormInput";
-import Button from "../../components/ui/Button";
+import { FormInput } from "../../components/ui/FormInput";
+import { Button } from "../../components/ui/Button";
 import { authService } from "../../services/authService";
 import { useDispatch } from "react-redux";
 import { login } from "../../redux/slices/authSlice";

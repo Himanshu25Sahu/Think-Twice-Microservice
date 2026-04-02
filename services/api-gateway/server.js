@@ -58,11 +58,15 @@ app.get('/health', (req, res) => {
 });
 
 // ============ ROUTING TO SERVICES ============
-const DECISION_SERVICE_URL = process.env.DECISION_SERVICE_URL || 'http://localhost:5001';
-const ANALYTICS_SERVICE_URL = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:5002';
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
+const ENTRY_SERVICE_URL = process.env.ENTRY_SERVICE_URL || 'http://localhost:5002';
+const ORG_SERVICE_URL = process.env.ORG_SERVICE_URL || 'http://localhost:5003';
+const ANALYTICS_SERVICE_URL = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:5004';
 
-console.log(`[GATEWAY] Configured routes:`);
-console.log(`   Decision Service: ${DECISION_SERVICE_URL}`);
+console.log(`[GATEWAY] Configured service routes:`);
+console.log(`   Auth Service: ${AUTH_SERVICE_URL}`);
+console.log(`   Entry Service: ${ENTRY_SERVICE_URL}`);
+console.log(`   Org Service: ${ORG_SERVICE_URL}`);
 console.log(`   Analytics Service: ${ANALYTICS_SERVICE_URL}`);
 
 // ============ AUTH MIDDLEWARE (Only Here) ============
@@ -106,10 +110,16 @@ const attachTraceId = (req, res, next) => {
 
 // Auth routes (no auth required)
 app.use('/auth', attachTraceId, createProxyMiddleware({
-  target: DECISION_SERVICE_URL,
+  target: AUTH_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: { '^/auth': '/auth' },
   onProxyReq: (proxyReq, req, res) => {
+    console.log(`[GATEWAY] 🔄 Proxying /auth request to ${AUTH_SERVICE_URL}${req.path}`, {
+      method: req.method,
+      path: req.path,
+      body: req.body,
+      traceId: req.traceId,
+    });
     // Forward body for POST requests
     if (req.method === 'POST' && req.body) {
       const bodyData = JSON.stringify(req.body);
@@ -117,14 +127,28 @@ app.use('/auth', attachTraceId, createProxyMiddleware({
       proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
       proxyReq.write(bodyData);
     }
+  },
+  onError: (err, req, res) => {
+    console.error(`[GATEWAY] ❌ Proxy error for ${req.method} ${req.path}:`, {
+      error: err.message,
+      code: err.code,
+      target: AUTH_SERVICE_URL,
+      traceId: req.traceId,
+    });
+    res.status(503).json({
+      success: false,
+      message: `Proxy error: ${err.message}`,
+      target: AUTH_SERVICE_URL,
+      traceId: req.traceId,
+    });
   }
 }));
 
-// Decision routes (with auth check)
-app.use('/decisions', isAuthenticated, attachTraceId, createProxyMiddleware({
-  target: DECISION_SERVICE_URL,
+// Decision/Entry routes (with auth check)
+app.use('/entries', isAuthenticated, attachTraceId, createProxyMiddleware({
+  target: ENTRY_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: { '^/decisions': '/decisions' },
+  pathRewrite: { '^/entries': '/' },
   onProxyReq: (proxyReq, req, res) => {
     // Forward body for POST requests
     if ((req.method === 'POST' || req.method === 'PUT') && req.body) {
@@ -136,11 +160,11 @@ app.use('/decisions', isAuthenticated, attachTraceId, createProxyMiddleware({
   }
 }));
 
-// User routes (with auth check)
-app.use('/user', isAuthenticated, attachTraceId, createProxyMiddleware({
-  target: DECISION_SERVICE_URL,
+// Org routes (with auth check)
+app.use('/org', isAuthenticated, attachTraceId, createProxyMiddleware({
+  target: ORG_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: { '^/user': '/user' },
+  pathRewrite: { '^/org': '/' },
   onProxyReq: (proxyReq, req, res) => {
     // Forward body for POST requests
     if ((req.method === 'POST' || req.method === 'PUT') && req.body) {
@@ -156,7 +180,7 @@ app.use('/user', isAuthenticated, attachTraceId, createProxyMiddleware({
 app.use('/analytics', isAuthenticated, attachTraceId, createProxyMiddleware({
   target: ANALYTICS_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: { '^/analytics': '/analytics' },
+  pathRewrite: { '^/analytics': '/' },
   onProxyReq: (proxyReq, req, res) => {
     // Forward body for POST requests
     if (req.method === 'POST' && req.body) {
@@ -185,7 +209,9 @@ app.listen(PORT, () => {
   console.log(`📋 Configuration:`);
   console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
   console.log(`   JWT_SECRET: ${process.env.JWT_SECRET ? '✅ LOADED (' + process.env.JWT_SECRET.substring(0, 10) + '...)' : '❌ UNDEFINED - AUTH WILL FAIL'}`);
-  console.log(`   Decision Service: ${DECISION_SERVICE_URL}`);
+  console.log(`   Auth Service: ${AUTH_SERVICE_URL}`);
+  console.log(`   Entry Service: ${ENTRY_SERVICE_URL}`);
+  console.log(`   Org Service: ${ORG_SERVICE_URL}`);
   console.log(`   Analytics Service: ${ANALYTICS_SERVICE_URL}`);
   console.log(`${'='.repeat(60)}`);
   console.log(`✅ Gateway ready to route requests\n`);

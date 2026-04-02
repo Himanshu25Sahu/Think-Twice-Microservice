@@ -1,30 +1,38 @@
-"use client"
+'use client';
 
-export default function Button({
+import React from 'react';
+
+export function Button({
   children,
-  onClick,
-  type = "button",
-  variant = "primary",
+  variant = 'primary',
+  size = 'md',
   disabled = false,
-  className = "",
+  loading = false,
+  className = '',
+  ...props
 }) {
-  const baseClasses =
-    "px-6 py-3 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0d0d0d]"
-
+  const baseClasses = 'rounded-lg font-medium transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2';
+  
   const variants = {
-    primary: "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500",
-    secondary: "bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white border border-gray-700 focus:ring-gray-500",
-    ghost: "bg-transparent hover:bg-[#1a1a1a] text-gray-300 hover:text-white focus:ring-gray-500",
-  }
+    primary: 'bg-indigo-600 hover:bg-indigo-500 text-white',
+    secondary: 'bg-[#1a1a27] border border-[#1e1e2e] text-zinc-300 hover:bg-[#252535]',
+    ghost: 'text-zinc-400 hover:bg-[#1a1a27]',
+    danger: 'bg-red-600/10 text-red-400 hover:bg-red-600/20 border border-red-500/20',
+  };
+
+  const sizes = {
+    sm: 'px-3 py-1.5 text-xs',
+    md: 'px-4 py-2.5 text-sm',
+    lg: 'px-6 py-3 text-base',
+  };
 
   return (
     <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={`${baseClasses} ${variants[variant]} ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`}
+      className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`}
+      disabled={disabled || loading}
+      {...props}
     >
-      {children}
+      {loading ? '...' : children}
     </button>
-  )
+  );
 }

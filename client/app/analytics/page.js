@@ -1,67 +1,8 @@
-"use client"
-import { useState, useEffect } from "react"
-import DashboardLayout from "../../components/layout/DashboardLayout"
-import AnalyticsCard from "../../components/ui/AnalyticsCard.js"
-import { analyticsService } from "../../services/analyticsService"
+import { redirect } from 'next/navigation';
 
 export default function AnalyticsPage() {
-  const [analyticsData, setAnalyticsData] = useState(null)
-  const [timeRange, setTimeRange] = useState("month")
-  const [loading, setLoading] = useState(true)
-  const userId = "currentUserId"; // Replace with actual user ID from auth context or state
-
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        setLoading(true)
-        const response = await analyticsService.getAnalytics(userId)
-        if (response.success) {
-          setAnalyticsData(response.data)
-        }
-      } catch (error) {
-        console.error("Error fetching analytics:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchAnalytics()
-  }, [userId])
-
-  const categoryColors = {
-    career: "bg-blue-500",
-    personal: "bg-purple-500",
-    financial: "bg-green-500",
-    health: "bg-red-500",
-    relationship: "bg-pink-500",
-  }
-
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        </div>
-      </DashboardLayout>
-    )
-  }
-
-  if (!analyticsData) {
-    return (
-      <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-white">Error loading analytics</div>
-        </div>
-      </DashboardLayout>
-    )
-  }
-
-  const { totalDecisions, successRate, avgConfidence, thisWeek, thisMonth, categoryStats, confidenceBreakdown, outcomesByConfidence, weeklyTrend, monthlyTrend, suggestions } = analyticsData
-
-  return (
-    <DashboardLayout>
-      <div className="p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+  redirect('/analytics');
+}
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Analytics</h1>
               <p className="text-gray-400">Insights into your decision-making patterns</p>

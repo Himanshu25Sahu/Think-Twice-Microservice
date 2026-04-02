@@ -1,49 +1,57 @@
-"use client"
-import { useState } from "react"
-import Link from "next/link"
+'use client';
+
+import { usePathname } from 'next/navigation';
+import { SearchIcon, PlusIcon } from '@/components/icons';
+import Link from 'next/link';
+import { useState } from 'react';
 
 export default function Navbar() {
-  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const pathname = usePathname();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  return ( 
-    <nav className="bg-[#1a1a1a] border-b border-gray-800 px-4 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/dashboard" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">JC</span>
-          </div>
-          <span className="text-white font-semibold text-lg">Think Twice</span>
-        </Link>
+  // Map routes to page titles
+  const pageTitles = {
+    '/dashboard': 'Dashboard',
+    '/entries/new': 'New Entry',
+    '/analytics': 'Analytics',
+    '/settings': 'Settings',
+  };
 
-        {/* Search Bar */}
-        <div className="flex-1 max-w-md mx-8">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search decisions, users..."
-              className="w-full bg-[#0d0d0d] border border-gray-700 rounded-xl px-4 py-2 pl-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              suppressHydrationWarning // Suppress hydration warning for this input
-            />
-            <svg
-              className="absolute left-3 top-2.5 w-4 h-4 text-gray-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
+  const title = pageTitles[pathname] || 'Page';
+
+  // Only show search on dashboard
+  const showSearch = pathname === '/dashboard';
+
+  return (
+    <nav className="sticky top-0 z-40 h-14 bg-card border-b border-border flex items-center px-6 ml-64">
+      {/* Page Title */}
+      <h1 className="text-lg font-semibold text-primary">{title}</h1>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Search Bar (Dashboard only) */}
+      {showSearch && (
+        <div className="relative mr-6 max-w-xs hidden sm:block">
+          <input
+            type="text"
+            placeholder="Search entries..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-3 py-2 pl-9 text-sm bg-[#1a1a27] border border-border rounded-lg text-primary placeholder-secondary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+          />
+          <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-secondary pointer-events-none" />
         </div>
+      )}
 
-        {/* User Menu */}
-        {/* (Add user menu logic here if needed) */}
-      </div>
+      {/* New Entry Button (Quick Access) */}
+      <Link
+        href="/entries/new"
+        className="flex items-center space-x-1 px-3 py-2 rounded-lg bg-accent hover:bg-indigo-700 text-white font-medium transition text-sm"
+      >
+        <PlusIcon className="w-4 h-4" />
+        <span className="hidden sm:inline">New</span>
+      </Link>
     </nav>
-  )
+  );
 }

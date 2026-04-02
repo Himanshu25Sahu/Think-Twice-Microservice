@@ -1,37 +1,8 @@
-"use client";
-import { useState, useEffect } from "react";
-import DashboardLayout from "../../components/layout/DashboardLayout";
-import DecisionCard from "../../components/ui/DecisionCard";
-import QuickDecisionEntry from "../../components/ui/QuickDecisionEntry";
-import { decisionService } from "../../services/decisionService";
-import { useSelector } from "react-redux";
-import { useRouter } from "next/navigation";
+import { redirect } from 'next/navigation';
 
 export default function FeedPage() {
-  const [decisions, setDecisions] = useState([]);
-  const [filteredDecisions, setFilteredDecisions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("recent");
-  const { userData } = useSelector((state) => state.user);
-  const router = useRouter();
-
-  // 🔒 Protect route: redirect if not logged in
-  useEffect(() => {
-    if (!userData) {
-      router.replace("/login");
-    }
-  }, [userData, router]);
-
-  useEffect(() => {
-    if (userData) {
-      fetchPublicDecisions();
-    }
-  }, [userData]);
-
-  const fetchPublicDecisions = async () => {
-    try {
-      setLoading(true);
+  redirect('/dashboard');
+}
       const response = await decisionService.getPublicDecisions();
       const decisionsWithIds = response.data.decisions.map((decision) => ({
         ...decision,

@@ -5,7 +5,7 @@
   "description": "Analytics Service for Think-Twice",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "node --watch server.js"
   },
   "keywords": [],
   "author": "",

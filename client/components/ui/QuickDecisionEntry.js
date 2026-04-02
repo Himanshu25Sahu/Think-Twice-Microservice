@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import Button from "./Button";
+import { Button } from "./Button";
 
-export default function QuickDecisionEntry({ onSubmit }) {
+export function QuickDecisionEntry({ onSubmit }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [formData, setFormData] = useState({
     title: "",

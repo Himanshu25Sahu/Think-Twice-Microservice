@@ -1,32 +1,8 @@
-"use client";
+import { redirect } from 'next/navigation';
 
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-
-export default function About() {
-  const steps = [
-    { name: "Checkout Repo", desc: "Pulls the latest code from GitHub." },
-    { name: "Setup Node.js", desc: "Prepares Node.js 20 environment." },
-    { name: "Cache Server Node Modules", desc: "Speeds up installs by caching server dependencies." },
-    { name: "Install Server Dependencies", desc: "Runs `npm ci` in the server folder." },
-    { name: "Build Server Docker Image", desc: "Builds a Docker image for the backend." },
-    { name: "Cache Client Node Modules", desc: "Caches client dependencies for faster builds." },
-    { name: "Install Client Dependencies", desc: "Runs `npm ci` in the client folder." },
-    { name: "Build Client Docker Image", desc: "Builds a Docker image for the frontend." },
-    { name: "Push Server Image to Docker Hub", desc: "Uploads server image (only on main branch)." },
-    { name: "Trigger Render Deploy", desc: "Triggers backend redeploy on Render." },
-    { name: "Vercel Deploy", desc: "Frontend automatically redeploys with latest code." },
-  ];
-
-  const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(-1);
-  const [isRunning, setIsRunning] = useState(false);
-  const [finished, setFinished] = useState(false);
-
-  useEffect(() => {
-    let timer;
-    if (isRunning && currentStep < steps.length) {
+export default function AboutPage() {
+  redirect('/');
+}
       timer = setTimeout(() => setCurrentStep((prev) => prev + 1), 1200);
     }
     if (currentStep === steps.length - 1) {

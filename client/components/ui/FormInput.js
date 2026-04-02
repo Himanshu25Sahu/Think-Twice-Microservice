@@ -1,6 +1,6 @@
 "use client"
 
-export default function FormInput({ label, type = "text", placeholder, value, onChange, required = false, error }) {
+export function FormInput({ label, type = "text", placeholder, value, onChange, required = false, error }) {
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-300">

@@ -1,13 +1,13 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*', // Match all API routes (e.g., /api/auth/login)
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/:path*`, // Proxy to backend
+        source: '/api/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/:path*`,
       },
     ];
   },
+  reactStrictMode: true,
 };
 
 export default nextConfig;

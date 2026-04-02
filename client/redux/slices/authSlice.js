@@ -1,103 +1,107 @@
-// src/redux/slices/authSlice.js - UPDATED
+// src/redux/slices/authSlice.js
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import api from '@/services/api';
 
-// Load initial state from localStorage
-const storedAuth = typeof window !== 'undefined' ? localStorage.getItem('auth') : null;
-const initialState = storedAuth ? JSON.parse(storedAuth) : {
-  userData: null,
-  isAuthorized: false,
+// Thunks
+export const register = createAsyncThunk(
+  'auth/register',
+  async (credentials, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/auth/register', credentials);
+      return { success: true, user: response.data.data.user };
+    } catch (err) {
+      return rejectWithValue({ success: false, message: err.response?.data?.message || 'Registration failed' });
+    }
+  }
+);
+
+export const login = createAsyncThunk(
+  'auth/login',
+  async (credentials, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/auth/login', credentials);
+      return { success: true, user: response.data.data.user };
+    } catch (err) {
+      return rejectWithValue({ success: false, message: err.response?.data?.message || 'Login failed' });
+    }
+  }
+);
+
+export const checkAuth = createAsyncThunk(
+  'auth/checkAuth',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/auth/me');
+      return { success: true, user: response.data };
+    } catch (err) {
+      return rejectWithValue({ success: false, message: 'Not authenticated' });
+    }
+  }
+);
+
+const initialState = {
+  user: null,
+  isAuthenticated: false,
   loading: false,
   error: null,
 };
 
-const logoutAsync = createAsyncThunk('user/logout', async (_, { rejectWithValue }) => {
-  try {
-    await api.post('/auth/logout');
-    return true;
-  } catch (error) {
-    return rejectWithValue(error.message);
-  }
-});
-
-const login = createAsyncThunk('user/login', async (userCredentials, { rejectWithValue }) => {
-  try {
-    console.log('Sending login request to:', '/auth/login');
-    const response = await api.post('/auth/login', userCredentials);
-    
-    if (response.status !== 200) {
-      return rejectWithValue(response.data.message || 'Login failed');
-    }
-
-    // For cookie-based auth, we don't need to store token in localStorage
-    // The server will send it as HttpOnly cookie
-    return response.data;
-  } catch (err) {
-    return rejectWithValue(err.response?.data?.message || err.message || 'Login failed');
-  }
-});
-
 const authSlice = createSlice({
-  name: 'user',
+  name: 'auth',
   initialState,
   reducers: {
     logout: (state) => {
-      state.userData = null;
-      state.isAuthorized = false;
-      state.loading = false;
+      state.user = null;
+      state.isAuthenticated = false;
       state.error = null;
-      localStorage.removeItem('auth');
     },
     clearError: (state) => {
       state.error = null;
     },
-    setAuthState: (state, action) => {
-      state.userData = action.payload.userData;
-      state.isAuthorized = action.payload.isAuthorized;
-    }
   },
   extraReducers: (builder) => {
-    builder
-      .addCase(login.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(login.fulfilled, (state, action) => {
-        state.loading = false;
-        state.userData = action.payload.user;
-        state.isAuthorized = true;
-        state.error = null;
-        
-        // Store minimal auth state in localStorage
-        localStorage.setItem('auth', JSON.stringify({
-          userData: action.payload.user,
-          isAuthorized: true
-        }));
-      })
-      .addCase(login.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-        state.isAuthorized = false;
-        localStorage.removeItem('auth');
-      })
-      .addCase(logoutAsync.fulfilled, (state) => {
-  state.userData = null;
-  state.isAuthorized = false;
-  state.loading = false;
-  state.error = null;
-  localStorage.removeItem('auth');
-})
-.addCase(logoutAsync.rejected, (state, action) => {
-  // Still clear state even if API call fails
-  state.userData = null;
-  state.isAuthorized = false;
-  state.loading = false;
-  state.error = action.payload;
-  localStorage.removeItem('auth');
-});
+    // Register
+    builder.addCase(register.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(register.fulfilled, (state, action) => {
+      state.loading = false;
+      state.user = action.payload.user;
+      state.isAuthenticated = true;
+    });
+    builder.addCase(register.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload.message;
+      state.isAuthenticated = false;
+    });
+
+    // Login
+    builder.addCase(login.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(login.fulfilled, (state, action) => {
+      state.loading = false;
+      state.user = action.payload.user;
+      state.isAuthenticated = true;
+    });
+    builder.addCase(login.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload.message;
+      state.isAuthenticated = false;
+    });
+
+    // Check Auth
+    builder.addCase(checkAuth.fulfilled, (state, action) => {
+      state.user = action.payload.user;
+      state.isAuthenticated = true;
+    });
+    builder.addCase(checkAuth.rejected, (state) => {
+      state.isAuthenticated = false;
+    });
   },
 });
 
-export { login };
-export const { logout, clearError, setAuthState } = authSlice.actions;
+export const { logout, clearError } = authSlice.actions;
 export default authSlice.reducer;

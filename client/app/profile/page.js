@@ -1,22 +1,8 @@
-"use client"
-import { useState, useEffect } from "react"
-import DashboardLayout from "../../components/layout/DashboardLayout"
-import DecisionCard from "../../components/ui/DecisionCard"
-import AnalyticsCard from "../../components/ui/AnalyticsCard"
-import Button from "../../components/ui/Button"
-import { userService } from "../../services/userService"
-import { decisionService } from "../../services/decisionService"
-import { useSelector } from "react-redux"
+import { redirect } from 'next/navigation';
 
 export default function ProfilePage() {
-  const [activeTab, setActiveTab] = useState("decisions")
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedBio, setEditedBio] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [profileData, setProfileData] = useState(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [deletingDecisionId, setDeletingDecisionId] = useState(null)
-  const decisionsPerPage = 5
+  redirect('/settings');
+}
   const { userData } = useSelector((state) => state.user)
 
   useEffect(() => {

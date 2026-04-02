@@ -1,42 +1,8 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { decisionService } from "../../../services/decisionService";
-import { format } from "date-fns";
-import { useSelector } from "react-redux";
+import { redirect } from 'next/navigation';
 
 export default function DecisionDetailPage() {
-  const params = useParams();
-  const id = params.id;
-  const [decision, setDecision] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Poll state
-  const [voteCounts, setVoteCounts] = useState({});
-  const [userVote, setUserVote] = useState(null);
-  const [voting, setVoting] = useState(false);
-  const [voteError, setVoteError] = useState(null);
-  const [hasVoted, setHasVoted] = useState(false);
-
-  const { userData } = useSelector((state) => state.user);
-
-  useEffect(() => {
-    const fetchDecision = async () => {
-      try {
-        setLoading(true);
-        if (id) {
-          const response = await decisionService.getDecision(id);
-          if (response.success) {
-            const dec = response.data.decision;
-            setDecision(dec);
-            setComments(dec.comments || []);
-
-            // Build initial vote counts
-            const counts = {};
-            dec.options?.forEach((opt) => {
+  redirect('/dashboard');
+}
               counts[opt._id.toString()] = 0;
             });
             dec.poll?.votes?.forEach((vote) => {

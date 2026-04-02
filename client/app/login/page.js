@@ -1,128 +1,128 @@
-// app/login/page.js - FIXED
-"use client";
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useDispatch, useSelector } from "react-redux";
-import { login, clearError } from "../../redux/slices/authSlice";
-import FormInput from "../../components/ui/FormInput";
-import Button from "../../components/ui/Button";
-import { useRouter } from "next/navigation";
-import api from "../../services/api"; // ADD THIS IMPORT
+'use client';
+
+import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { login } from '@/redux/slices/authSlice';
+import { fetchMyOrgs } from '@/redux/slices/orgSlice';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Toast } from '@/components/ui/Toast';
 
 export default function LoginPage() {
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [isClient, setIsClient] = useState(false);
-
   const dispatch = useDispatch();
-  const { loading, error, isAuthorized } = useSelector((state) => state.user);
   const router = useRouter();
+  const { loading, error } = useSelector((state) => state.auth);
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    setIsClient(true);
-    dispatch(clearError());
-    
-    // Check if already logged in - FIXED
-    const checkAuthStatus = async () => {
-      try {
-        const authData = localStorage.getItem('auth');
-        if (authData) {
-          const response = await api.get('/auth/verify');
-          if (response.data.isValid) {
-            router.push("/dashboard");
-          } else {
-            localStorage.removeItem('auth');
-          }
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        localStorage.removeItem('auth');
-      }
-    };
-
-    checkAuthStatus();
-  }, [dispatch, router]);
-
-  const handleInputChange = (field) => (e) => {
-    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await dispatch(login(formData));
-    if (login.fulfilled.match(result)) {
-      router.push("/dashboard");
+
+    if (!formData.email || !formData.password) {
+      setToast({ type: 'error', message: 'Please fill in all fields' });
+      return;
+    }
+
+    try {
+      const result = await dispatch(login(formData));
+      if (result.payload.success) {
+        // Fetch user's orgs after successful login
+        await dispatch(fetchMyOrgs());
+        setToast({ type: 'success', message: 'Login successful!' });
+        setTimeout(() => router.push('/dashboard'), 1000);
+      } else {
+        setToast({ type: 'error', message: result.payload.message || 'Login failed' });
+      }
+    } catch (err) {
+      setToast({ type: 'error', message: 'An error occurred. Please try again.' });
     }
   };
-
-  const handleTestLogin = async () => {
-    const result = await dispatch(
-      login({ email: "himpreetak@gmail.com", password: "1234" })
-    );
-    if (login.fulfilled.match(result)) {
-      router.push("/dashboard");
-    }
-  };
-
-  if (!isClient) {
-    return <div>Loading...</div>;
-  }
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-primary flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="bg-[#1a1a1a] rounded-2xl shadow-2xl p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-            <p className="text-gray-400">Sign in to your Judgment Call account</p>
-          </div>
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-accent mb-2">🧠</h1>
+          <h2 className="text-2xl font-bold text-primary">Think Twice</h2>
+          <p className="text-secondary mt-2">Document. Debug. Decide.</p>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <FormInput
+        {/* Login Form */}
+        <div className="card-base">
+          <h3 className="text-xl font-semibold text-primary mb-6">Sign In</h3>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
               label="Email"
               type="email"
-              placeholder="Enter your email"
+              name="email"
               value={formData.email}
-              onChange={handleInputChange("email")}
-              required
+              onChange={handleChange}
+              placeholder="your@email.com"
+              disabled={loading}
             />
 
-            <FormInput
+            <Input
               label="Password"
               type="password"
-              placeholder="Enter your password"
+              name="password"
               value={formData.password}
-              onChange={handleInputChange("password")}
-              required
+              onChange={handleChange}
+              placeholder="••••••••"
+              disabled={loading}
             />
 
-            {error && <p className="text-red-500 text-center">{error}</p>}
+            {error && (
+              <div className="p-3 rounded bg-red-600/10 border border-red-600/20 text-red-400 text-sm">
+                {error}
+              </div>
+            )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing In..." : "Sign In"}
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full"
+              loading={loading}
+            >
+              Sign In
             </Button>
           </form>
 
-          <div className="mt-4">
-            <Button
-              type="button"
-              className="w-full bg-gray-700 hover:bg-gray-600"
-              onClick={handleTestLogin}
-              disabled={loading}
-            >
-              {loading ? "Signing In..." : "Login as Test User"}
-            </Button>
-          </div>
-
-          <div className="mt-6 text-center">
-            <p className="text-gray-400">
-              Dont have an account?{" "}
-              <Link href="/register" className="text-blue-400 hover:text-blue-300">
+          {/* Link to Register */}
+          <div className="mt-6 pt-6 border-t border-border text-center">
+            <p className="text-secondary text-sm">
+              Don't have an account?{' '}
+              <Link href="/register" className="text-accent hover:underline font-medium">
                 Sign up
               </Link>
             </p>
           </div>
         </div>
+
+        {/* Demo Credentials */}
+        <div className="mt-6 p-3 rounded bg-indigo-600/10 border border-indigo-600/20 text-indigo-400 text-sm">
+          <p className="font-semibold mb-1">Demo Credentials</p>
+          <p>Email: <code className="text-indigo-300 bg-indigo-600/20 px-1 rounded">test@example.com</code></p>
+          <p>Password: <code className="text-indigo-300 bg-indigo-600/20 px-1 rounded">password123</code></p>
+        </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

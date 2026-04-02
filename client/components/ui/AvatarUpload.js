@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 
-export default function AvatarUpload({ onImageSelect }) {
+export function AvatarUpload({ onImageSelect }) {
   const [preview, setPreview] = useState(null)
 
   const handleFileChange = (e) => {

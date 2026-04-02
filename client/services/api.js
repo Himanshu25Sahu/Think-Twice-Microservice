@@ -1,7 +1,14 @@
 // services/api.js - FIXED
 import axios from 'axios';
 
-const API_BASE_URL = '/api'
+// In browser (client-side), axios needs the full URL to the gateway
+// During development, bypass Next.js and connect directly to the gateway
+// NOTE: Gateway routes are under /api prefix, so include that!
+const API_BASE_URL = typeof window !== 'undefined' 
+  ? 'http://localhost:5000/api' 
+  : 'http://localhost:5000/api';
+
+console.log('🔧 API Initialized with BASE_URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -14,21 +21,45 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    console.log('API Request:', config.method?.toUpperCase(), config.url);
+    const fullUrl = `${config.baseURL}${config.url}`;
+    console.log('📤 [API REQUEST]', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      fullUrl: fullUrl,
+      baseURL: config.baseURL,
+      data: config.data ? JSON.stringify(config.data).substring(0, 100) : null,
+      timestamp: new Date().toISOString(),
+    });
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('❌ [API REQUEST ERROR]', error);
+    return Promise.reject(error);
+  }
 );
-// services/api.js - FIXED INTERCEPTOR
+
+// Response interceptor
 api.interceptors.response.use(
   (response) => {
-    console.log('API Response:', response.status, response.config.url);
+    console.log('✅ [API RESPONSE]', {
+      status: response.status,
+      url: response.config.url,
+      dataKeys: response.data ? Object.keys(response.data) : null,
+      timestamp: new Date().toISOString(),
+    });
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
     
-    console.error('API Error:', error.response?.status, error.config?.url);
+    console.error('❌ [API ERROR]', {
+      status: error.response?.status,
+      url: error.config?.url,
+      fullUrl: error.config ? `${error.config.baseURL}${error.config.url}` : null,
+      message: error.message,
+      responseData: error.response?.data,
+      timestamp: new Date().toISOString(),
+    });
     
     // Handle 401 errors with token refresh - BUT NOT FOR LOGIN/REFRESH ENDPOINTS
     if (error.response?.status === 401 && 

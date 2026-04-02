@@ -1,0 +1,27 @@
+{
+  "name": "think-twice",
+  "version": "1.0.0",
+  "description": "A multi-tenant knowledge logging platform for engineering teams",
+  "private": true,
+  "author": "Think Twice Team",
+  "license": "MIT",
+  "scripts": {
+    "infra": "docker compose -f docker-compose.dev.yml up -d",
+    "infra:stop": "docker compose -f docker-compose.dev.yml down",
+    "infra:clean": "docker compose -f docker-compose.dev.yml down -v",
+    "dev:gateway": "cd gateway && npm run dev",
+    "dev:auth": "cd services/auth-service && npm run dev",
+    "dev:org": "cd services/org-service && npm run dev",
+    "dev:entry": "cd services/entry-service && npm run dev",
+    "dev:analytics": "cd services/analytics-service && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "install:all": "npm install && cd gateway && npm install && cd ../services/auth-service && npm install && cd ../org-service && npm install && cd ../entry-service && npm install && cd ../analytics-service && npm install && cd ../../client && npm install",
+    "health": "node scripts/health-check.js",
+    "test:integration": "npm run infra && sleep 3 && bash verify.sh"
+  },
+  "keywords": ["knowledge-base", "architecture-decisions", "microservices", "nextjs", "nodejs"],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

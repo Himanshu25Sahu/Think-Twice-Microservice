@@ -1,187 +1,154 @@
-"use client"
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import FormInput from "../../components/ui/FormInput"
-import Button from "../../components/ui/Button"
-import AvatarUpload from "../../components/ui/AvatarUpload"
-import { authService } from "../../services/authService"
+'use client';
+
+import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { register } from '@/redux/slices/authSlice';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Toast } from '@/components/ui/Toast';
+import { OrgOnboarding } from '@/components/onboarding/OrgOnboarding';
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    bio: "",
-    location: ""
-  })
-  const [avatar, setAvatar] = useState(null)
-  const [errors, setErrors] = useState({})
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const dispatch = useDispatch();
+  const router = useRouter();
+  const { loading, error } = useSelector((state) => state.auth);
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', passwordConfirm: '' });
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  const handleInputChange = (field) => (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: e.target.value,
-    }))
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: "",
-      }))
-    }
-  }
-
-  const validateForm = () => {
-    const newErrors = {}
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required"
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required"
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid"
-    }
-
-
-
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match"
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!validateForm()) return
+    e.preventDefault();
 
-    setLoading(true)
-    try {
-      const formDataToSend = new FormData()
-      formDataToSend.append("name", formData.name)
-      formDataToSend.append("email", formData.email)
-      formDataToSend.append("password", formData.password)
-      formDataToSend.append("bio", formData.bio)
-      formDataToSend.append("location", formData.location)
-      
-      if (avatar) {
-        formDataToSend.append("avatar", avatar)
-      }
-
-      const response = await authService.register(formDataToSend)
-      
-      if (response.message) {
-        // Redirect to OTP verification page with email
-        router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`)
-      }
-    } catch (error) {
-      console.error("Registration error:", error)
-      if (error.response?.data?.message) {
-        setErrors({ general: error.response.data.message })
-      } else {
-        setErrors({ general: "Registration failed. Please try again." })
-      }
-    } finally {
-      setLoading(false)
+    if (!formData.name || !formData.email || !formData.password || !formData.passwordConfirm) {
+      setToast({ type: 'error', message: 'Please fill in all fields' });
+      return;
     }
-  } 
+
+    if (formData.password !== formData.passwordConfirm) {
+      setToast({ type: 'error', message: 'Passwords do not match' });
+      return;
+    }
+
+    try {
+      const result = await dispatch(register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      }));
+
+      if (result.payload.success) {
+        setToast({ type: 'success', message: 'Registration successful!' });
+        setShowOnboarding(true);
+      } else {
+        setToast({ type: 'error', message: result.payload.message || 'Registration failed' });
+      }
+    } catch (err) {
+      setToast({ type: 'error', message: 'An error occurred. Please try again.' });
+    }
+  };
+
+  if (showOnboarding) {
+    return <OrgOnboarding />;
+  }
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-primary flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="bg-[#1a1a1a] rounded-2xl shadow-2xl p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Join Think Twice</h1>
-            <p className="text-gray-400">Create your account to start making better decisions</p>
-          </div>
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-accent mb-2">🧠</h1>
+          <h2 className="text-2xl font-bold text-primary">Think Twice</h2>
+          <p className="text-secondary mt-2">Document. Debug. Decide.</p>
+        </div>
 
-          {errors.general && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6">
-              <p className="text-red-400 text-sm">{errors.general}</p>
-            </div>
-          )}
+        {/* Registration Form */}
+        <div className="card-base">
+          <h3 className="text-xl font-semibold text-primary mb-6">Create Account</h3>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <AvatarUpload onImageSelect={setAvatar} />
-
-            <FormInput
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
               label="Full Name"
               type="text"
-              placeholder="Enter your full name"
+              name="name"
               value={formData.name}
-              onChange={handleInputChange("name")}
-              required
-              error={errors.name}
+              onChange={handleChange}
+              placeholder="John Doe"
+              disabled={loading}
             />
 
-            <FormInput
+            <Input
               label="Email"
               type="email"
-              placeholder="Enter your email"
+              name="email"
               value={formData.email}
-              onChange={handleInputChange("email")}
-              required
-              error={errors.email}
+              onChange={handleChange}
+              placeholder="your@email.com"
+              disabled={loading}
             />
 
-            <FormInput
+            <Input
               label="Password"
               type="password"
-              placeholder="Create a password (min. 6 characters)"
+              name="password"
               value={formData.password}
-              onChange={handleInputChange("password")}
-              required
-              error={errors.password}
+              onChange={handleChange}
+              placeholder="••••••••"
+              disabled={loading}
             />
 
-            <FormInput
+            <Input
               label="Confirm Password"
               type="password"
-              placeholder="Confirm your password"
-              value={formData.confirmPassword}
-              onChange={handleInputChange("confirmPassword")}
-              required
-              error={errors.confirmPassword}
+              name="passwordConfirm"
+              value={formData.passwordConfirm}
+              onChange={handleChange}
+              placeholder="••••••••"
+              disabled={loading}
             />
 
-            <FormInput
-              label="Bio (Optional)"
-              type="text"
-              placeholder="Tell us about yourself"
-              value={formData.bio}
-              onChange={handleInputChange("bio")}
-            />
+            {error && (
+              <div className="p-3 rounded bg-red-600/10 border border-red-600/20 text-red-400 text-sm">
+                {error}
+              </div>
+            )}
 
-            <FormInput
-              label="Location (Optional)"
-              type="text"
-              placeholder="Where are you from?"
-              value={formData.location}
-              onChange={handleInputChange("location")}
-            />
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating Account..." : "Create Account"}
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full"
+              loading={loading}
+            >
+              Create Account
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-gray-400">
-              Already have an account?{" "}
-              <Link href="/login" className="text-blue-400 hover:text-blue-300 transition-colors">
+          {/* Link to Login */}
+          <div className="mt-6 pt-6 border-t border-border text-center">
+            <p className="text-secondary text-sm">
+              Already have an account?{' '}
+              <Link href="/login" className="text-accent hover:underline font-medium">
                 Sign in
               </Link>
             </p>
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
-  )
+  );
 }

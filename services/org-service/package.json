@@ -1,0 +1,28 @@
+{
+  "name": "think-twice-org-service",
+  "version": "1.0.0",
+  "description": "Organization Management Service for Think Twice",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "organization",
+    "multi-tenant",
+    "microservice"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.5.0",
+    "redis": "^4.6.10",
+    "axios": "^1.5.0",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "cookie-parser": "^1.4.6",
+    "slugify": "^1.6.6"
+  }
+}
