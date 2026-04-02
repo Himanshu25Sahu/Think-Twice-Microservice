@@ -213,7 +213,6 @@ decisionSchema.virtual('pollVoteCounts').get(function() {
 
 
 // Ensure unique votes per user (prevent multiple votes from same user)
-decisionSchema.index({ 'poll.votes.user': 1 }, { unique: true, partialFilterExpression: { 'poll.enabled': true } });
 
 // Indexes (existing)
 decisionSchema.index({ user: 1, createdAt: -1 });

@@ -1,3 +1,5 @@
+import './telemetry.js';
+
 import { app } from "./app.js";
 import dotenv from 'dotenv'
 import { connectDB } from "./database/connection.js";

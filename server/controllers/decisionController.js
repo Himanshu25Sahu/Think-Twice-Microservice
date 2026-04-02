@@ -166,7 +166,7 @@ export const createDecision = async (req, res) => {
       seekingAdvice,
       tags: Array.isArray(tags) ? tags.map(tag => typeof tag === 'string' ? tag.trim() : '').filter(tag => tag) : [],
       poll: {
-        enabled: isPublic && poll.enabled // Only enable poll if public and requested
+        enabled: isPublic // Auto-enable polls for public decisions
       }
     });
 

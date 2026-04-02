@@ -46,7 +46,7 @@ export default function QuickDecisionEntry({ onSubmit }) {
         isPublic: formData.isPublic,
         seekingAdvice: formData.seekingAdvice,
         tags: formData.tags,
-        poll: { enabled: false }
+        poll: { enabled: formData.isPublic && formData.seekingAdvice }
       };
 
       await onSubmit(decisionData);

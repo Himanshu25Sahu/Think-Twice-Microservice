@@ -5,6 +5,7 @@ import DecisionCard from "../../components/ui/DecisionCard"
 import AnalyticsCard from "../../components/ui/AnalyticsCard"
 import Button from "../../components/ui/Button"
 import { userService } from "../../services/userService"
+import { decisionService } from "../../services/decisionService"
 import { useSelector } from "react-redux"
 
 export default function ProfilePage() {
@@ -14,6 +15,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [profileData, setProfileData] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [deletingDecisionId, setDeletingDecisionId] = useState(null)
   const decisionsPerPage = 5
   const { userData } = useSelector((state) => state.user)
 
@@ -42,6 +44,22 @@ export default function ProfilePage() {
       fetchProfileData()
     } catch (error) {
       console.error("Error updating bio:", error)
+    }
+  }
+
+  const handleDeleteDecision = async (decisionId) => {
+    const confirmed = window.confirm("Are you sure you want to delete this decision?")
+    if (!confirmed) return
+
+    try {
+      setDeletingDecisionId(decisionId)
+      await decisionService.deleteDecision(decisionId)
+      await fetchProfileData()
+    } catch (error) {
+      console.error("Error deleting decision:", error)
+      window.alert("Failed to delete decision. Please try again.")
+    } finally {
+      setDeletingDecisionId(null)
     }
   }
 
@@ -199,6 +217,15 @@ export default function ProfilePage() {
                 <>
                   {currentDecisions.map((decision) => (
                     <div key={decision._id} className="relative">
+                      <div className="flex justify-end mb-3">
+                        <button
+                          onClick={() => handleDeleteDecision(decision._id)}
+                          disabled={deletingDecisionId === decision._id}
+                          className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {deletingDecisionId === decision._id ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
                       <DecisionCard decision={decision} showInteractions={false} />
                       {decision.outcome && (
                         <div className="mt-4 bg-[#0d0d0d] rounded-xl p-4 border border-gray-800">

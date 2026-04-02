@@ -13,6 +13,11 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.71.0",
+    "@opentelemetry/exporter-jaeger": "^2.6.0",
+    "@opentelemetry/sdk-node": "^0.213.0",
+    "@opentelemetry/sdk-trace-node": "^2.6.0",
     "@upstash/redis": "^1.35.5",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.7.0",

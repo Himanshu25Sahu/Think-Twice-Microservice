@@ -105,6 +105,18 @@ services:
       - tt-network
     restart: unless-stopped
 
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: tt-jaeger
+    environment:
+      COLLECTOR_JAEGER_GRPC_HOST_PORT: ":14250"
+    ports:
+      - "16686:16686"
+      - "14250:14250"
+    networks:
+      - tt-network
+    restart: unless-stopped
+
 networks:
   tt-network:
     driver: bridge
