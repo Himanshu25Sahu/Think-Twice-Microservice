@@ -16,6 +16,7 @@ export const verifyAuth = (req, res, next) => {
     // Set headers for downstream services
     req.headers['x-user-id'] = decoded.id;
     req.headers['x-user-email'] = decoded.email;
+    req.headers['x-user-name'] = decoded.name || decoded.email;
     
     console.log(`[GATEWAY] User authenticated: ${decoded.email} trace=${req.traceId}`);
     
@@ -37,6 +38,7 @@ export const optionalAuth = (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
       req.headers['x-user-id'] = decoded.id;
       req.headers['x-user-email'] = decoded.email;
+      req.headers['x-user-name'] = decoded.name || decoded.email;
       console.log(`[GATEWAY] User authenticated: ${decoded.email} trace=${req.traceId}`);
     }
 

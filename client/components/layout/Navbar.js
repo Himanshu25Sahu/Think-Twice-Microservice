@@ -23,35 +23,26 @@ export default function Navbar() {
   const showSearch = pathname === '/dashboard';
 
   return (
-    <nav className="sticky top-0 z-40 h-14 bg-card border-b border-border flex items-center px-6 ml-64">
+    <nav className="sticky top-0 z-40 h-16 bg-card border-b border-border flex items-center px-8 ml-64 backdrop-blur-sm bg-opacity-95">
       {/* Page Title */}
-      <h1 className="text-lg font-semibold text-primary">{title}</h1>
+      <h1 className="text-xl font-bold text-primary tracking-tight">{title}</h1>
 
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Search Bar (Dashboard only) */}
-      {showSearch && (
-        <div className="relative mr-6 max-w-xs hidden sm:block">
-          <input
-            type="text"
-            placeholder="Search entries..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-2 pl-9 text-sm bg-[#1a1a27] border border-border rounded-lg text-primary placeholder-secondary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-          />
-          <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-secondary pointer-events-none" />
-        </div>
-      )}
+      {/* Right Section - Flex Container for Alignment */}
+      <div className="flex items-center gap-4 sm:gap-6 w-auto">
 
-      {/* New Entry Button (Quick Access) */}
-      <Link
-        href="/entries/new"
-        className="flex items-center space-x-1 px-3 py-2 rounded-lg bg-accent hover:bg-indigo-700 text-white font-medium transition text-sm"
-      >
-        <PlusIcon className="w-4 h-4" />
-        <span className="hidden sm:inline">New</span>
-      </Link>
+
+        {/* New Entry Button */}
+        <Link
+          href="/entries/new"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-accent hover:bg-accent/90 text-white font-semibold transition-all duration-200 text-sm shadow-sm hover:shadow-md active:scale-95"
+        >
+          <PlusIcon className="w-4 h-4" />
+          <span className="hidden sm:inline">New</span>
+        </Link>
+      </div>
     </nav>
   );
 }

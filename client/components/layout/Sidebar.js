@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { logout } from '@/redux/slices/authSlice';
 import { switchOrg } from '@/redux/slices/orgSlice';
+import api from '@/services/api';
 import {
   HomeIcon,
   PlusIcon,
@@ -31,9 +32,15 @@ export default function Sidebar() {
     router.push('/dashboard');
   };
 
-  const handleLogout = () => {
-    dispatch(logout());
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } 
+      dispatch(logout());
+      router.push('/login');
+    
   };
 
   const navItems = [

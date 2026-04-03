@@ -35,8 +35,11 @@ export const orgAccess = async (req, res, next) => {
           message: 'Access denied',
         });
       }
+      // Cached role data
+      const roleData = JSON.parse(cached);
       req.orgId = orgId;
-      console.log(`[ENTRY] Access granted (cached): ${userId} to ${orgId} trace=${traceId}`);
+      req.userRole = roleData.role;
+      console.log(`[ENTRY] Access granted (cached): ${userId} to ${orgId}, role=${roleData.role} trace=${traceId}`);
       return next();
     }
 
@@ -51,10 +54,26 @@ export const orgAccess = async (req, res, next) => {
       });
 
       if (response.data.success) {
-        // Cache allow for 5 minutes
-        await setCache(cacheKey, 'allowed', 300);
+        // Find user's role in the organization
+        const org = response.data.data;
+        const member = org.members.find((m) => m.userId === userId);
+        const userRole = member ? member.role : null;
+
+        if (!userRole) {
+          // Member not found - access denied
+          await setCache(cacheKey, 'denied', 300);
+          console.log(`[ENTRY] Access denied: User not a member - ${userId} to ${orgId} trace=${traceId}`);
+          return res.status(403).json({
+            success: false,
+            message: 'Access denied',
+          });
+        }
+
+        // Cache allow with role for 5 minutes
+        await setCache(cacheKey, JSON.stringify({ role: userRole }), 300);
         req.orgId = orgId;
-        console.log(`[ENTRY] Access granted: ${userId} to ${orgId} trace=${traceId}`);
+        req.userRole = userRole;
+        console.log(`[ENTRY] Access granted: ${userId} to ${orgId}, role=${userRole} trace=${traceId}`);
         return next();
       }
     } catch (orgError) {
@@ -88,6 +107,28 @@ export const orgAccess = async (req, res, next) => {
       message: 'Internal server error',
     });
   }
+};
+
+/**
+ * Middleware to check if user has required role
+ * Usage: router.post('/entry', orgAccess, requireRole('admin', 'owner'), entryController.create)
+ */
+export const requireRole = (...allowedRoles) => {
+  return (req, res, next) => {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const userRole = req.userRole;
+
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      console.log(`[ENTRY] Role check failed: user role ${userRole} not in ${allowedRoles.join(', ')} trace=${traceId}`);
+      return res.status(403).json({
+        success: false,
+        message: `Only users with roles [${allowedRoles.join(', ')}] can perform this action`,
+      });
+    }
+
+    console.log(`[ENTRY] Role check passed: user role ${userRole} trace=${traceId}`);
+    next();
+  };
 };
 
 export default orgAccess;

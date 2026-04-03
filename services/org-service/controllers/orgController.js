@@ -238,16 +238,16 @@ export const getOrganization = async (req, res) => {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     const userId = req.headers['x-user-id'];
     const { orgId } = req.params;
-
+ 
     if (!userId) {
       return res.status(401).json({
         success: false,
         message: 'User ID not provided',
       });
     }
-
+ 
     console.log(`[ORG] Get org: ${orgId} trace=${traceId}`);
-
+ 
     const org = await Organization.findById(orgId);
     if (!org) {
       return res.status(404).json({
@@ -255,7 +255,7 @@ export const getOrganization = async (req, res) => {
         message: 'Organization not found',
       });
     }
-
+ 
     // Verify user is a member
     const isMember = org.members.some((m) => m.userId === userId);
     if (org.owner !== userId && !isMember) {
@@ -265,10 +265,48 @@ export const getOrganization = async (req, res) => {
         message: 'Access denied',
       });
     }
-
+ 
+    // Fetch user details for all members
+    const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
+    const orgData = sanitizeOrg(org);
+    
+    try {
+      const enrichedMembers = await Promise.all(
+        orgData.members.map(async (member) => {
+          try {
+            const userResponse = await axios.get(
+              `${authService}/auth/user/${member.userId}`,
+              {
+                headers: {
+                  'x-trace-id': traceId,
+                },
+              }
+            );
+            return {
+              ...member,
+              name: userResponse.data.data?.name || 'Unknown',
+              email: userResponse.data.data?.email || 'unknown@example.com',
+            };
+          } catch (err) {
+            console.warn(`[ORG] Failed to fetch user ${member.userId}: ${err.message}`);
+            return {
+              ...member,
+              name: 'Unknown',
+              email: 'unknown@example.com',
+            };
+          }
+        })
+      );
+      
+      orgData.members = enrichedMembers;
+    } catch (err) {
+      console.warn(`[ORG] Failed to enrich members: ${err.message}`);
+      // Continue without enriched data
+    }
+ 
     res.json({
       success: true,
-      data: sanitizeOrg(org),
+      data: orgData,
     });
   } catch (error) {
     const traceId = req.headers['x-trace-id'] || 'unknown';
@@ -342,6 +380,212 @@ export const switchOrganization = async (req, res) => {
   } catch (error) {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     console.error(`[ORG] Switch org error: ${error.message} trace=${traceId}`);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const updateMemberRole = async (req, res) => {
+  try {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const userId = req.headers['x-user-id'];
+    const { orgId } = req.params;
+    const { memberId, newRole } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User ID not provided',
+      });
+    }
+
+    if (!memberId || !newRole) {
+      return res.status(400).json({
+        success: false,
+        message: 'Member ID and new role are required',
+      });
+    }
+
+    // Validate role
+    const validRoles = ['owner', 'admin', 'member', 'viewer'];
+    if (!validRoles.includes(newRole)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid role. Must be one of: ${validRoles.join(', ')}`,
+      });
+    }
+
+    console.log(`[ORG] Update member role: org=${orgId}, memberId=${memberId}, newRole=${newRole} trace=${traceId}`);
+
+    const org = await Organization.findById(orgId);
+    if (!org) {
+      return res.status(404).json({
+        success: false,
+        message: 'Organization not found',
+      });
+    }
+
+    // Check if requester is owner or admin
+    const requesterMember = org.members.find((m) => m.userId === userId);
+    const isOwner = org.owner === userId;
+    const isAdmin = requesterMember && requesterMember.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only owners and admins can update member roles',
+      });
+    }
+
+    // Find and update member
+    const memberToUpdate = org.members.find((m) => m.userId === memberId);
+    if (!memberToUpdate) {
+      return res.status(404).json({
+        success: false,
+        message: 'Member not found in this organization',
+      });
+    }
+
+    // Don't allow changing owner role (if owner wants to change their own role, they should transfer ownership first)
+    if (memberToUpdate.role === 'owner' && newRole !== 'owner') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot change the owner role. Transfer ownership first if needed.',
+      });
+    }
+
+    const oldRole = memberToUpdate.role;
+    memberToUpdate.role = newRole;
+
+    await org.save();
+
+    // Emit event
+    await emitEvent('member:role-updated', {
+      orgId: org._id.toString(),
+      memberId,
+      oldRole,
+      newRole,
+      updatedBy: userId,
+    });
+
+    console.log(`[ORG] Member role updated: ${memberId} from ${oldRole} to ${newRole} trace=${traceId}`);
+
+    res.json({
+      success: true,
+      message: `Member role updated from ${oldRole} to ${newRole}`,
+      data: sanitizeOrg(org),
+    });
+  } catch (error) {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    console.error(`[ORG] Update member role error: ${error.message} trace=${traceId}`);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const removeMember = async (req, res) => {
+  try {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const userId = req.headers['x-user-id'];
+    const { orgId } = req.params;
+    const { memberId } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User ID not provided',
+      });
+    }
+
+    if (!memberId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Member ID is required',
+      });
+    }
+
+    console.log(`[ORG] Remove member: org=${orgId}, memberId=${memberId} trace=${traceId}`);
+
+    const org = await Organization.findById(orgId);
+    if (!org) {
+      return res.status(404).json({
+        success: false,
+        message: 'Organization not found',
+      });
+    }
+
+    // Check if requester is owner
+    const isOwner = org.owner === userId;
+    if (!isOwner) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the organization owner can remove members',
+      });
+    }
+
+    // Find member to remove
+    const memberIndex = org.members.findIndex((m) => m.userId === memberId);
+    if (memberIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Member not found in this organization',
+      });
+    }
+
+    // Prevent removing the owner
+    if (memberId === org.owner) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot remove the organization owner',
+      });
+    }
+
+    const removedMember = org.members[memberIndex];
+    org.members.splice(memberIndex, 1);
+
+    await org.save();
+
+    // Call auth service to remove org from user
+    try {
+      const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
+      await axios.put(
+        `${authService}/auth/remove-org`,
+        { userId: memberId, orgId: org._id.toString() },
+        {
+          headers: {
+            'x-trace-id': traceId,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      console.log(`[ORG] Removed org from user in auth service trace=${traceId}`);
+    } catch (authError) {
+      console.error(`[ORG] Auth service call failed: ${authError.message} trace=${traceId}`);
+      // Continue anyway - member is removed from org
+    }
+
+    // Emit event
+    await emitEvent('member:removed', {
+      orgId: org._id.toString(),
+      memberId,
+      memberRole: removedMember.role,
+      removedBy: userId,
+    });
+
+    console.log(`[ORG] Member removed: ${memberId} from org ${orgId} trace=${traceId}`);
+
+    res.json({
+      success: true,
+      message: 'Member removed from organization',
+      data: sanitizeOrg(org),
+    });
+  } catch (error) {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    console.error(`[ORG] Remove member error: ${error.message} trace=${traceId}`);
     res.status(500).json({
       success: false,
       message: error.message,

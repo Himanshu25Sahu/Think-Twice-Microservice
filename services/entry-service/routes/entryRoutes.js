@@ -1,14 +1,23 @@
 import express from 'express';
 import * as entryController from '../controllers/entryController.js';
-import orgAccess from '../middleware/orgAccess.js';
+import orgAccess, { requireRole } from '../middleware/orgAccess.js';
+import upload from '../utils/upload.js';
 
 const router = express.Router();
 
+// Read operations (all authenticated members can read)
 router.get('/', orgAccess, entryController.getEntries);
-router.post('/', orgAccess, entryController.createEntry);
 router.get('/:id', orgAccess, entryController.getEntry);
-router.put('/:id', orgAccess, entryController.updateEntry);
-router.delete('/:id', orgAccess, entryController.deleteEntry);
+
+// Write operations (members and above can create)
+router.post('/', orgAccess, requireRole('owner', 'admin', 'member'), upload.single('image'), entryController.createEntry);
+
+// Update and delete operations (admin and owner can update/delete)
+router.put('/:id', orgAccess, requireRole('owner', 'admin'), entryController.updateEntry);
+router.delete('/:id', orgAccess, requireRole('owner', 'admin'), entryController.deleteEntry);
+
+// Vote operations (all authenticated members can vote)
 router.post('/:id/upvote', orgAccess, entryController.toggleUpvote);
+router.post('/:id/downvote', orgAccess, entryController.toggleDownvote);
 
 export default router;

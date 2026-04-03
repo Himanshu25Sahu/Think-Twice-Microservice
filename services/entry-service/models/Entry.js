@@ -69,6 +69,11 @@ const entrySchema = new mongoose.Schema(
         type: String,
       },
     ],
+    downvotes: [
+      {
+        type: String,
+      },
+    ],
     createdAt: {
       type: Date,
       default: Date.now,

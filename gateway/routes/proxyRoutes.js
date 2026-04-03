@@ -54,6 +54,7 @@ router.use(
       proxyReq.setHeader('x-trace-id', req.traceId);
       proxyReq.setHeader('x-user-id', req.headers['x-user-id']);
       proxyReq.setHeader('x-user-email', req.headers['x-user-email']);
+      proxyReq.setHeader('x-user-name', req.headers['x-user-name'] || '');
       
       if (req.body) {
         const bodyData = JSON.stringify(req.body);
@@ -86,6 +87,12 @@ router.use(
       proxyReq.setHeader('x-trace-id', req.traceId);
       proxyReq.setHeader('x-user-id', req.headers['x-user-id']);
       proxyReq.setHeader('x-user-email', req.headers['x-user-email']);
+      proxyReq.setHeader('x-user-name', req.headers['x-user-name'] || '');
+
+      // Don't rewrite body for multipart uploads
+      if (req.headers['content-type']?.includes('multipart/form-data')) {
+        return;
+      }
       
       if (req.body) {
         const bodyData = JSON.stringify(req.body);
@@ -118,6 +125,7 @@ router.use(
       proxyReq.setHeader('x-trace-id', req.traceId);
       proxyReq.setHeader('x-user-id', req.headers['x-user-id']);
       proxyReq.setHeader('x-user-email', req.headers['x-user-email']);
+      proxyReq.setHeader('x-user-name', req.headers['x-user-name'] || '');
       
       if (req.body) {
         const bodyData = JSON.stringify(req.body);

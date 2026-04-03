@@ -154,6 +154,7 @@ export const createEntry = async (req, res) => {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     const userId = req.headers['x-user-id'];
     const userEmail = req.headers['x-user-email'];
+    const userName = req.headers['x-user-name'] || userEmail;
     const orgId = req.orgId;
 
     const { title, type, what, why, dos, donts, context, tags, status } = req.body;
@@ -180,12 +181,13 @@ export const createEntry = async (req, res) => {
       type,
       orgId,
       authorId: userId,
-      authorName: userEmail,
+      authorName: userName,
       what,
       why,
       dos: dos || [],
       donts: donts || [],
       context: context || '',
+      image: req.file ? req.file.secure_url : undefined,
       tags: (tags || []).map((t) => t.toLowerCase()),
       status: status || 'published',
     });
@@ -414,11 +416,16 @@ export const toggleUpvote = async (req, res) => {
     }
 
     const upvoteIndex = entry.upvotes.indexOf(userId);
+    const downvoteIndex = entry.downvotes ? entry.downvotes.indexOf(userId) : -1;
     let upvoted = false;
 
     if (upvoteIndex === -1) {
       entry.upvotes.push(userId);
       upvoted = true;
+      // Remove from downvotes if present
+      if (downvoteIndex !== -1) {
+        entry.downvotes.splice(downvoteIndex, 1);
+      }
     } else {
       entry.upvotes.splice(upvoteIndex, 1);
       upvoted = false;
@@ -431,15 +438,83 @@ export const toggleUpvote = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Upvote toggled successfully',
       data: {
         upvoted,
-        count: entry.upvotes.length,
+        upvotes: entry.upvotes.length,
+        downvotes: entry.downvotes ? entry.downvotes.length : 0,
       },
     });
   } catch (error) {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     console.error(`[ENTRY] Toggle upvote error: ${error.message} trace=${traceId}`);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const toggleDownvote = async (req, res) => {
+  try {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const userId = req.headers['x-user-id'];
+    const orgId = req.orgId;
+    const { id } = req.params;
+
+    console.log(`[ENTRY] Toggle downvote: entry=${id} user=${userId} trace=${traceId}`);
+
+    const entry = await Entry.findById(id);
+    if (!entry) {
+      return res.status(404).json({
+        success: false,
+        message: 'Entry not found',
+      });
+    }
+
+    if (entry.orgId !== orgId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
+    }
+
+    // Ensure downvotes array exists
+    if (!entry.downvotes) {
+      entry.downvotes = [];
+    }
+
+    const downvoteIndex = entry.downvotes.indexOf(userId);
+    const upvoteIndex = entry.upvotes.indexOf(userId);
+    let downvoted = false;
+
+    if (downvoteIndex === -1) {
+      entry.downvotes.push(userId);
+      downvoted = true;
+      // Remove from upvotes if present
+      if (upvoteIndex !== -1) {
+        entry.upvotes.splice(upvoteIndex, 1);
+      }
+    } else {
+      entry.downvotes.splice(downvoteIndex, 1);
+      downvoted = false;
+    }
+
+    await entry.save();
+
+    // Invalidate cache
+    await invalidateCache(`entries:${orgId}:*`);
+
+    res.json({
+      success: true,
+      data: {
+        downvoted,
+        upvotes: entry.upvotes.length,
+        downvotes: entry.downvotes.length,
+      },
+    });
+  } catch (error) {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    console.error(`[ENTRY] Toggle downvote error: ${error.message} trace=${traceId}`);
     res.status(500).json({
       success: false,
       message: error.message,

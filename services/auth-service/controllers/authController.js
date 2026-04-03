@@ -325,3 +325,68 @@ export const addOrganization = async (req, res) => {
     });
   }
 };
+
+export const removeOrganization = async (req, res) => {
+  try {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const { userId, orgId } = req.body;
+
+    console.log(`[AUTH] Remove organization: ${userId} / ${orgId} trace=${traceId}`);
+
+    if (!userId || !orgId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID and Organization ID are required',
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Find and remove org from user's organizations
+    const orgIndex = user.organizations.findIndex(org => org.toString() === orgId.toString());
+    if (orgIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Organization not found in user\'s organizations',
+      });
+    }
+
+    user.organizations.splice(orgIndex, 1);
+
+    // If removed org was active org, set new active org
+    if (user.activeOrg && user.activeOrg.toString() === orgId.toString()) {
+      if (user.organizations.length > 0) {
+        user.activeOrg = user.organizations[0];
+      } else {
+        user.activeOrg = null;
+      }
+    }
+
+    await user.save();
+
+    const updatedUser = await User.findById(userId);
+
+    console.log(`[AUTH] Organization removed: ${userId} trace=${traceId}`);
+
+    res.json({
+      success: true,
+      message: 'Organization removed from user',
+      data: {
+        user: sanitizeUser(updatedUser),
+      },
+    });
+  } catch (error) {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    console.error(`[AUTH] Remove organization error: ${error.message} trace=${traceId}`);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
