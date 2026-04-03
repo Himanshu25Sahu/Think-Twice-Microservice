@@ -20,15 +20,16 @@ export default function EntryDetailPage() {
 
   const { currentEntry, loading } = useSelector((state) => state.entries);
   const { user } = useSelector((state) => state.auth);
+  const { activeOrg } = useSelector((state) => state.orgs);
   const [isEditing, setIsEditing] = useState(false);
   const [toast, setToast] = useState(null);
   const [editData, setEditData] = useState(null);
 
   useEffect(() => {
     if (id) {
-      dispatch(fetchEntry(id));
+      dispatch(fetchEntry({ id, orgId: activeOrg }));
     }
-  }, [id, dispatch]);
+  }, [id, dispatch, activeOrg]);
 
   useEffect(() => {
     if (currentEntry && !editData) {
@@ -42,8 +43,8 @@ export default function EntryDetailPage() {
 
   const handleSave = async () => {
     try {
-      const result = await dispatch(updateEntry({ id, ...editData }));
-      if (result.payload.success) {
+      const result = await dispatch(updateEntry({ id, data: { ...editData, orgId: activeOrg } }));
+      if (result.meta.requestStatus === 'fulfilled') {
         setToast({ type: 'success', message: 'Entry updated successfully!' });
         setIsEditing(false);
       } else {
@@ -57,8 +58,8 @@ export default function EntryDetailPage() {
   const handleDelete = async () => {
     if (confirm('Are you sure you want to delete this entry?')) {
       try {
-        const result = await dispatch(deleteEntry(id));
-        if (result.payload.success) {
+        const result = await dispatch(deleteEntry({ id, orgId: activeOrg }));
+        if (result.meta.requestStatus === 'fulfilled') {
           setToast({ type: 'success', message: 'Entry deleted!' });
           setTimeout(() => router.push('/dashboard'), 1000);
         }
@@ -69,10 +70,10 @@ export default function EntryDetailPage() {
   };
 
   const handleUpvote = () => {
-    dispatch(toggleUpvote(id));
+    dispatch(toggleUpvote({ id, orgId: activeOrg }));
   };
 
-  const isOwner = user && currentEntry && user._id === currentEntry.author._id;
+  const isOwner = user && currentEntry && user._id === currentEntry.authorId;
 
   if (loading) {
     return <Skeleton count={5} />;
@@ -130,7 +131,7 @@ export default function EntryDetailPage() {
                 className="flex items-center gap-1 px-3 py-2 rounded bg-[#1a1a27] hover:bg-indigo-600/10 hover:text-accent transition"
               >
                 <TriangleUpIcon className="w-4 h-4" />
-                <span className="text-sm">{currentEntry.upvotes || 0}</span>
+                <span className="text-sm">{currentEntry.upvotes?.length || 0}</span>
               </button>
 
               {isOwner && (
@@ -156,7 +157,7 @@ export default function EntryDetailPage() {
         {/* Metadata */}
         <div className="flex flex-wrap gap-4 text-sm text-secondary border-b border-border pb-4">
           <div>
-            <span className="text-secondary opacity-75">By</span> <span className="text-primary">{currentEntry.author?.name}</span>
+            <span className="text-secondary opacity-75">By</span> <span className="text-primary">{currentEntry.authorName}</span>
           </div>
           <div>
             <span className="text-secondary opacity-75">Created</span> <span className="text-primary">{new Date(currentEntry.createdAt).toLocaleDateString()}</span>
@@ -246,6 +247,18 @@ export default function EntryDetailPage() {
           <div>
             <h3 className="text-lg font-semibold text-primary mb-2">Additional Context</h3>
             <p className="text-secondary whitespace-pre-wrap">{currentEntry.context}</p>
+          </div>
+        )}
+
+        {/* Image */}
+        {currentEntry.image && (
+          <div>
+            <h3 className="text-lg font-semibold text-primary mb-2">Diagram / Image</h3>
+            <img
+              src={currentEntry.image}
+              alt={currentEntry.title}
+              className="rounded-lg border border-[#1e1e2e] max-w-full"
+            />
           </div>
         )}
 

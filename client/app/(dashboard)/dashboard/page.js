@@ -17,7 +17,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (activeOrg) {
-      dispatch(fetchEntries({ orgId: activeOrg._id, type: filterType !== 'all' ? filterType : undefined, page: 1 }));
+      dispatch(fetchEntries({ orgId: activeOrg, type: filterType !== 'all' ? filterType : undefined, page: 1 }));
     }
   }, [activeOrg, filterType, dispatch]);
 
@@ -110,7 +110,7 @@ export default function DashboardPage() {
 
                 {/* Footer */}
                 <div className="flex items-center justify-between text-xs text-secondary border-t border-border pt-3">
-                  <span>{entry.author?.name || 'Unknown'}</span>
+                  <span>{entry.authorName || 'Unknown'}</span>
                   <span>{new Date(entry.createdAt).toLocaleDateString()}</span>
                 </div>
               </Link>

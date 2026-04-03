@@ -241,9 +241,7 @@ export const updateActiveOrg = async (req, res) => {
     user.activeOrg = orgId;
     await user.save();
 
-    const updatedUser = await User.findById(userId)
-      .populate('activeOrg')
-      .populate('organizations');
+    const updatedUser = await User.findById(userId);
 
     console.log(`[AUTH] Active org updated: ${userId} trace=${traceId}`);
 
@@ -307,9 +305,7 @@ export const addOrganization = async (req, res) => {
 
     await user.save();
 
-    const updatedUser = await User.findById(userId)
-      .populate('activeOrg')
-      .populate('organizations');
+    const updatedUser = await User.findById(userId);
 
     console.log(`[AUTH] Organization added: ${userId} trace=${traceId}`);
 

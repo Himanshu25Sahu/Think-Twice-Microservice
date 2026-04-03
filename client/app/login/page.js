@@ -32,10 +32,10 @@ export default function LoginPage() {
 
     try {
       const result = await dispatch(login(formData));
-      if (result.payload.success) {
+      if (result.meta.requestStatus === 'fulfilled') {
         // Fetch user's orgs after successful login
         await dispatch(fetchMyOrgs());
-        setToast({ type: 'success', message: 'Login successful!' });
+        setToast({ type: 'success', message: `Welcome back, ${result.payload.user.name}!` });
         setTimeout(() => router.push('/dashboard'), 1000);
       } else {
         setToast({ type: 'error', message: result.payload.message || 'Login failed' });

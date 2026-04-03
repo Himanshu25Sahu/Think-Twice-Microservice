@@ -48,6 +48,10 @@ const entrySchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    image: {
+      type: String,
+      default: '',
+    },
     tags: [
       {
         type: String,

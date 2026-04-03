@@ -43,7 +43,7 @@ export function OrgOnboarding() {
       const result = await dispatch(createOrg(createData));
       // Check if fulfilled (no error), not if result.payload.success
       if (result.type.endsWith('/fulfilled')) {
-        setToast({ type: 'success', message: 'Organization created!' });
+        setToast({ type: 'success', message: `Organization "${createData.name}" created! Redirecting...` });
         await dispatch(fetchMyOrgs());
         setTimeout(() => router.push('/dashboard'), 1000);
       } else {
@@ -66,7 +66,7 @@ export function OrgOnboarding() {
       const result = await dispatch(joinOrg({ inviteCode: joinData.inviteCode }));
       // Check if fulfilled (no error), not if result.payload.success
       if (result.type.endsWith('/fulfilled')) {
-        setToast({ type: 'success', message: 'Joined organization!' });
+        setToast({ type: 'success', message: 'Joined organization! Redirecting...' });
         await dispatch(fetchMyOrgs());
         setTimeout(() => router.push('/dashboard'), 1000);
       } else {

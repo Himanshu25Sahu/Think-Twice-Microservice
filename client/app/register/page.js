@@ -43,8 +43,8 @@ export default function RegisterPage() {
         password: formData.password,
       }));
 
-      if (result.payload.success) {
-        setToast({ type: 'success', message: 'Registration successful!' });
+      if (result.meta.requestStatus === 'fulfilled') {
+        setToast({ type: 'success', message: `Account created! Welcome, ${result.payload.user.name}!` });
         setShowOnboarding(true);
       } else {
         setToast({ type: 'error', message: result.payload.message || 'Registration failed' });

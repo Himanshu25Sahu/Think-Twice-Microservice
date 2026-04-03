@@ -5,7 +5,10 @@ import crypto from 'crypto';
 import axios from 'axios';
 
 const sanitizeEntry = (entry) => {
-  return entry.toObject();
+  if (typeof entry.toObject === 'function') {
+    return entry.toObject();
+  }
+  return entry;
 };
 
 const generateCacheKey = (orgId, queryParams) => {

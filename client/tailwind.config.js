@@ -7,21 +7,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: {
-          primary: '#0a0a0f',
-          card: '#12121a',
-          hover: '#1a1a27',
-          deep: '#0e0e15',
-        },
-        border: {
-          DEFAULT: '#1e1e2e',
-          light: '#2a2a3e',
-        },
-        text: {
-          primary: '#e4e4e7',
-          secondary: '#71717a',
-          muted: '#52525b',
-        },
+        primary: '#0a0a0f',
+        card: '#12121a',
+        hover: '#1a1a27',
+        deep: '#0e0e15',
+        border: '#1e1e2e',
+        'border-light': '#2a2a3e',
+        accent: '#6366f1',
+        'accent-hover': '#818cf8',
+      },
+      textColor: {
+        primary: '#e4e4e7',
+        secondary: '#71717a',
+        muted: '#52525b',
       },
       spacing: {
         sidebar: '16rem',

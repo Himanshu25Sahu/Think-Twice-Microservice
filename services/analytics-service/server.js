@@ -3,7 +3,6 @@ import http from 'http';
 import app from './app.js';
 import connectDB from './database/connection.js';
 import { redisClient } from './utils/redisClient.js';
-import { startConsumer } from './consumers/entryConsumer.js';
 import { startOrgConsumer } from './consumers/orgConsumer.js';
 
 const PORT = process.env.PORT || 5004;
@@ -35,17 +34,34 @@ async function startServer() {
     // Start event consumers (background tasks)
     console.log(`[${SERVICE_NAME}] Starting event consumers...`);
 
-    // Entry events consumer
+    // Import handlers
+    const { startConsumer, onEntryCreated, onEntryDeleted, onEntryUpdated } = await import('./consumers/entryConsumer.js');
+
+    // Entry created events
     startConsumer(
       redisClient,
-      'entry-events',
-      'analytics-group',
-      'analytics-entry-consumer',
-      async (data) => {
-        // Handler function receives event data
-        // Actual handlers (onEntryCreated, etc.) are called inside consumer.js
-        // This is just the dispatcher that will call appropriate handler
-      }
+      'entry:created',
+      'analytics-entry-created-group',
+      'analytics-entry-created-consumer',
+      onEntryCreated
+    );
+
+    // Entry updated events
+    startConsumer(
+      redisClient,
+      'entry:updated',
+      'analytics-entry-updated-group',
+      'analytics-entry-updated-consumer',
+      onEntryUpdated
+    );
+
+    // Entry deleted events
+    startConsumer(
+      redisClient,
+      'entry:deleted',
+      'analytics-entry-deleted-group',
+      'analytics-entry-deleted-consumer',
+      onEntryDeleted
     );
 
     // Org events consumer

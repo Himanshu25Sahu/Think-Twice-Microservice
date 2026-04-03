@@ -42,7 +42,8 @@ export const checkAuth = createAsyncThunk(
 const initialState = {
   user: null,
   isAuthenticated: false,
-  loading: true,
+  loading: false,
+  authChecked: false,
   error: null,
 };
 
@@ -94,15 +95,17 @@ const authSlice = createSlice({
 
     // Check Auth
     builder.addCase(checkAuth.pending, (state) => {
-      state.loading = true;
+      // Do NOT set loading = true here — that would disable login/register pages
     });
     builder.addCase(checkAuth.fulfilled, (state, action) => {
       state.loading = false;
+      state.authChecked = true;
       state.user = action.payload.user;
       state.isAuthenticated = true;
     });
     builder.addCase(checkAuth.rejected, (state) => {
       state.loading = false;
+      state.authChecked = true;
       state.isAuthenticated = false;
       state.user = null;
     });

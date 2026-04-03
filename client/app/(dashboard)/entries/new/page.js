@@ -27,9 +27,11 @@ export default function NewEntryPage() {
     donts: [''],
     tags: [],
     context: '',
+    image: '',
   });
 
   const [tagInput, setTagInput] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -83,14 +85,20 @@ export default function NewEntryPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.title.trim()) {
-      setToast({ type: 'error', message: 'Title is required' });
+    const errors = {};
+    if (!formData.title.trim()) errors.title = 'Title is required';
+    if (!formData.what.trim()) errors.what = 'Please describe what this is about';
+    if (!formData.why.trim()) errors.why = 'Please explain why this matters';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setToast({ type: 'error', message: 'Please fill in all required fields' });
       return;
     }
+    setFieldErrors({});
 
     try {
       const result = await dispatch(createEntry({
-        orgId: activeOrg._id,
+        orgId: activeOrg,
         title: formData.title,
         type: formData.type,
         what: formData.what,
@@ -99,10 +107,11 @@ export default function NewEntryPage() {
         donts: formData.donts.filter((d) => d.trim()),
         tags: formData.tags,
         context: formData.context,
+        image: formData.image,
       }));
 
-      if (result.payload.success) {
-        setToast({ type: 'success', message: 'Entry created successfully!' });
+      if (result.meta.requestStatus === 'fulfilled') {
+        setToast({ type: 'success', message: `"${formData.title}" published successfully!` });
         setTimeout(() => router.push('/dashboard'), 1000);
       } else {
         setToast({ type: 'error', message: result.payload.message || 'Failed to create entry' });
@@ -121,16 +130,20 @@ export default function NewEntryPage() {
       <div className="card-base">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
-          <Input
-            label="Title"
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            placeholder="e.g., Caching Strategy for User Sessions"
-            required
-            disabled={loading}
-          />
+          <div>
+            <label className="block text-sm font-medium text-primary mb-2">Title <span className="text-red-400">*</span></label>
+            <Input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="e.g., Caching Strategy for User Sessions"
+              required
+              disabled={loading}
+              className={fieldErrors.title ? 'border-red-500 focus:border-red-500' : ''}
+            />
+            {fieldErrors.title && <p className="text-red-400 text-xs mt-1">{fieldErrors.title}</p>}
+          </div>
 
           {/* Type */}
           <div>
@@ -152,7 +165,7 @@ export default function NewEntryPage() {
 
           {/* What */}
           <div>
-            <label className="block text-sm font-medium text-primary mb-2">What happened?</label>
+            <label className="block text-sm font-medium text-primary mb-2">What happened? <span className="text-red-400">*</span></label>
             <textarea
               name="what"
               value={formData.what}
@@ -160,13 +173,14 @@ export default function NewEntryPage() {
               placeholder="Describe the situation or decision..."
               rows={3}
               disabled={loading}
-              className="input-base"
+              className={`input-base ${fieldErrors.what ? 'border-red-500 focus:border-red-500' : ''}`}
             />
+            {fieldErrors.what && <p className="text-red-400 text-xs mt-1">{fieldErrors.what}</p>}
           </div>
 
           {/* Why */}
           <div>
-            <label className="block text-sm font-medium text-primary mb-2">Why?</label>
+            <label className="block text-sm font-medium text-primary mb-2">Why? <span className="text-red-400">*</span></label>
             <textarea
               name="why"
               value={formData.why}
@@ -174,8 +188,9 @@ export default function NewEntryPage() {
               placeholder="Explain the reasoning and context..."
               rows={3}
               disabled={loading}
-              className="input-base"
+              className={`input-base ${fieldErrors.why ? 'border-red-500 focus:border-red-500' : ''}`}
             />
+            {fieldErrors.why && <p className="text-red-400 text-xs mt-1">{fieldErrors.why}</p>}
           </div>
 
           {/* Do's */}
@@ -296,6 +311,19 @@ export default function NewEntryPage() {
               rows={2}
               disabled={loading}
               className="input-base"
+            />
+          </div>
+
+          {/* Image URL */}
+          <div>
+            <label className="block text-sm font-medium text-primary mb-2">Image URL (optional)</label>
+            <Input
+              type="url"
+              name="image"
+              value={formData.image}
+              onChange={handleChange}
+              placeholder="https://example.com/architecture-diagram.png"
+              disabled={loading}
             />
           </div>
 
