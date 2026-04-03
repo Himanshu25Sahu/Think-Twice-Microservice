@@ -17,7 +17,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (activeOrg) {
-      dispatch(fetchEntries({ orgId: activeOrg, type: filterType !== 'all' ? filterType : undefined, page: 1 }));
+      dispatch(fetchEntries({ orgId: activeOrg._id, type: filterType !== 'all' ? filterType : undefined, page: 1 }));
     }
   }, [activeOrg, filterType, dispatch]);
 

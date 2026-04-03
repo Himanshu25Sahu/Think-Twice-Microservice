@@ -90,7 +90,7 @@ export default function NewEntryPage() {
 
     try {
       const result = await dispatch(createEntry({
-        orgId: activeOrg,
+        orgId: activeOrg._id,
         title: formData.title,
         type: formData.type,
         what: formData.what,

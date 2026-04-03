@@ -209,7 +209,7 @@ export const updateActiveOrg = async (req, res) => {
     const userId = req.headers['x-user-id'];
     const { orgId } = req.body;
 
-    console.log(`[AUTH] Update active org: ${userId} trace=${traceId}`);
+    console.log(`[AUTH] Update active org: ${userId} / ${orgId} trace=${traceId}`);
 
     if (!orgId) {
       return res.status(400).json({
@@ -226,8 +226,11 @@ export const updateActiveOrg = async (req, res) => {
       });
     }
 
-    // Verify orgId is in user's organizations
-    if (!user.organizations.includes(orgId)) {
+    // Verify orgId is in user's organizations - compare as strings
+    const orgIdString = orgId.toString();
+    const isMember = user.organizations.some(org => org.toString() === orgIdString);
+    
+    if (!isMember) {
       console.log(`[AUTH] User not member of org: ${userId} / ${orgId} trace=${traceId}`);
       return res.status(403).json({
         success: false,
@@ -283,8 +286,11 @@ export const addOrganization = async (req, res) => {
       });
     }
 
-    // Check if already member
-    if (user.organizations.includes(orgId)) {
+    // Check if already member - compare as strings
+    const orgIdString = orgId.toString();
+    const alreadyMember = user.organizations.some(org => org.toString() === orgIdString);
+    
+    if (alreadyMember) {
       return res.status(400).json({
         success: false,
         message: 'User is already a member of this organization',

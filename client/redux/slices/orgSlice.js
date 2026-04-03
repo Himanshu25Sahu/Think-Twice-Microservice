@@ -91,7 +91,7 @@ const orgSlice = createSlice({
       .addCase(fetchMyOrgs.fulfilled, (state, action) => {
         state.loading = false;
         state.orgs = action.payload;
-        state.activeOrg = action.payload.find((org) => org.isActive) || action.payload[0] || null;
+        state.activeOrg = action.payload[0]?._id || null;
       })
       .addCase(fetchMyOrgs.rejected, (state, action) => {
         state.loading = false;
@@ -102,8 +102,9 @@ const orgSlice = createSlice({
       })
       .addCase(createOrg.fulfilled, (state, action) => {
         state.loading = false;
-        state.orgs.push(action.payload.data);
-        state.activeOrg = action.payload.data;
+        const org = action.payload.data;
+        state.orgs.push(org);
+        state.activeOrg = org._id;
       })
       .addCase(createOrg.rejected, (state, action) => {
         state.loading = false;
@@ -114,15 +115,16 @@ const orgSlice = createSlice({
       })
       .addCase(joinOrg.fulfilled, (state, action) => {
         state.loading = false;
-        state.orgs.push(action.payload);
-        state.activeOrg = action.payload;
+        const org = action.payload.data;
+        state.orgs.push(org);
+        state.activeOrg = org._id;
       })
       .addCase(joinOrg.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
       .addCase(switchOrg.fulfilled, (state, action) => {
-        state.activeOrg = action.payload;
+        state.activeOrg = action.meta.arg;
       })
       .addCase(fetchOrgDetails.fulfilled, (state, action) => {
         state.orgDetails = action.payload;

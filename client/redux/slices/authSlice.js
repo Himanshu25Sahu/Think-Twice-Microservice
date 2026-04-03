@@ -32,7 +32,7 @@ export const checkAuth = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get('/auth/me');
-      return { success: true, user: response.data };
+      return { success: true, user: response.data.data.user };
     } catch (err) {
       return rejectWithValue({ success: false, message: 'Not authenticated' });
     }
@@ -42,7 +42,7 @@ export const checkAuth = createAsyncThunk(
 const initialState = {
   user: null,
   isAuthenticated: false,
-  loading: false,
+  loading: true,
   error: null,
 };
 
@@ -93,12 +93,18 @@ const authSlice = createSlice({
     });
 
     // Check Auth
+    builder.addCase(checkAuth.pending, (state) => {
+      state.loading = true;
+    });
     builder.addCase(checkAuth.fulfilled, (state, action) => {
+      state.loading = false;
       state.user = action.payload.user;
       state.isAuthenticated = true;
     });
     builder.addCase(checkAuth.rejected, (state) => {
+      state.loading = false;
       state.isAuthenticated = false;
+      state.user = null;
     });
   },
 });

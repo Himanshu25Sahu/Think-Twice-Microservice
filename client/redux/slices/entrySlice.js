@@ -5,12 +5,14 @@ import api from '@/services/api';
 
 export const fetchEntries = createAsyncThunk(
   'entries/fetchEntries',
-  async ({ orgId, type, query, tag, page = 1, limit = 12, sort = '-createdAt' }, { rejectWithValue }) => {
+  async ({ orgId, type, query, tag, page = 1, limit = 12, sort = 'newest' }, { rejectWithValue }) => {
     try {
-      let url = `/entries?orgId=${orgId}&page=${page}&limit=${limit}&sort=${sort}`;
+      // Extract ID if orgId is an object, otherwise use as-is
+      const orgIdString = typeof orgId === 'object' ? orgId._id : orgId;
+      let url = `/entries?orgId=${orgIdString}&page=${page}&limit=${limit}&sort=${sort}`;
       if (type && type !== 'all') url += `&type=${type}`;
-      if (query) url += `&query=${query}`;
-      if (tag) url += `&tag=${tag}`;
+      if (query) url += `&q=${encodeURIComponent(query)}`;
+      if (tag) url += `&tag=${encodeURIComponent(tag)}`;
       
       const response = await api.get(url);
       return response.data.data;
@@ -24,7 +26,9 @@ export const fetchEntry = createAsyncThunk(
   'entries/fetchEntry',
   async ({ id, orgId }, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/entries/${id}?orgId=${orgId}`);
+      // Extract ID if orgId is an object, otherwise use as-is
+      const orgIdString = typeof orgId === 'object' ? orgId._id : orgId;
+      const response = await api.get(`/entries/${id}?orgId=${orgIdString}`);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch entry');
@@ -73,7 +77,7 @@ export const toggleUpvote = createAsyncThunk(
   async ({ id, orgId }, { rejectWithValue }) => {
     try {
       const response = await api.post(`/entries/${id}/upvote?orgId=${orgId}`);
-      return response.data.data;
+      return { id, ...response.data.data };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to toggle upvote');
     }
@@ -115,8 +119,9 @@ const entrySlice = createSlice({
       .addCase(fetchEntries.fulfilled, (state, action) => {
         state.loading = false;
         state.entries = action.payload.entries || [];
-        state.total = action.payload.total || 0;
-        state.totalPages = action.payload.totalPages || 0;
+        state.total = action.payload.pagination?.total || 0;
+        state.totalPages = action.payload.pagination?.pages || 0;
+        state.page = action.payload.pagination?.page || 1;
       })
       .addCase(fetchEntries.rejected, (state, action) => {
         state.loading = false;
@@ -139,13 +144,15 @@ const entrySlice = createSlice({
         state.entries = state.entries.filter((e) => e._id !== action.payload);
       })
       .addCase(toggleUpvote.fulfilled, (state, action) => {
-        const entry = state.entries.find((e) => e._id === action.payload._id);
+        const { id, upvoted, count } = action.payload;
+        const entry = state.entries.find((e) => e._id === id);
         if (entry) {
-          entry.upvotes = action.payload.upvotes;
-          entry.userUpvoted = action.payload.userUpvoted;
+          entry.upvoteCount = count;
+          entry.userUpvoted = upvoted;
         }
-        if (state.currentEntry?._id === action.payload._id) {
-          state.currentEntry = action.payload;
+        if (state.currentEntry?._id === id) {
+          state.currentEntry.upvoteCount = count;
+          state.currentEntry.userUpvoted = upvoted;
         }
       });
   },

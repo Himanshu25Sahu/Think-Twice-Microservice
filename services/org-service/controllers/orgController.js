@@ -317,7 +317,7 @@ export const switchOrganization = async (req, res) => {
       const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
       await axios.put(
         `${authService}/auth/update-active-org`,
-        { orgId: orgId },
+        { orgId: orgId.toString() },
         {
           headers: {
             'x-trace-id': traceId,
