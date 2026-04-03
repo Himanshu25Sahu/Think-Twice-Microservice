@@ -17,7 +17,7 @@ export default function AnalyticsPage() {
       try {
         setLoading(true);
         const response = await api.get(`/analytics/org/${activeOrg}`);
-        setMetrics(response.data);
+        setMetrics(response.data.data);
       } catch (err) {
         setError('Failed to load analytics');
         console.error(err);
@@ -30,6 +30,15 @@ export default function AnalyticsPage() {
       fetchMetrics();
     }
   }, [activeOrg]);
+
+  const getTopCategory = () => {
+    if (!metrics?.entriesByType) return '-';
+    const entries = Object.entries(metrics.entriesByType);
+    const top = entries.sort((a, b) => b[1] - a[1])[0];
+    return top && top[1] > 0 ? top[0].replace('-', ' ') : '-';
+  };
+  
+  const getThisWeek = () => metrics?.weeklyActivity?.slice(-1)[0]?.count || 0;
 
   if (loading) {
     return <Skeleton count={4} />;
@@ -53,19 +62,19 @@ export default function AnalyticsPage() {
     {
       icon: UserIcon,
       label: 'Team Members',
-      value: metrics?.teamMembers || 0,
+      value: metrics?.totalMembers || 0,
       color: 'cyan',
     },
     {
       icon: ChartIcon,
-      label: 'Your Entries',
-      value: metrics?.yourEntries || 0,
+      label: 'Top Category',
+      value: getTopCategory(),
       color: 'amber',
     },
     {
       icon: HomeIcon,
       label: 'This Week',
-      value: metrics?.thisWeek || 0,
+      value: getThisWeek(),
       color: 'green',
     },
   ];
@@ -102,11 +111,11 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Entry Types Breakdown */}
-      {metrics?.byType && Object.keys(metrics.byType).length > 0 && (
+      {metrics?.entriesByType && Object.keys(metrics.entriesByType).length > 0 && (
         <div className="card-base">
           <h3 className="text-lg font-semibold text-primary mb-4">Entries by Type</h3>
           <div className="space-y-3">
-            {Object.entries(metrics.byType).map(([type, count]) => (
+            {Object.entries(metrics.entriesByType).map(([type, count]) => (
               <div key={type} className="flex items-center justify-between">
                 <span className="text-secondary capitalize">
                   {type.replace('-', ' ')}
@@ -139,7 +148,7 @@ export default function AnalyticsPage() {
           <div className="space-y-3">
             {metrics.topContributors.map((contributor, idx) => (
               <div
-                key={contributor._id}
+                key={contributor.userId}
                 className="flex items-center gap-3 p-3 rounded hover:bg-[#1a1a27] transition"
               >
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600/20 flex items-center justify-center">
@@ -149,9 +158,8 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-primary font-medium truncate">
-                    {contributor.name}
+                    User {contributor.userId?.slice(-6)}
                   </p>
-                  <p className="text-xs text-secondary">{contributor.email}</p>
                 </div>
                 <div className="text-right">
                   <span className="text-sm font-semibold text-accent">

@@ -27,9 +27,10 @@ export default function NewEntryPage() {
     donts: [''],
     tags: [],
     context: '',
-    image: '',
   });
 
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [tagInput, setTagInput] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
 
@@ -97,18 +98,18 @@ export default function NewEntryPage() {
     setFieldErrors({});
 
     try {
-      const result = await dispatch(createEntry({
-        orgId: activeOrg,
-        title: formData.title,
-        type: formData.type,
-        what: formData.what,
-        why: formData.why,
-        dos: formData.dos.filter((d) => d.trim()),
-        donts: formData.donts.filter((d) => d.trim()),
-        tags: formData.tags,
-        context: formData.context,
-        image: formData.image,
-      }));
+      const submitData = new FormData();
+      submitData.append('title', formData.title);
+      submitData.append('type', formData.type);
+      submitData.append('what', formData.what);
+      submitData.append('why', formData.why);
+      submitData.append('context', formData.context || '');
+      formData.dos.filter(d => d.trim()).forEach(d => submitData.append('dos[]', d));
+      formData.donts.filter(d => d.trim()).forEach(d => submitData.append('donts[]', d));
+      formData.tags.forEach(t => submitData.append('tags[]', t));
+      if (imageFile) submitData.append('image', imageFile);
+
+      const result = await dispatch(createEntry({ data: submitData, orgId: activeOrg }));
 
       if (result.meta.requestStatus === 'fulfilled') {
         setToast({ type: 'success', message: `"${formData.title}" published successfully!` });
@@ -314,16 +315,28 @@ export default function NewEntryPage() {
             />
           </div>
 
-          {/* Image URL */}
+          {/* Image */}
           <div>
-            <label className="block text-sm font-medium text-primary mb-2">Image URL (optional)</label>
-            <Input
-              type="url"
-              name="image"
-              value={formData.image}
-              onChange={handleChange}
-              placeholder="https://example.com/architecture-diagram.png"
+            <label className="block text-sm font-medium text-primary mb-2">Image (optional)</label>
+            {imagePreview && (
+              <div className="mb-2 relative inline-block">
+                <img src={imagePreview} alt="Preview" className="rounded-lg border border-[#1e1e2e] max-h-48 object-cover" />
+                <button type="button" onClick={() => { setImageFile(null); setImagePreview(null); }}
+                  className="absolute top-1 right-1 p-1 bg-red-600 rounded-full hover:bg-red-500">
+                  <XIcon className="w-3 h-3 text-white" />
+                </button>
+              </div>
+            )}
+            <input type="file" accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  setImageFile(file);
+                  setImagePreview(URL.createObjectURL(file));
+                }
+              }}
               disabled={loading}
+              className="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 file:cursor-pointer"
             />
           </div>
 

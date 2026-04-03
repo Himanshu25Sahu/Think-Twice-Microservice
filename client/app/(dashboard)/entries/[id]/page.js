@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter, useParams } from 'next/navigation';
-import { fetchEntry, updateEntry, deleteEntry, toggleUpvote } from '@/redux/slices/entrySlice';
+import { fetchEntry, updateEntry, deleteEntry, toggleUpvote, toggleDownvote } from '@/redux/slices/entrySlice';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -24,6 +24,7 @@ export default function EntryDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [toast, setToast] = useState(null);
   const [editData, setEditData] = useState(null);
+  const [optimisticVotes, setOptimisticVotes] = useState({ upvotes: null, downvotes: null, userUpvoted: null, userDownvoted: null });
 
   useEffect(() => {
     if (id) {
@@ -34,6 +35,7 @@ export default function EntryDetailPage() {
   useEffect(() => {
     if (currentEntry && !editData) {
       setEditData(currentEntry);
+      setOptimisticVotes({ upvotes: null, downvotes: null, userUpvoted: null, userDownvoted: null });
     }
   }, [currentEntry, editData]);
 
@@ -69,11 +71,51 @@ export default function EntryDetailPage() {
     }
   };
 
-  const handleUpvote = () => {
-    dispatch(toggleUpvote({ id, orgId: activeOrg }));
+  const handleUpvote = async () => {
+    const wasUpvoted = optimisticVotes.userUpvoted !== null ? optimisticVotes.userUpvoted : currentEntry.upvotes?.includes(user?._id);
+    const upvoteCount = optimisticVotes.upvotes !== null ? optimisticVotes.upvotes : (currentEntry.upvotes?.length || 0);
+    const downvoteCount = optimisticVotes.downvotes !== null ? optimisticVotes.downvotes : (currentEntry.downvotes?.length || 0);
+    
+    // Optimistic update
+    if (wasUpvoted) {
+      setOptimisticVotes({ upvotes: upvoteCount - 1, downvotes: downvoteCount, userUpvoted: false, userDownvoted: optimisticVotes.userDownvoted !== null ? optimisticVotes.userDownvoted : false });
+    } else {
+      setOptimisticVotes({ upvotes: upvoteCount + 1, downvotes: downvoteCount, userUpvoted: true, userDownvoted: false });
+    }
+
+    const result = await dispatch(toggleUpvote({ id, orgId: activeOrg }));
+    if (result.meta.requestStatus !== 'fulfilled') {
+      setOptimisticVotes({ upvotes: null, downvotes: null, userUpvoted: null, userDownvoted: null });
+      setToast({ type: 'error', message: 'Failed to update vote' });
+    }
+  };
+
+  const handleDownvote = async () => {
+    const wasDownvoted = optimisticVotes.userDownvoted !== null ? optimisticVotes.userDownvoted : currentEntry.downvotes?.includes(user?._id);
+    const upvoteCount = optimisticVotes.upvotes !== null ? optimisticVotes.upvotes : (currentEntry.upvotes?.length || 0);
+    const downvoteCount = optimisticVotes.downvotes !== null ? optimisticVotes.downvotes : (currentEntry.downvotes?.length || 0);
+    
+    // Optimistic update
+    if (wasDownvoted) {
+      setOptimisticVotes({ upvotes: upvoteCount, downvotes: downvoteCount - 1, userUpvoted: optimisticVotes.userUpvoted !== null ? optimisticVotes.userUpvoted : false, userDownvoted: false });
+    } else {
+      setOptimisticVotes({ upvotes: upvoteCount, downvotes: downvoteCount + 1, userUpvoted: false, userDownvoted: true });
+    }
+
+    const result = await dispatch(toggleDownvote({ id, orgId: activeOrg }));
+    if (result.meta.requestStatus !== 'fulfilled') {
+      setOptimisticVotes({ upvotes: null, downvotes: null, userUpvoted: null, userDownvoted: null });
+      setToast({ type: 'error', message: 'Failed to update vote' });
+    }
   };
 
   const isOwner = user && currentEntry && user._id === currentEntry.authorId;
+  
+  // Use optimistic values if available, otherwise use currentEntry values
+  const userUpvoted = optimisticVotes.userUpvoted !== null ? optimisticVotes.userUpvoted : currentEntry?.upvotes?.includes(user?._id);
+  const userDownvoted = optimisticVotes.userDownvoted !== null ? optimisticVotes.userDownvoted : currentEntry?.downvotes?.includes(user?._id);
+  const upvoteCount = optimisticVotes.upvotes !== null ? optimisticVotes.upvotes : (currentEntry?.upvotes?.length || 0);
+  const downvoteCount = optimisticVotes.downvotes !== null ? optimisticVotes.downvotes : (currentEntry?.downvotes?.length || 0);
 
   if (loading) {
     return <Skeleton count={5} />;
@@ -126,13 +168,26 @@ export default function EntryDetailPage() {
           {/* Action Buttons */}
           {!isEditing && (
             <div className="flex gap-2">
-              <button
-                onClick={handleUpvote}
-                className="flex items-center gap-1 px-3 py-2 rounded bg-[#1a1a27] hover:bg-indigo-600/10 hover:text-accent transition"
-              >
-                <TriangleUpIcon className="w-4 h-4" />
-                <span className="text-sm">{currentEntry.upvotes?.length || 0}</span>
-              </button>
+              <div className="flex gap-1">
+                <button onClick={handleUpvote}
+                  className={`flex items-center gap-1 px-3 py-2 rounded-l-lg border transition ${
+                    userUpvoted
+                      ? 'bg-green-600/20 text-green-400 border-green-500/30'
+                      : 'bg-[#1a1a27] text-zinc-400 border-[#1e1e2e] hover:bg-green-600/10 hover:text-green-400'
+                  }`}>
+                  <TriangleUpIcon className="w-4 h-4" />
+                  <span className="text-sm font-medium">{upvoteCount}</span>
+                </button>
+                <button onClick={handleDownvote}
+                  className={`flex items-center gap-1 px-3 py-2 rounded-r-lg border transition ${
+                    userDownvoted
+                      ? 'bg-red-600/20 text-red-400 border-red-500/30'
+                      : 'bg-[#1a1a27] text-zinc-400 border-[#1e1e2e] hover:bg-red-600/10 hover:text-red-400'
+                  }`}>
+                  <span className="rotate-180 inline-block"><TriangleUpIcon className="w-4 h-4" /></span>
+                  <span className="text-sm font-medium">{downvoteCount}</span>
+                </button>
+              </div>
 
               {isOwner && (
                 <>

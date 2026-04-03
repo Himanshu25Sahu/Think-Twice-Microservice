@@ -69,6 +69,30 @@ export const fetchOrgDetails = createAsyncThunk(
   }
 );
 
+export const updateMemberRole = createAsyncThunk(
+  'orgs/updateMemberRole',
+  async ({ orgId, targetUserId, newRole }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/org/${orgId}/members/role`, { memberId: targetUserId, newRole });
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update role');
+    }
+  }
+);
+
+export const removeMember = createAsyncThunk(
+  'orgs/removeMember',
+  async ({ orgId, targetUserId }, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(`/org/${orgId}/members`, { data: { memberId: targetUserId } });
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to remove member');
+    }
+  }
+);
+
 const orgSlice = createSlice({
   name: 'orgs',
   initialState: {
@@ -127,6 +151,12 @@ const orgSlice = createSlice({
         state.activeOrg = action.meta.arg;
       })
       .addCase(fetchOrgDetails.fulfilled, (state, action) => {
+        state.orgDetails = action.payload;
+      })
+      .addCase(updateMemberRole.fulfilled, (state, action) => {
+        state.orgDetails = action.payload;
+      })
+      .addCase(removeMember.fulfilled, (state, action) => {
         state.orgDetails = action.payload;
       });
   },

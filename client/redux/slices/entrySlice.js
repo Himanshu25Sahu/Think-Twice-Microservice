@@ -38,9 +38,12 @@ export const fetchEntry = createAsyncThunk(
 
 export const createEntry = createAsyncThunk(
   'entries/createEntry',
-  async (data, { rejectWithValue }) => {
+  async ({ data, orgId }, { rejectWithValue }) => {
     try {
-      const response = await api.post('/entries', data);
+      const isFormData = data instanceof FormData;
+      const response = await api.post(`/entries?orgId=${orgId}`, data, isFormData ? {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      } : {});
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create entry');
@@ -80,6 +83,18 @@ export const toggleUpvote = createAsyncThunk(
       return { id, ...response.data.data };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to toggle upvote');
+    }
+  }
+);
+
+export const toggleDownvote = createAsyncThunk(
+  'entries/toggleDownvote',
+  async ({ id, orgId }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/entries/${id}/downvote?orgId=${orgId}`);
+      return { id, ...response.data.data };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to toggle downvote');
     }
   }
 );
@@ -144,16 +159,28 @@ const entrySlice = createSlice({
         state.entries = state.entries.filter((e) => e._id !== action.payload);
       })
       .addCase(toggleUpvote.fulfilled, (state, action) => {
-        const { id, upvoted, count } = action.payload;
-        const entry = state.entries.find((e) => e._id === id);
-        if (entry) {
-          entry.upvoteCount = count;
-          entry.userUpvoted = upvoted;
-        }
-        if (state.currentEntry?._id === id) {
-          state.currentEntry.upvoteCount = count;
-          state.currentEntry.userUpvoted = upvoted;
-        }
+        const { id, upvoted, upvotes, downvotes } = action.payload;
+        const update = (e) => {
+          if (!e) return;
+          e.upvoteCount = upvotes;
+          e.downvoteCount = downvotes;
+          e.userUpvoted = upvoted;
+          e.userDownvoted = false;
+        };
+        update(state.entries.find(e => e._id === id));
+        if (state.currentEntry?._id === id) update(state.currentEntry);
+      })
+      .addCase(toggleDownvote.fulfilled, (state, action) => {
+        const { id, downvoted, upvotes, downvotes } = action.payload;
+        const update = (e) => {
+          if (!e) return;
+          e.upvoteCount = upvotes;
+          e.downvoteCount = downvotes;
+          e.userDownvoted = downvoted;
+          e.userUpvoted = false;
+        };
+        update(state.entries.find(e => e._id === id));
+        if (state.currentEntry?._id === id) update(state.currentEntry);
       });
   },
 });

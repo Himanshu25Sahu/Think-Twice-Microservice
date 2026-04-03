@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchOrgDetails } from '@/redux/slices/orgSlice';
+import { fetchOrgDetails, updateMemberRole, removeMember } from '@/redux/slices/orgSlice';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Toast } from '@/components/ui/Toast';
 import { CopyIcon } from '@/components/icons';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -14,8 +13,6 @@ export default function SettingsPage() {
   const { activeOrg, orgDetails, loading } = useSelector((state) => state.orgs);
   const { user } = useSelector((state) => state.auth);
   const [toast, setToast] = useState(null);
-  const [formData, setFormData] = useState({ name: '', slug: '' });
-  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (activeOrg) {
@@ -23,36 +20,29 @@ export default function SettingsPage() {
     }
   }, [activeOrg, dispatch]);
 
-  useEffect(() => {
-    if (orgDetails) {
-      setFormData({ name: orgDetails.name || '', slug: orgDetails.slug || '' });
-    }
-  }, [orgDetails]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSave = async () => {
-    try {
-      const result = await dispatch(updateOrg({ id: activeOrg, ...formData }));
-      if (result.payload.success) {
-        setToast({ type: 'success', message: 'Organization updated!' });
-        setIsEditing(false);
-        await dispatch(fetchOrgDetails(activeOrg));
-      } else {
-        setToast({ type: 'error', message: 'Failed to update organization' });
-      }
-    } catch (err) {
-      setToast({ type: 'error', message: 'An error occurred' });
-    }
-  };
-
   const handleCopyInviteCode = () => {
     if (orgDetails?.inviteCode) {
       navigator.clipboard.writeText(orgDetails.inviteCode);
       setToast({ type: 'success', message: 'Invite code copied!' });
+    }
+  };
+
+  const handleRoleChange = async (targetUserId, newRole) => {
+    const result = await dispatch(updateMemberRole({ orgId: activeOrg, targetUserId, newRole }));
+    if (result.meta.requestStatus === 'fulfilled') {
+      setToast({ type: 'success', message: `Role updated to ${newRole}` });
+    } else {
+      setToast({ type: 'error', message: result.payload || 'Failed to update role' });
+    }
+  };
+
+  const handleRemoveMember = async (targetUserId) => {
+    if (!confirm('Remove this member?')) return;
+    const result = await dispatch(removeMember({ orgId: activeOrg, targetUserId }));
+    if (result.meta.requestStatus === 'fulfilled') {
+      setToast({ type: 'success', message: 'Member removed' });
+    } else {
+      setToast({ type: 'error', message: result.payload || 'Failed to remove member' });
     }
   };
 
@@ -66,81 +56,26 @@ export default function SettingsPage() {
     <div className="max-w-2xl space-y-6">
       {/* Organization Details */}
       <div className="card-base">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-primary">Organization Settings</h3>
-          {isOwner && !isEditing && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setIsEditing(true)}
-            >
-              Edit
-            </Button>
-          )}
+        <h3 className="text-lg font-semibold text-primary mb-6">Organization Details</h3>
+
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs text-secondary uppercase mb-1">Organization Name</p>
+            <p className="text-primary font-medium">{orgDetails?.name}</p>
+          </div>
+          <div>
+            <p className="text-xs text-secondary uppercase mb-1">Owner</p>
+            <p className="text-primary font-medium">
+              {orgDetails?.owner === user?._id ? `${user?.name} (You)` : `User ...${orgDetails?.owner?.slice(-6)}`}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-secondary uppercase mb-1">Created</p>
+            <p className="text-primary font-medium">
+              {new Date(orgDetails?.createdAt).toLocaleDateString()}
+            </p>
+          </div>
         </div>
-
-        {isEditing ? (
-          <div className="space-y-4">
-            <Input
-              label="Organization Name"
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-            />
-
-            <Input
-              label="Slug"
-              type="text"
-              name="slug"
-              value={formData.slug}
-              onChange={handleChange}
-              description="Used for invite codes"
-            />
-
-            <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setIsEditing(false);
-                  setFormData({ name: orgDetails.name, slug: orgDetails.slug });
-                }}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleSave}
-                loading={loading}
-                className="flex-1"
-              >
-                Save Changes
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs text-secondary uppercase mb-1">Organization Name</p>
-              <p className="text-primary font-medium">{orgDetails?.name}</p>
-            </div>
-            <div>
-              <p className="text-xs text-secondary uppercase mb-1">Slug</p>
-              <p className="text-primary font-medium">{orgDetails?.slug}</p>
-            </div>
-            <div>
-              <p className="text-xs text-secondary uppercase mb-1">Owner</p>
-              <p className="text-primary font-medium">{orgDetails?.owner?.name || 'Unknown'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-secondary uppercase mb-1">Created</p>
-              <p className="text-primary font-medium">
-                {new Date(orgDetails?.createdAt).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Invite Code */}
@@ -180,48 +115,50 @@ export default function SettingsPage() {
 
           <div className="space-y-2">
             {orgDetails.members.map((member) => (
-              <div
-                key={member._id}
-                className="flex items-center justify-between p-3 rounded hover:bg-[#1a1a27] transition"
-              >
-                <div>
-                  <p className="text-primary font-medium">{member.name}</p>
-                  <p className="text-xs text-secondary">{member.email}</p>
+              <div key={member.userId || member._id} className="flex items-center justify-between p-3 rounded hover:bg-[#1a1a27] transition">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-indigo-600/20 flex items-center justify-center">
+                    <span className="text-xs font-bold text-indigo-400">
+                      {member.userId === user?._id ? user?.name?.charAt(0) : '?'}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-primary text-sm font-medium">
+                      {member.userId === user?._id ? `${user?.name} (You)` : `User ...${member.userId?.slice(-6)}`}
+                    </p>
+                    <p className="text-xs text-secondary">Joined {new Date(member.joinedAt).toLocaleDateString()}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-accent uppercase px-2 py-1 rounded bg-accent/10">
-                    {member._id === orgDetails.owner ? 'Owner' : 'Member'}
-                  </span>
-                  <span className="text-xs text-secondary">
-                    Joined {new Date(member.joinedAt).toLocaleDateString()}
-                  </span>
+                  <span className={`text-xs font-medium uppercase px-2 py-1 rounded ${
+                    member.role === 'owner' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                    member.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
+                    member.role === 'member' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' :
+                    'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
+                  }`}>{member.role}</span>
+                  
+                  {/* Role change — only owner can change, not on self */}
+                  {isOwner && member.userId !== user?._id && member.role !== 'owner' && (
+                    <select value={member.role}
+                      onChange={(e) => handleRoleChange(member.userId, e.target.value)}
+                      className="bg-[#12121a] border border-[#1e1e2e] rounded text-xs py-1 px-2 text-zinc-300 outline-none">
+                      <option value="viewer">Viewer</option>
+                      <option value="member">Member</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  )}
+                  
+                  {/* Remove — only owner can remove, not on self */}
+                  {isOwner && member.userId !== user?._id && member.role !== 'owner' && (
+                    <button onClick={() => handleRemoveMember(member.userId)}
+                      className="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded hover:bg-red-600/10 transition">
+                      Remove
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Danger Zone */}
-      {isOwner && (
-        <div className="card-base border border-red-600/20 bg-red-600/5">
-          <h3 className="text-lg font-semibold text-red-400 mb-4">Danger Zone</h3>
-
-          <p className="text-sm text-secondary mb-4">
-            Deleting an organization is permanent and cannot be undone.
-          </p>
-
-          <Button
-            variant="danger"
-            onClick={() => {
-              if (confirm('Are you sure? This cannot be undone.')) {
-                // TODO: Implement delete organization
-                setToast({ type: 'error', message: 'Delete not yet implemented' });
-              }
-            }}
-          >
-            Delete Organization
-          </Button>
         </div>
       )}
 
