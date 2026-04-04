@@ -38,10 +38,21 @@ export const fetchEntry = createAsyncThunk(
 
 export const createEntry = createAsyncThunk(
   'entries/createEntry',
-  async ({ data, orgId }, { rejectWithValue }) => {
+  async (data, { rejectWithValue }) => {
     try {
       const isFormData = data instanceof FormData;
-      const response = await api.post(`/entries?orgId=${orgId}`, data, isFormData ? {
+      let url = '/entries';
+      let orgId = '';
+      
+      // Extract orgId from FormData if present
+      if (isFormData) {
+        orgId = data.get('orgId');
+        if (orgId) {
+          url = `/entries?orgId=${orgId}`;
+        }
+      }
+      
+      const response = await api.post(url, data, isFormData ? {
         headers: { 'Content-Type': 'multipart/form-data' }
       } : {});
       return response.data.data;

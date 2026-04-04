@@ -26,6 +26,13 @@ export default function Sidebar() {
 
   const currentOrg = orgs.find((o) => o._id === activeOrg);
 
+  //hide new entry for viewers
+  const userRole = (()=>{
+    if(!currentOrg) return 'viewer';
+    const member = currentOrg.members.find(m => m.userId === user._id);
+    return member?.role || 'viewer';
+  })();
+
   const handleSwitchOrg = async (orgId) => {
     await dispatch(switchOrg(orgId));
     setIsOrgDropdownOpen(false);
@@ -43,9 +50,10 @@ export default function Sidebar() {
     
   };
 
+  //hide new entry for viewers
   const navItems = [
     { href: '/dashboard', label: 'Home', icon: HomeIcon },
-    { href: '/entries/new', label: 'New Entry', icon: PlusIcon },
+    ...(userRole !== 'viewer' ? [{ href: '/new-entry', label: 'New Entry', icon: PlusIcon }] : []),
     { href: '/analytics', label: 'Analytics', icon: ChartIcon },
     { href: '/settings', label: 'Settings', icon: SettingsIcon },
   ];

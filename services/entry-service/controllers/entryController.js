@@ -1,6 +1,7 @@
 import Entry from '../models/Entry.js';
 import { getCache, setCache, invalidateCache } from '../utils/redisClient.js';
 import { emitEvent } from '../utils/eventEmitter.js';
+import cloudinary from '../utils/cloudinary.js';
 import crypto from 'crypto';
 import axios from 'axios';
 
@@ -157,7 +158,15 @@ export const createEntry = async (req, res) => {
     const userName = req.headers['x-user-name'] || userEmail;
     const orgId = req.orgId;
 
-    const { title, type, what, why, dos, donts, context, tags, status } = req.body;
+    // Handle both JSON and multipart form data
+    let { title, type, what, why, context, status } = req.body;
+    let dos = req.body['dos[]'] || req.body.dos || [];
+    let donts = req.body['donts[]'] || req.body.donts || [];
+    let tags = req.body['tags[]'] || req.body.tags || [];
+    // Ensure arrays (single value comes as string, not array)
+    if (typeof dos === 'string') dos = [dos];
+    if (typeof donts === 'string') donts = [donts];
+    if (typeof tags === 'string') tags = [tags];
 
     console.log(`[ENTRY] Create entry: org=${orgId} user=${userId} trace=${traceId}`);
 
@@ -176,6 +185,18 @@ export const createEntry = async (req, res) => {
       });
     }
 
+    // Handle image upload if present
+    // req.file.path contains cloudinary url
+    let imageUrl = '';
+    try {
+      imageUrl = req.file ? req.file.path : '';
+    if(imageUrl) {
+      console.log(`[ENTRY] Image uploaded: ${imageUrl} trace=${traceId}`);
+    }
+    } catch (error) {
+      console.log("### image up;oad error ",error)
+    }
+
     const entry = new Entry({
       title,
       type,
@@ -187,7 +208,7 @@ export const createEntry = async (req, res) => {
       dos: dos || [],
       donts: donts || [],
       context: context || '',
-      image: req.file ? req.file.secure_url : undefined,
+      image: imageUrl,
       tags: (tags || []).map((t) => t.toLowerCase()),
       status: status || 'published',
     });

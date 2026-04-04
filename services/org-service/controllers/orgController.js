@@ -266,47 +266,39 @@ export const getOrganization = async (req, res) => {
       });
     }
  
-    // Fetch user details for all members
-    const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
-    const orgData = sanitizeOrg(org);
-    
+    // Enrich member data with auth service
+    const enrichedOrg = sanitizeOrg(org);
     try {
-      const enrichedMembers = await Promise.all(
-        orgData.members.map(async (member) => {
-          try {
-            const userResponse = await axios.get(
-              `${authService}/auth/user/${member.userId}`,
-              {
-                headers: {
-                  'x-trace-id': traceId,
-                },
-              }
-            );
-            return {
-              ...member,
-              name: userResponse.data.data?.name || 'Unknown',
-              email: userResponse.data.data?.email || 'unknown@example.com',
-            };
-          } catch (err) {
-            console.warn(`[ORG] Failed to fetch user ${member.userId}: ${err.message}`);
-            return {
-              ...member,
-              name: 'Unknown',
-              email: 'unknown@example.com',
-            };
-          }
-        })
-      );
-      
-      orgData.members = enrichedMembers;
-    } catch (err) {
-      console.warn(`[ORG] Failed to enrich members: ${err.message}`);
+      const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
+      const memberPromises = enrichedOrg.members.map(async (member) => {
+        try {
+          const userResponse = await axios.get(
+            `${authService}/auth/me`,
+            {
+              headers: {
+                'x-trace-id': traceId,
+                'x-user-id': member.userId,
+              },
+            }
+          );
+          member.name = userResponse.data.data?.name || 'Unknown';
+          member.email = userResponse.data.data?.email || 'unknown@example.com';
+        } catch (err) {
+          console.warn(`[ORG] Failed to fetch user ${member.userId}: ${err.message}`);
+          member.name = 'Unknown';
+          member.email = '';
+        }
+        return member;
+      });
+      enrichedOrg.members = await Promise.all(memberPromises);
+    } catch (authError) {
+      console.error(`[ORG] Auth service call failed: ${authError.message} trace=${traceId}`);
       // Continue without enriched data
     }
- 
+
     res.json({
       success: true,
-      data: orgData,
+      data: enrichedOrg,
     });
   } catch (error) {
     const traceId = req.headers['x-trace-id'] || 'unknown';

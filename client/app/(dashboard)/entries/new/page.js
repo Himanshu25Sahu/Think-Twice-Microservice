@@ -16,7 +16,25 @@ export default function NewEntryPage() {
   const router = useRouter();
   const { loading, error } = useSelector((state) => state.entries);
   const { activeOrg } = useSelector((state) => state.orgs);
+  const { user } = useSelector((state) => state.auth);
+  const { orgs } = useSelector((state) => state.orgs);
   const [toast, setToast] = useState(null);
+
+  const userRole = (()=>{
+    const org=orgs.find(o => o._id === activeOrg);
+    if(!org) return 'viewer';
+    const member = org.members.find(m => m.userId === user._id);
+    return member?.role || 'viewer';
+   })();
+
+  if(userRole === 'viewer') {
+    return (
+      <div className="max-w-2xl">
+        <h1 className="text-2xl font-bold text-primary mb-4">Create New Entry</h1>
+        <p className="text-center text-zinc-400">You don't have permission to create entries. Please contact your administrator.</p>
+      </div>
+    );
+  }
 
   const [formData, setFormData] = useState({
     title: '',
@@ -99,6 +117,7 @@ export default function NewEntryPage() {
 
     try {
       const submitData = new FormData();
+      submitData.append('orgId', activeOrg);
       submitData.append('title', formData.title);
       submitData.append('type', formData.type);
       submitData.append('what', formData.what);
@@ -109,7 +128,7 @@ export default function NewEntryPage() {
       formData.tags.forEach(t => submitData.append('tags[]', t));
       if (imageFile) submitData.append('image', imageFile);
 
-      const result = await dispatch(createEntry({ data: submitData, orgId: activeOrg }));
+      const result = await dispatch(createEntry(submitData));
 
       if (result.meta.requestStatus === 'fulfilled') {
         setToast({ type: 'success', message: `"${formData.title}" published successfully!` });

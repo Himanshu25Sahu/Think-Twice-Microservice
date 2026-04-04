@@ -124,7 +124,7 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <p className="text-primary text-sm font-medium">
-                      {member.userId === user?._id ? `${user?.name} (You)` : `User ...${member.userId?.slice(-6)}`}
+                      {member.userId === user?._id ? `${user?.name} (You)` : (member.name || `User ...${member.userId?.slice(-6)}`)}
                     </p>
                     <p className="text-xs text-secondary">Joined {new Date(member.joinedAt).toLocaleDateString()}</p>
                   </div>

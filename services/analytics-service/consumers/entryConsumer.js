@@ -38,37 +38,31 @@ export const startConsumer = async (redisClient, streamName, groupName, consumer
         ],
         {
           COUNT: 10,
-          BLOCK: 5000,
+          BLOCK: 120000, // 2 minutes to allow for longer processing times
         }
       );
 
       // No new messages
-      if (!results || Object.keys(results).length === 0) {
+      if (!results || results.length === 0) {
         continue;
       }
 
-      // Process each message batch
-      for (const streamData of Object.values(results)) {
-        for (const message of streamData) {
-          // Parse JSON fields from stream (Redis stores everything as strings)
+      for (const stream of results) {
+        for (const message of stream.messages) {
           const data = {};
           for (const [key, value] of Object.entries(message.message)) {
             try {
               data[key] = JSON.parse(value);
             } catch {
-              // Not JSON, keep as string
               data[key] = value;
             }
           }
 
           try {
-            // Call the handler to process this event
             await handler(data);
-            // Acknowledge receipt (idempotent, won't reprocess if crashed)
             await redisClient.xAck(streamName, groupName, message.id);
             console.log(`[ANALYTICS] ✅ Processed ${streamName}: ${message.id}`);
           } catch (err) {
-            // Don't ACK on error — message will be retried
             console.error(`[ANALYTICS] ❌ Handler error for ${streamName}: ${err.message}`);
           }
         }
