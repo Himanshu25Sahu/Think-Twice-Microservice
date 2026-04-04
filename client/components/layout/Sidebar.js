@@ -15,6 +15,7 @@ import {
   LogoutIcon,
   ChevronDownIcon,
   CheckIcon,
+  UserIcon
 } from '@/components/icons';
 
 export default function Sidebar() {
@@ -55,6 +56,7 @@ export default function Sidebar() {
     { href: '/dashboard', label: 'Home', icon: HomeIcon },
     ...(userRole !== 'viewer' ? [{ href: '/new-entry', label: 'New Entry', icon: PlusIcon }] : []),
     { href: '/analytics', label: 'Analytics', icon: ChartIcon },
+    { href: '/profile', label: 'Profile', icon: UserIcon },
     { href: '/settings', label: 'Settings', icon: SettingsIcon },
   ];
 

@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector,useDispatch } from 'react-redux';
 import { HomeIcon, UserIcon, BookIcon, ChartIcon } from '@/components/icons';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { fetchOrgDetails } from '@/redux/slices/orgSlice';
 import api from '@/services/api';
 
 export default function AnalyticsPage() {
@@ -11,6 +12,25 @@ export default function AnalyticsPage() {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const { orgDetails } = useSelector((state) => state.orgs);
+  const { user } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (activeOrg) {
+      dispatch(fetchOrgDetails(activeOrg));
+    }
+
+  }, [activeOrg, dispatch]);
+
+  const getMemberName = (userId) => {
+    if (userId === user?._id) {
+      return `${user?.name} (You)`;
+    }
+    const member = orgDetails?.members.find((m) => m.userId === userId);
+    return member?.name || `User ...${userId?.slice(-6)}`;
+  };
+
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -158,7 +178,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-primary font-medium truncate">
-                    User {contributor.userId?.slice(-6)}
+                    {getMemberName(contributor.userId)}{contributor.userId === user?._id ? ' (You)' : ''}
                   </p>
                 </div>
                 <div className="text-right">

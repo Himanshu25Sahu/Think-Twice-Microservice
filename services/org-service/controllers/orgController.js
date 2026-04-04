@@ -281,8 +281,8 @@ export const getOrganization = async (req, res) => {
               },
             }
           );
-          member.name = userResponse.data.data?.name || 'Unknown';
-          member.email = userResponse.data.data?.email || 'unknown@example.com';
+          member.name = userResponse.data.data?.user?.name || 'Unknown';
+          member.email = userResponse.data.data?.user?.email || 'unknown@example.com';
         } catch (err) {
           console.warn(`[ORG] Failed to fetch user ${member.userId}: ${err.message}`);
           member.name = 'Unknown';
