@@ -14,12 +14,28 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(
   cors({
-    origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'http://localhost:3000'],
+    origin: function (origin, callback) {
+      const allowed = [process.env.FRONTEND_URL, 'http://localhost:3000'].filter(Boolean);
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin || allowed.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+
     credentials: true,
   })
 );
 
-app.use(express.json());
+
+app.use((req, res, next) => {
+  if (req.headers['content-type']?.includes('multipart/form-data')) {
+    // Skip body parsing for multipart/form-data (file uploads)
+    return next();
+  }
+  express.json()(req, res, next);
+});
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
 app.use(traceId);
