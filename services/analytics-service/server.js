@@ -16,7 +16,7 @@ async function startServer() {
     // Connect to MongoDB
     console.log(`[${SERVICE_NAME}] Connecting to MongoDB...`);
     await connectDB();
-    console.log(`[${SERVICE_NAME}] Connected to MongoDB`);
+    console.log(`[${SERVICE_NAME}] Connected to MongoDB at ${process.env.MONGODB_URI || 'mongodb://localhost:27017/tt'}`);
 
     // Connect to Redis
     console.log(`[${SERVICE_NAME}] Connecting to Redis...`);

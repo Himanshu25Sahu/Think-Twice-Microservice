@@ -54,7 +54,7 @@ export default function Sidebar() {
   //hide new entry for viewers
   const navItems = [
     { href: '/dashboard', label: 'Home', icon: HomeIcon },
-    ...(userRole !== 'viewer' ? [{ href: '/new-entry', label: 'New Entry', icon: PlusIcon }] : []),
+    ...(userRole !== 'viewer' ? [{ href: '/entries/new', label: 'New Entry', icon: PlusIcon }] : []),
     { href: '/analytics', label: 'Analytics', icon: ChartIcon },
     { href: '/profile', label: 'Profile', icon: UserIcon },
     { href: '/settings', label: 'Settings', icon: SettingsIcon },

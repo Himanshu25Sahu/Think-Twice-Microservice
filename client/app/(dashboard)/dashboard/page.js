@@ -6,6 +6,14 @@ import { fetchEntries } from '@/redux/slices/entrySlice';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 
+const TYPE_META = {
+  architecture:    { icon: '⬡', color: '#818cf8' },
+  debugging:       { icon: '⚡', color: '#f472b6' },
+  feature:         { icon: '◈',  color: '#34d399' },
+  'best-practice': { icon: '◎', color: '#fbbf24' },
+  incident:        { icon: '⚠',  color: '#f87171' },
+};
+
 export default function DashboardPage() {
   const dispatch = useDispatch();
   const { entries, loading, page, totalPages } = useSelector((state) => state.entries);
@@ -19,7 +27,6 @@ export default function DashboardPage() {
     }
   }, [activeOrg, filterType, dispatch]);
 
-  // Filter entries based on search query
   const filteredEntries = entries.filter((entry) =>
     entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     entry.what?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -28,9 +35,7 @@ export default function DashboardPage() {
 
   const types = ['all', 'architecture', 'debugging', 'feature', 'best-practice', 'incident'];
 
-  const handleFilterChange = (type) => {
-    setFilterType(type);
-  };
+  const handleFilterChange = (type) => setFilterType(type);
 
   const handlePrevPage = () => {
     dispatch(fetchEntries({ orgId: activeOrg, type: filterType !== 'all' ? filterType : undefined, page: page - 1 }));
@@ -41,170 +46,639 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header Section with Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-[#e4e4e7] mb-2">Entries</h1>
-          <p className="text-[#71717a] text-base">Manage and review your decision entries</p>
-        </div>
-        
-        {/* Search Bar */}
-        <input
-          type="text"
-          placeholder="Search entries..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full sm:w-80 px-4 py-2 text-sm bg-[#1a1a27] border border-[#1e1e2e] rounded-lg text-[#e4e4e7] placeholder-[#71717a] transition-all focus:outline-none focus:ring-2 focus:ring-[#6366f1]/50 focus:border-[#6366f1]/50 hover:bg-[#12121a]"
-        />
-      </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
 
-      {/* Filter Pills */}
-      <div className="flex flex-wrap items-center gap-2 pb-6 border-b border-[#1e1e2e]">
-        {types.map((type) => {
-          const isActive = filterType === type;
-          const displayLabel = type === 'all' ? 'All Entries' : type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' ');
-          
-          return (
-            <button
-              key={type}
-              onClick={() => handleFilterChange(type)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                isActive
-                  ? 'bg-[#6366f1] text-white shadow-lg shadow-[#6366f1]/30'
-                  : 'bg-[#12121a] text-[#71717a] border border-[#1e1e2e] hover:border-[#6366f1]/50 hover:text-[#e4e4e7] hover:bg-[#0a0a0f]'
-              }`}
-            >
-              {displayLabel}
-            </button>
-          );
-        })}
-      </div>
+        .db-root {
+          font-family: 'DM Sans', sans-serif;
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+        }
 
-      {/* Loading State */}
-      {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-[#12121a] border border-[#1e1e2e] rounded-xl p-5 h-48 animate-pulse" />
-          ))}
-        </div>
-      )}
+        /* ── Header ── */
+        .db-header {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 1.25rem;
+          padding-bottom: 1.5rem;
+          border-bottom: 1px solid #1a1a2a;
+          margin-bottom: 1.5rem;
+          flex-wrap: wrap;
+        }
 
-      {/* Empty State */}
-      {!loading && filteredEntries.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="text-5xl mb-4">📚</div>
-          <h3 className="text-xl font-bold text-[#e4e4e7] mb-2">
-            {searchQuery ? 'No results found' : 'No entries yet'}
-          </h3>
-          <p className="text-[#71717a] mb-6">
-            {searchQuery
-              ? `Try adjusting your search for "${searchQuery}"`
-              : filterType === 'all'
-              ? 'Start documenting decisions by creating your first entry.'
-              : `No entries found for ${filterType}.`}
-          </p>
-          {!searchQuery && (
-            <Link
-              href="/entries/new"
-              className="px-4 py-2 rounded-lg bg-[#6366f1] text-white font-semibold hover:bg-[#818cf8] transition-all duration-200"
-            >
-              Create Entry
-            </Link>
-          )}
-        </div>
-      )}
+        .db-title {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: #e4e4f0;
+          letter-spacing: -0.02em;
+          line-height: 1.2;
+        }
 
-      {/* Entries Grid */}
-      {!loading && filteredEntries.length > 0 && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredEntries.map((entry) => (
-              <Link
-                key={entry._id}
-                href={`/entries/${entry._id}`}
-                className="group"
-              >
-                <div className="bg-[#12121a] border border-[#1e1e2e] rounded-xl p-5 h-full flex flex-col hover:border-[#6366f1]/50 hover:bg-[#0f0f17] hover:shadow-xl hover:shadow-[#6366f1]/10 transition-all duration-300 cursor-pointer">
-                  {/* Header with Badge and Icon */}
-                  <div className="flex items-start justify-between mb-4">
-                    <Badge type={entry.type} />
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <div className="w-8 h-8 rounded-full bg-[#6366f1]/10 flex items-center justify-center">
-                        <svg className="w-4 h-4 text-[#818cf8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
+        .db-subtitle {
+          font-size: 0.8125rem;
+          color: #666688;
+          font-family: 'DM Mono', monospace;
+          font-weight: 300;
+          margin-top: 0.25rem;
+        }
 
-                  {/* Title */}
-                  <h3 className="font-bold text-lg text-[#e4e4e7] mb-3 line-clamp-2 group-hover:text-[#818cf8] transition-colors duration-200">
-                    {entry.title}
-                  </h3>
+        /* Search */
+        .db-search-wrap {
+          position: relative;
+          flex-shrink: 0;
+        }
 
-                  {/* Preview */}
-                  {entry.what && (
-                    <p className="text-sm text-[#71717a] mb-4 line-clamp-2 group-hover:text-[#a1a1a8] transition-colors duration-200">
-                      {entry.what}
-                    </p>
-                  )}
+        .db-search-icon {
+          position: absolute;
+          left: 0.75rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #4a4a6a;
+          pointer-events: none;
+          display: flex;
+          align-items: center;
+        }
 
-                  {/* Tags */}
-                  {entry.tags && entry.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4 flex-1">
-                      {entry.tags.slice(0, 2).map((tag) => (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-[#0a0a0f] text-[#a1a1a8] border border-[#1e1e2e] group-hover:border-[#6366f1]/30 transition-colors duration-200"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                      {entry.tags.length > 2 && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-[#0a0a0f] text-[#a1a1a8] border border-[#1e1e2e]">
-                          +{entry.tags.length - 2}
-                        </span>
-                      )}
-                    </div>
-                  )}
+        .db-search {
+          background: #0a0a14;
+          border: 1px solid #1e1e30;
+          border-radius: 0.5rem;
+          padding: 0.6rem 0.875rem 0.6rem 2.25rem;
+          font-size: 0.8125rem;
+          color: #d4d4e8;
+          outline: none;
+          width: 260px;
+          transition: border-color 160ms, box-shadow 160ms;
+          font-family: 'DM Sans', sans-serif;
+        }
 
-                  {/* Footer */}
-                  <div className="flex items-center justify-between text-xs text-[#71717a] border-t border-[#1e1e2e] pt-4 mt-auto group-hover:border-[#6366f1]/30 transition-colors duration-200">
-                    <span className="font-semibold text-[#a1a1a8]">{entry.authorName || 'Unknown'}</span>
-                    <span>{new Date(entry.createdAt).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+        .db-search::placeholder {
+          color: #52527a;
+        }
+
+        .db-search:focus {
+          border-color: #3b3b5c;
+          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+        }
+
+        @media (max-width: 580px) {
+          .db-search { width: 100%; }
+          .db-search-wrap { width: 100%; }
+          .db-header { align-items: flex-start; }
+        }
+
+        /* ── Filter pills ── */
+        .db-filters {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.4375rem;
+          padding-bottom: 1.5rem;
+          border-bottom: 1px solid #13131f;
+          margin-bottom: 1.75rem;
+        }
+
+        .db-filter-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.375rem;
+          padding: 0.375rem 0.75rem;
+          border-radius: 0.4375rem;
+          border: 1px solid #1e1e30;
+          background: #0a0a14;
+          color: #6666888;
+          font-size: 0.8rem;
+          font-family: 'DM Sans', sans-serif;
+          font-weight: 400;
+          cursor: pointer;
+          transition: all 150ms;
+          white-space: nowrap;
+          color: #8888aa;
+        }
+
+        .db-filter-btn:hover {
+          border-color: #2e2e48;
+          color: #aaaacc;
+          background: #0f0f1c;
+        }
+
+        .db-filter-btn.active {
+          background: #0f0f20;
+          border-color: #6366f1;
+          color: #818cf8;
+          box-shadow: 0 0 0 1px rgba(99,102,241,0.1) inset, 0 0 12px rgba(99,102,241,0.05);
+        }
+
+        .db-filter-icon {
+          font-size: 0.75rem;
+          line-height: 1;
+        }
+
+        /* ── Grid ── */
+        .db-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1rem;
+        }
+
+        @media (max-width: 1024px) {
+          .db-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 600px) {
+          .db-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ── Card ── */
+        .db-card-link {
+          text-decoration: none;
+          display: block;
+        }
+
+        .db-card {
+          background: #0d0d18;
+          border: 1px solid #1a1a2a;
+          border-radius: 0.875rem;
+          padding: 1.125rem;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          cursor: pointer;
+          transition: border-color 180ms, background 180ms, box-shadow 180ms, transform 120ms;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .db-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 0.875rem;
+          opacity: 0;
+          transition: opacity 200ms;
+          background: radial-gradient(ellipse at top left, rgba(99,102,241,0.04) 0%, transparent 70%);
+          pointer-events: none;
+        }
+
+        .db-card:hover {
+          border-color: #2e2e4a;
+          background: #0f0f1e;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(99,102,241,0.06);
+          transform: translateY(-1px);
+        }
+
+        .db-card:hover::before {
+          opacity: 1;
+        }
+
+        /* Card top row */
+        .db-card-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 0.875rem;
+        }
+
+        .db-type-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3125rem;
+          padding: 0.25rem 0.5625rem;
+          border-radius: 9999px;
+          border: 1px solid;
+          font-size: 0.6875rem;
+          font-family: 'DM Mono', monospace;
+          font-weight: 400;
+          letter-spacing: 0.02em;
+        }
+
+        .db-card-arrow {
+          width: 1.625rem;
+          height: 1.625rem;
+          border-radius: 9999px;
+          background: rgba(99,102,241,0.08);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 180ms, background 180ms;
+          flex-shrink: 0;
+        }
+
+        .db-card:hover .db-card-arrow {
+          opacity: 1;
+        }
+
+        .db-card-arrow svg {
+          color: #818cf8;
+        }
+
+        /* Card title */
+        .db-card-title {
+          font-size: 0.9375rem;
+          font-weight: 600;
+          color: #d4d4e8;
+          line-height: 1.4;
+          margin-bottom: 0.5rem;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          transition: color 160ms;
+        }
+
+        .db-card:hover .db-card-title {
+          color: #a8a8f0;
+        }
+
+        /* Card preview */
+        .db-card-preview {
+          font-size: 0.8125rem;
+          color: #6060808;
+          line-height: 1.55;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          margin-bottom: 0.875rem;
+          color: #7878a0;
+          flex-grow: 1;
+          transition: color 160ms;
+        }
+
+        .db-card:hover .db-card-preview {
+          color: #9090b8;
+        }
+
+        /* Tags */
+        .db-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.3125rem;
+          margin-bottom: 0.875rem;
+        }
+
+        .db-tag {
+          display: inline-flex;
+          align-items: center;
+          padding: 0.1875rem 0.5rem;
+          background: #12122a;
+          border: 1px solid #22224a;
+          border-radius: 9999px;
+          font-size: 0.6875rem;
+          color: #7878aa;
+          font-family: 'DM Mono', monospace;
+          font-weight: 300;
+          transition: border-color 160ms;
+        }
+
+        .db-card:hover .db-tag {
+          border-color: rgba(99,102,241,0.25);
+        }
+
+        .db-tag-more {
+          background: transparent;
+          border-color: #1a1a30;
+          color: #4a4a6a;
+        }
+
+        /* Card footer */
+        .db-card-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding-top: 0.75rem;
+          border-top: 1px solid #13131f;
+          margin-top: auto;
+          transition: border-color 160ms;
+        }
+
+        .db-card:hover .db-card-footer {
+          border-color: rgba(99,102,241,0.12);
+        }
+
+        .db-card-author {
+          font-size: 0.75rem;
+          color: #8888aa;
+          font-family: 'DM Mono', monospace;
+          font-weight: 300;
+        }
+
+        .db-card-date {
+          font-size: 0.6875rem;
+          color: #4a4a6a;
+          font-family: 'DM Mono', monospace;
+          font-weight: 300;
+        }
+
+        /* ── Skeleton ── */
+        .db-skeleton {
+          background: #0d0d18;
+          border: 1px solid #1a1a2a;
+          border-radius: 0.875rem;
+          height: 180px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .db-skeleton::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%);
+          animation: db-shimmer 1.4s infinite;
+        }
+
+        @keyframes db-shimmer {
+          0%   { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+
+        /* ── Empty state ── */
+        .db-empty {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 4rem 1rem;
+          text-align: center;
+        }
+
+        .db-empty-icon {
+          font-size: 2.5rem;
+          margin-bottom: 1rem;
+          opacity: 0.6;
+        }
+
+        .db-empty-title {
+          font-size: 1.0625rem;
+          font-weight: 600;
+          color: #c4c4e0;
+          margin-bottom: 0.375rem;
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .db-empty-msg {
+          font-size: 0.8125rem;
+          color: #6666888;
+          font-family: 'DM Mono', monospace;
+          font-weight: 300;
+          margin-bottom: 1.5rem;
+          max-width: 320px;
+          line-height: 1.6;
+          color: #7878a0;
+        }
+
+        .db-empty-cta {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.375rem;
+          padding: 0.5625rem 1.125rem;
+          border-radius: 0.5rem;
+          background: #6366f1;
+          color: white;
+          font-size: 0.875rem;
+          font-family: 'DM Sans', sans-serif;
+          font-weight: 500;
+          text-decoration: none;
+          transition: background 140ms, transform 80ms;
+        }
+
+        .db-empty-cta:hover {
+          background: #7274f3;
+        }
+
+        .db-empty-cta:active {
+          transform: scale(0.985);
+        }
+
+        /* ── Pagination ── */
+        .db-pagination {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+          margin-top: 2rem;
+          padding-top: 1.5rem;
+          border-top: 1px solid #13131f;
+        }
+
+        .db-page-btn {
+          padding: 0.5rem 1rem;
+          border-radius: 0.5rem;
+          border: 1px solid #1e1e30;
+          background: transparent;
+          color: #8080a8;
+          font-size: 0.8125rem;
+          font-family: 'DM Sans', sans-serif;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background 140ms, border-color 140ms, color 140ms;
+        }
+
+        .db-page-btn:hover:not(:disabled) {
+          background: #0f0f1c;
+          border-color: #2a2a40;
+          color: #c0c0e0;
+        }
+
+        .db-page-btn:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
+
+        .db-page-info {
+          display: flex;
+          align-items: center;
+          gap: 0.375rem;
+          font-size: 0.8125rem;
+          font-family: 'DM Mono', monospace;
+        }
+
+        .db-page-current {
+          color: #c0c0e0;
+          font-weight: 400;
+        }
+
+        .db-page-sep {
+          color: #2e2e45;
+        }
+
+        .db-page-total {
+          color: #5050708;
+          color: #606080;
+        }
+      `}</style>
+
+      <div className="db-root">
+
+        {/* Header */}
+        <div className="db-header">
+          <div>
+            <h1 className="db-title">Entries</h1>
+            <p className="db-subtitle">manage and review your decision entries</p>
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-3 mt-12 pt-6 border-t border-[#1e1e2e]">
+          <div className="db-search-wrap">
+            <span className="db-search-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+            </span>
+            <input
+              type="text"
+              placeholder="Search entries…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="db-search"
+            />
+          </div>
+        </div>
+
+        {/* Filter pills */}
+        <div className="db-filters">
+          {types.map((type) => {
+            const isActive = filterType === type;
+            const meta = TYPE_META[type];
+            const label = type === 'all' ? 'All' : type.replace('-', ' ');
+            return (
               <button
-                disabled={page === 1}
-                onClick={handlePrevPage}
-                className="px-4 py-2.5 rounded-lg border border-[#1e1e2e] text-sm font-semibold text-[#71717a] disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:border-[#6366f1]/50 hover:enabled:text-[#e4e4e7] hover:enabled:bg-[#12121a] transition-all duration-200"
+                key={type}
+                onClick={() => handleFilterChange(type)}
+                className={`db-filter-btn ${isActive ? 'active' : ''}`}
+                style={isActive && meta ? { '--type-color': meta.color, borderColor: meta.color, color: meta.color } : {}}
               >
-                Previous
+                {meta && <span className="db-filter-icon">{meta.icon}</span>}
+                {label}
               </button>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-[#e4e4e7]">{page}</span>
-                <span className="text-[#71717a] text-sm">of</span>
-                <span className="text-sm font-semibold text-[#e4e4e7]">{totalPages}</span>
-              </div>
-              <button
-                disabled={page === totalPages}
-                onClick={handleNextPage}
-                className="px-4 py-2.5 rounded-lg border border-[#1e1e2e] text-sm font-semibold text-[#71717a] disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:border-[#6366f1]/50 hover:enabled:text-[#e4e4e7] hover:enabled:bg-[#12121a] transition-all duration-200"
-              >
-                Next
-              </button>
+            );
+          })}
+        </div>
+
+        {/* Loading skeletons */}
+        {loading && (
+          <div className="db-grid">
+            {[1,2,3,4,5,6].map((i) => (
+              <div key={i} className="db-skeleton" />
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && filteredEntries.length === 0 && (
+          <div className="db-empty">
+            <div className="db-empty-icon">📚</div>
+            <h3 className="db-empty-title">
+              {searchQuery ? 'No results found' : 'No entries yet'}
+            </h3>
+            <p className="db-empty-msg">
+              {searchQuery
+                ? `Nothing matched "${searchQuery}" — try a different term`
+                : filterType === 'all'
+                ? 'Start documenting decisions by creating your first entry.'
+                : `No ${filterType} entries found.`}
+            </p>
+            {!searchQuery && (
+              <Link href="/entries/new" className="db-empty-cta">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Create Entry
+              </Link>
+            )}
+          </div>
+        )}
+
+        {/* Entries grid */}
+        {!loading && filteredEntries.length > 0 && (
+          <>
+            <div className="db-grid">
+              {filteredEntries.map((entry) => {
+                const meta = TYPE_META[entry.type];
+                return (
+                  <Link key={entry._id} href={`/entries/${entry._id}`} className="db-card-link">
+                    <div className="db-card">
+                      {/* Top row: badge + arrow */}
+                      <div className="db-card-top">
+                        <div
+                          className="db-type-pill"
+                          style={meta ? {
+                            color: meta.color,
+                            borderColor: `${meta.color}33`,
+                            background: `${meta.color}0f`,
+                          } : {}}
+                        >
+                          {meta && <span>{meta.icon}</span>}
+                          <span>{entry.type?.replace('-', ' ') || 'entry'}</span>
+                        </div>
+                        <div className="db-card-arrow">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
+                        </div>
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="db-card-title">{entry.title}</h3>
+
+                      {/* Preview */}
+                      {entry.what && (
+                        <p className="db-card-preview">{entry.what}</p>
+                      )}
+
+                      {/* Tags */}
+                      {entry.tags && entry.tags.length > 0 && (
+                        <div className="db-tags">
+                          {entry.tags.slice(0, 2).map((tag) => (
+                            <span key={tag} className="db-tag">{tag}</span>
+                          ))}
+                          {entry.tags.length > 2 && (
+                            <span className="db-tag db-tag-more">+{entry.tags.length - 2}</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Footer */}
+                      <div className="db-card-footer">
+                        <span className="db-card-author">{entry.authorName || 'unknown'}</span>
+                        <span className="db-card-date">{new Date(entry.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
-          )}
-        </>
-      )}
-    </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="db-pagination">
+                <button
+                  disabled={page === 1}
+                  onClick={handlePrevPage}
+                  className="db-page-btn"
+                >
+                  ← Prev
+                </button>
+                <div className="db-page-info">
+                  <span className="db-page-current">{page}</span>
+                  <span className="db-page-sep">/</span>
+                  <span className="db-page-total">{totalPages}</span>
+                </div>
+                <button
+                  disabled={page === totalPages}
+                  onClick={handleNextPage}
+                  className="db-page-btn"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </>
   );
 }

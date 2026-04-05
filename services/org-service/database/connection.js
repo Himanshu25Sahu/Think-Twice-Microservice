@@ -2,11 +2,11 @@ import mongoose from 'mongoose';
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/think-twice', {
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/tt-orgs', {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
     });
-    console.log('[ORG] ✓ MongoDB connected');
+    console.log(`[ORG] ✓ MongoDB connected ${process.env.MONGODB_URI || 'mongodb://localhost:27017/think-twice'}`);
   } catch (error) {
     console.error('[ORG] ✗ MongoDB connection error:', error.message);
     process.exit(1);
