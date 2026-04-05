@@ -2,7 +2,7 @@ import redis from 'redis';
 import axios from 'axios';
 import 'dotenv/config.js';
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const REDIS_URL = process.env.REDIS_URL;
 const API_BASE = 'http://localhost:5004';
 
 const redisClient = redis.createClient({ url: REDIS_URL });
