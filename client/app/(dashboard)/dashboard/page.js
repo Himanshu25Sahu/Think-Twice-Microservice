@@ -18,14 +18,15 @@ export default function DashboardPage() {
   const dispatch = useDispatch();
   const { entries, loading, page, totalPages } = useSelector((state) => state.entries);
   const { activeOrg } = useSelector((state) => state.orgs);
+  const { activeProject } = useSelector((state) => state.projects);
   const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (activeOrg) {
-      dispatch(fetchEntries({ orgId: activeOrg, type: filterType !== 'all' ? filterType : undefined, page: 1 }));
+    if (activeOrg && activeProject) {
+      dispatch(fetchEntries({ orgId: activeOrg, projectId: activeProject, type: filterType !== 'all' ? filterType : undefined, page: 1 }));
     }
-  }, [activeOrg, filterType, dispatch]);
+  }, [activeOrg, activeProject, filterType, dispatch]);
 
   const filteredEntries = entries.filter((entry) =>
     entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -38,11 +39,11 @@ export default function DashboardPage() {
   const handleFilterChange = (type) => setFilterType(type);
 
   const handlePrevPage = () => {
-    dispatch(fetchEntries({ orgId: activeOrg, type: filterType !== 'all' ? filterType : undefined, page: page - 1 }));
+    dispatch(fetchEntries({ orgId: activeOrg, projectId: activeProject, type: filterType !== 'all' ? filterType : undefined, page: page - 1 }));
   };
 
   const handleNextPage = () => {
-    dispatch(fetchEntries({ orgId: activeOrg, type: filterType !== 'all' ? filterType : undefined, page: page + 1 }));
+    dispatch(fetchEntries({ orgId: activeOrg, projectId: activeProject, type: filterType !== 'all' ? filterType : undefined, page: page + 1 }));
   };
 
   return (

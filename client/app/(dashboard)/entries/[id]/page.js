@@ -29,14 +29,15 @@ export default function EntryDetailPage() {
   const { currentEntry, loading } = useSelector((state) => state.entries);
   const { user } = useSelector((state) => state.auth);
   const { activeOrg } = useSelector((state) => state.orgs);
+  const { activeProject } = useSelector((state) => state.projects);
   const [isEditing, setIsEditing] = useState(false);
   const [toast, setToast] = useState(null);
   const [editData, setEditData] = useState(null);
   const [optimisticVotes, setOptimisticVotes] = useState({ upvotes: null, downvotes: null, userUpvoted: null, userDownvoted: null });
 
   useEffect(() => {
-    if (id) dispatch(fetchEntry({ id, orgId: activeOrg }));
-  }, [id, dispatch, activeOrg]);
+    if (id && activeOrg && activeProject) dispatch(fetchEntry({ id, orgId: activeOrg, projectId: activeProject }));
+  }, [id, dispatch, activeOrg, activeProject]);
 
   useEffect(() => {
     if (currentEntry && !editData) {
@@ -51,7 +52,7 @@ export default function EntryDetailPage() {
 
   const handleSave = async () => {
     try {
-      const result = await dispatch(updateEntry({ id, data: { ...editData, orgId: activeOrg } }));
+      const result = await dispatch(updateEntry({ id, data: { ...editData, orgId: activeOrg, projectId: activeProject } }));
       if (result.meta.requestStatus === 'fulfilled') {
         setToast({ type: 'success', message: 'Entry updated successfully!' });
         setIsEditing(false);
@@ -66,7 +67,7 @@ export default function EntryDetailPage() {
   const handleDelete = async () => {
     if (confirm('Are you sure you want to delete this entry?')) {
       try {
-        const result = await dispatch(deleteEntry({ id, orgId: activeOrg }));
+        const result = await dispatch(deleteEntry({ id, orgId: activeOrg, projectId: activeProject }));
         if (result.meta.requestStatus === 'fulfilled') {
           setToast({ type: 'success', message: 'Entry deleted!' });
           setTimeout(() => router.push('/dashboard'), 1000);
@@ -86,7 +87,7 @@ export default function EntryDetailPage() {
     } else {
       setOptimisticVotes({ upvotes: upvoteCount + 1, downvotes: downvoteCount, userUpvoted: true, userDownvoted: false });
     }
-    const result = await dispatch(toggleUpvote({ id, orgId: activeOrg }));
+    const result = await dispatch(toggleUpvote({ id, orgId: activeOrg, projectId: activeProject }));
     if (result.meta.requestStatus !== 'fulfilled') {
       setOptimisticVotes({ upvotes: null, downvotes: null, userUpvoted: null, userDownvoted: null });
       setToast({ type: 'error', message: 'Failed to update vote' });
@@ -102,7 +103,7 @@ export default function EntryDetailPage() {
     } else {
       setOptimisticVotes({ upvotes: upvoteCount, downvotes: downvoteCount + 1, userUpvoted: false, userDownvoted: true });
     }
-    const result = await dispatch(toggleDownvote({ id, orgId: activeOrg }));
+    const result = await dispatch(toggleDownvote({ id, orgId: activeOrg, projectId: activeProject }));
     if (result.meta.requestStatus !== 'fulfilled') {
       setOptimisticVotes({ upvotes: null, downvotes: null, userUpvoted: null, userDownvoted: null });
       setToast({ type: 'error', message: 'Failed to update vote' });

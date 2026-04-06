@@ -32,10 +32,11 @@ export const getOrgAnalytics = async (req, res) => {
   try {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     const { orgId } = req.params;
+    const projectId = req.query.projectId || req.headers['x-project-id'] || '';
 
-    console.log(`[ANALYTICS] GET org metrics: ${orgId} trace=${traceId}`);
+    console.log(`[ANALYTICS] GET org metrics: ${orgId}/${projectId || 'aggregate'} trace=${traceId}`);
 
-    let metrics = await OrgMetrics.findOne({ orgId });
+    let metrics = await OrgMetrics.findOne({ orgId, projectId });
 
     if (!metrics) {
       // Return zeroed defaults if no metrics exist yet
@@ -43,6 +44,7 @@ export const getOrgAnalytics = async (req, res) => {
         success: true,
         data: {
           orgId,
+          projectId,
           ...defaultOrgMetrics,
           lastUpdated: new Date(),
         },
@@ -68,6 +70,7 @@ export const getUserAnalytics = async (req, res) => {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     const { userId } = req.params;
     const { orgId } = req.query;
+    const projectId = req.query.projectId || req.headers['x-project-id'] || '';
 
     if (!orgId) {
       return res.status(400).json({
@@ -76,9 +79,9 @@ export const getUserAnalytics = async (req, res) => {
       });
     }
 
-    console.log(`[ANALYTICS] GET user metrics: ${userId} in org ${orgId} trace=${traceId}`);
+    console.log(`[ANALYTICS] GET user metrics: ${userId} in org ${orgId}/${projectId || 'aggregate'} trace=${traceId}`);
 
-    let activity = await UserActivity.findOne({ userId, orgId });
+    let activity = await UserActivity.findOne({ userId, orgId, projectId });
 
     if (!activity) {
       // Return zeroed defaults if no activity exists yet
@@ -87,6 +90,7 @@ export const getUserAnalytics = async (req, res) => {
         data: {
           userId,
           orgId,
+          projectId,
           ...defaultUserActivity,
           lastActive: new Date(),
         },
@@ -112,6 +116,7 @@ export const getOverview = async (req, res) => {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     const userId = req.headers['x-user-id'];
     const { orgId } = req.query;
+    const projectId = req.query.projectId || req.headers['x-project-id'] || '';
 
     if (!orgId) {
       return res.status(400).json({
@@ -120,18 +125,18 @@ export const getOverview = async (req, res) => {
       });
     }
 
-    console.log(`[ANALYTICS] GET overview: org=${orgId}, user=${userId} trace=${traceId}`);
+    console.log(`[ANALYTICS] GET overview: org=${orgId}, project=${projectId || 'aggregate'}, user=${userId} trace=${traceId}`);
 
     // Get organization metrics
-    let orgMetrics = await OrgMetrics.findOne({ orgId });
+    let orgMetrics = await OrgMetrics.findOne({ orgId, projectId });
     if (!orgMetrics) {
-      orgMetrics = { ...defaultOrgMetrics, orgId, lastUpdated: new Date() };
+      orgMetrics = { ...defaultOrgMetrics, orgId, projectId, lastUpdated: new Date() };
     }
 
     // Get user activity in this org
-    let userActivity = await UserActivity.findOne({ userId, orgId });
+    let userActivity = await UserActivity.findOne({ userId, orgId, projectId });
     if (!userActivity) {
-      userActivity = { ...defaultUserActivity, userId, orgId, lastActive: new Date() };
+      userActivity = { ...defaultUserActivity, userId, orgId, projectId, lastActive: new Date() };
     }
 
     res.json({

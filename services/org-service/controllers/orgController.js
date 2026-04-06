@@ -1,4 +1,5 @@
 import Organization from '../models/Organization.js';
+import Project from '../models/Project.js';
 import { emitEvent } from '../utils/eventEmitter.js';
 import slugify from 'slugify';
 import { randomBytes } from 'crypto';
@@ -8,6 +9,39 @@ const generateInviteCode = () => randomBytes(4).toString('hex').toUpperCase();
 
 const sanitizeOrg = (org) => {
   return org.toObject();
+};
+
+const sanitizeProject = (project) => {
+  return project.toObject();
+};
+
+const getMemberRole = (org, userId) => {
+  if (!org || !userId) {
+    return null;
+  }
+
+  if (org.owner === userId) {
+    return 'owner';
+  }
+
+  return org.members.find((member) => member.userId === userId)?.role || null;
+};
+
+const ensureDefaultProject = async (org, userId) => {
+  const existingProject = await Project.findOne({ orgId: org._id.toString() }).sort({ createdAt: 1 });
+  if (existingProject) {
+    return existingProject;
+  }
+
+  const defaultProject = new Project({
+    name: 'Default Project',
+    description: 'System default project for legacy-safe org setup',
+    orgId: org._id.toString(),
+    createdBy: userId,
+  });
+
+  await defaultProject.save();
+  return defaultProject;
 };
 
 export const createOrganization = async (req, res) => {
@@ -67,6 +101,8 @@ export const createOrganization = async (req, res) => {
 
     await org.save();
 
+    const defaultProject = await ensureDefaultProject(org, userId);
+
     // Call auth service to add org to user
     try {
       const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
@@ -89,6 +125,7 @@ export const createOrganization = async (req, res) => {
     // Emit event
     await emitEvent('org:created', {
       orgId: org._id.toString(),
+      projectId: defaultProject._id.toString(),
       userId,
       name,
       slug,
@@ -180,6 +217,7 @@ export const joinOrganization = async (req, res) => {
     // Emit event
     await emitEvent('org:member.joined', {
       orgId: org._id.toString(),
+      projectId: '',
       userId,
       role: 'member',
     });
@@ -368,6 +406,9 @@ export const switchOrganization = async (req, res) => {
     res.json({
       success: true,
       message: 'Organization switched successfully',
+      data: {
+        activeOrg: orgId.toString(),
+      },
     });
   } catch (error) {
     const traceId = req.headers['x-trace-id'] || 'unknown';
@@ -456,6 +497,7 @@ export const updateMemberRole = async (req, res) => {
     // Emit event
     await emitEvent('member:role-updated', {
       orgId: org._id.toString(),
+      projectId: '',
       memberId,
       oldRole,
       newRole,
@@ -563,6 +605,7 @@ export const removeMember = async (req, res) => {
     // Emit event
     await emitEvent('member:removed', {
       orgId: org._id.toString(),
+      projectId: '',
       memberId,
       memberRole: removedMember.role,
       removedBy: userId,
@@ -578,6 +621,224 @@ export const removeMember = async (req, res) => {
   } catch (error) {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     console.error(`[ORG] Remove member error: ${error.message} trace=${traceId}`);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const createProject = async (req, res) => {
+  try {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const userId = req.headers['x-user-id'];
+    const { orgId } = req.params;
+    const { name, description = '' } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User ID not provided',
+      });
+    }
+
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Project name is required',
+      });
+    }
+
+    console.log(`[ORG] Create project: org=${orgId} user=${userId} trace=${traceId}`);
+
+    const org = await Organization.findById(orgId);
+    if (!org) {
+      return res.status(404).json({
+        success: false,
+        message: 'Organization not found',
+      });
+    }
+
+    if (org.owner !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the organization owner can create projects',
+      });
+    }
+
+    const existingProject = await Project.findOne({
+      orgId: orgId.toString(),
+      name: name.trim(),
+    });
+
+    if (existingProject) {
+      return res.status(400).json({
+        success: false,
+        message: 'A project with this name already exists in the organization',
+      });
+    }
+
+    const project = new Project({
+      name: name.trim(),
+      description: description?.trim() || '',
+      orgId: orgId.toString(),
+      createdBy: userId,
+    });
+
+    await project.save();
+
+    await emitEvent('org:project.created', {
+      orgId: orgId.toString(),
+      projectId: project._id.toString(),
+      userId,
+      name: project.name,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Project created successfully',
+      data: sanitizeProject(project),
+    });
+  } catch (error) {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    console.error(`[ORG] Create project error: ${error.message} trace=${traceId}`);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const listProjects = async (req, res) => {
+  try {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const userId = req.headers['x-user-id'];
+    const { orgId } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User ID not provided',
+      });
+    }
+
+    console.log(`[ORG] List projects: org=${orgId} user=${userId} trace=${traceId}`);
+
+    const org = await Organization.findById(orgId);
+    if (!org) {
+      return res.status(404).json({
+        success: false,
+        message: 'Organization not found',
+      });
+    }
+
+    const role = getMemberRole(org, userId);
+    if (!role) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
+    }
+
+    const projects = await Project.find({ orgId: orgId.toString() }).sort({ createdAt: 1 });
+
+    res.json({
+      success: true,
+      data: projects.map(sanitizeProject),
+    });
+  } catch (error) {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    console.error(`[ORG] List projects error: ${error.message} trace=${traceId}`);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const switchProject = async (req, res) => {
+  try {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const userId = req.headers['x-user-id'];
+    const activeOrgId = req.headers['x-org-id'];
+    const { projectId } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User ID not provided',
+      });
+    }
+
+    if (!activeOrgId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Active organization header is required',
+      });
+    }
+
+    console.log(`[ORG] Switch project: user=${userId} project=${projectId} org=${activeOrgId} trace=${traceId}`);
+
+    const org = await Organization.findById(activeOrgId);
+    if (!org) {
+      return res.status(404).json({
+        success: false,
+        message: 'Organization not found',
+      });
+    }
+
+    const role = getMemberRole(org, userId);
+    if (!role) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
+    }
+
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found',
+      });
+    }
+
+    if (project.orgId !== activeOrgId.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Project does not belong to the active organization',
+      });
+    }
+
+    try {
+      const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
+      await axios.put(
+        `${authService}/auth/update-active-project`,
+        { projectId: projectId.toString() },
+        {
+          headers: {
+            'x-trace-id': traceId,
+            'x-user-id': userId,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    } catch (authError) {
+      console.error(`[ORG] Auth project switch failed: ${authError.message} trace=${traceId}`);
+      return res.status(503).json({
+        success: false,
+        message: 'Failed to update active project',
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Project switched successfully',
+      data: sanitizeProject(project),
+    });
+  } catch (error) {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    console.error(`[ORG] Switch project error: ${error.message} trace=${traceId}`);
     res.status(500).json({
       success: false,
       message: error.message,

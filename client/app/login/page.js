@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { login } from '@/redux/slices/authSlice';
 import { fetchMyOrgs } from '@/redux/slices/orgSlice';
+import { initializeProjects } from '@/redux/slices/projectSlice';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Toast } from '@/components/ui/Toast';
@@ -34,7 +35,11 @@ export default function LoginPage() {
       const result = await dispatch(login(formData));
       if (result.meta.requestStatus === 'fulfilled') {
         // Fetch user's orgs after successful login
-        await dispatch(fetchMyOrgs());
+        const orgResult = await dispatch(fetchMyOrgs());
+        const preferredOrgId = orgResult.payload?.orgs?.find((org) => org._id === orgResult.payload?.preferredOrgId)?._id || orgResult.payload?.orgs?.[0]?._id;
+        if (preferredOrgId) {
+          await dispatch(initializeProjects(preferredOrgId));
+        }
         setToast({ type: 'success', message: `Welcome back, ${result.payload.user.name}!` });
         setTimeout(() => router.push('/dashboard'), 1000);
       } else {

@@ -5,7 +5,11 @@ const orgMetricsSchema = new mongoose.Schema(
     orgId: {
       type: String,
       required: true,
-      unique: true,
+      index: true,
+    },
+    projectId: {
+      type: String,
+      default: '',
       index: true,
     },
     totalEntries: {
@@ -61,5 +65,7 @@ const orgMetricsSchema = new mongoose.Schema(
   },
   { timestamps: false }
 );
+
+orgMetricsSchema.index({ orgId: 1, projectId: 1 }, { unique: true });
 
 export default mongoose.model('OrgMetrics', orgMetricsSchema);

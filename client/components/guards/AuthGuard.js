@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { checkAuth } from '@/redux/slices/authSlice';
 import { fetchMyOrgs } from '@/redux/slices/orgSlice';
+import { initializeProjects } from '@/redux/slices/projectSlice';
 
 export default function AuthGuard({ children }) {
   const { isAuthenticated, authChecked } = useSelector((state) => state.auth);
@@ -16,7 +17,13 @@ export default function AuthGuard({ children }) {
   useEffect(() => {
     dispatch(checkAuth()).then((result) => {
       if (result.type === checkAuth.fulfilled.type) {
-        dispatch(fetchMyOrgs()).then(()=>setReady(true));
+        dispatch(fetchMyOrgs()).then(async (orgResult) => {
+          const preferredOrgId = orgResult.payload?.orgs?.find((org) => org._id === orgResult.payload?.preferredOrgId)?._id || orgResult.payload?.orgs?.[0]?._id;
+          if (preferredOrgId) {
+            await dispatch(initializeProjects(preferredOrgId));
+          }
+          setReady(true);
+        });
       }else{
         setReady(true);
       }

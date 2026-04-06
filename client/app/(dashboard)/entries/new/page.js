@@ -24,6 +24,7 @@ export default function NewEntryPage() {
   const router = useRouter();
   const { loading, error } = useSelector((state) => state.entries);
   const { activeOrg } = useSelector((state) => state.orgs);
+  const { activeProject, projects } = useSelector((state) => state.projects);
   const { user } = useSelector((state) => state.auth);
   const { orgs } = useSelector((state) => state.orgs);
   const [toast, setToast] = useState(null);
@@ -40,6 +41,15 @@ export default function NewEntryPage() {
       <div className="max-w-2xl">
         <h1 className="text-2xl font-bold text-primary mb-4">Create New Entry</h1>
         <p className="text-center text-zinc-400">You don't have permission to create entries. Please contact your administrator.</p>
+      </div>
+    );
+  }
+
+  if (!activeProject) {
+    return (
+      <div className="max-w-2xl">
+        <h1 className="text-2xl font-bold text-primary mb-4">Create New Entry</h1>
+        <p className="text-center text-zinc-400">Select or create a project before creating entries.</p>
       </div>
     );
   }
@@ -113,6 +123,7 @@ export default function NewEntryPage() {
     try {
       const submitData = new FormData();
       submitData.append('orgId', activeOrg);
+      submitData.append('projectId', activeProject);
       submitData.append('title', formData.title);
       submitData.append('type', formData.type);
       submitData.append('what', formData.what);

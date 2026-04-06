@@ -32,6 +32,10 @@ const userSchema = new mongoose.Schema(
       ref: 'Organization',
       default: null,
     },
+    activeProject: {
+      type: String,
+      default: null,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

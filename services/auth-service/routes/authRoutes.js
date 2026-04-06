@@ -15,6 +15,7 @@ router.post('/login', authController.login);
 router.post('/logout', authController.logout);
 router.get('/me', authController.getMe);
 router.put('/update-active-org', authController.updateActiveOrg);
+router.put('/update-active-project', authController.updateActiveProject);
 router.put('/add-org', authController.addOrganization);
 router.put('/remove-org', authController.removeOrganization);
 

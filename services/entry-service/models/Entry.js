@@ -18,6 +18,11 @@ const entrySchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    projectId: {
+      type: String,
+      required: true,
+      index: true,
+    },
     authorId: {
       type: String,
       required: true,
@@ -91,5 +96,7 @@ entrySchema.index({ title: 'text', what: 'text', why: 'text', tags: 'text' });
 
 // Compound index for org + status queries
 entrySchema.index({ orgId: 1, status: 1, createdAt: -1 });
+entrySchema.index({ orgId: 1, projectId: 1 });
+entrySchema.index({ orgId: 1, projectId: 1, status: 1, createdAt: -1 });
 
 export default mongoose.model('Entry', entrySchema);

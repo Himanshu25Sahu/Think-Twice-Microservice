@@ -239,6 +239,7 @@ export const updateActiveOrg = async (req, res) => {
     }
 
     user.activeOrg = orgId;
+    user.activeProject = null;
     await user.save();
 
     const updatedUser = await User.findById(userId);
@@ -255,6 +256,58 @@ export const updateActiveOrg = async (req, res) => {
   } catch (error) {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     console.error(`[AUTH] Update active org error: ${error.message} trace=${traceId}`);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const updateActiveProject = async (req, res) => {
+  try {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const userId = req.headers['x-user-id'];
+    const { projectId } = req.body;
+
+    console.log(`[AUTH] Update active project: ${userId} / ${projectId} trace=${traceId}`);
+
+    if (!projectId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Project ID is required',
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (!user.activeOrg) {
+      return res.status(400).json({
+        success: false,
+        message: 'Active organization must be set before switching project',
+      });
+    }
+
+    user.activeProject = projectId.toString();
+    await user.save();
+
+    const updatedUser = await User.findById(userId);
+
+    res.json({
+      success: true,
+      message: 'Active project updated',
+      data: {
+        user: sanitizeUser(updatedUser),
+      },
+    });
+  } catch (error) {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    console.error(`[AUTH] Update active project error: ${error.message} trace=${traceId}`);
     res.status(500).json({
       success: false,
       message: error.message,
@@ -366,6 +419,7 @@ export const removeOrganization = async (req, res) => {
       } else {
         user.activeOrg = null;
       }
+      user.activeProject = null;
     }
 
     await user.save();

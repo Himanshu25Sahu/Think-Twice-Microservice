@@ -46,27 +46,51 @@ ORG=$(curl -sf -X POST "$BASE/org/create" \
 echo "$ORG" | grep -q '"success":true' && pass "Organization created" || fail "Org creation failed"
 ORG_ID=$(echo "$ORG" | grep -o '"_id":"[^"]*"' | head -1 | cut -d'"' -f4)
 
-# 5. Create an entry
+# 5. Create project and switch context
+info "Creating project..."
+PROJECT=$(curl -sf -X POST "$BASE/org/$ORG_ID/projects" \
+  -H "Content-Type: application/json" \
+  -H "x-org-id: $ORG_ID" \
+  -b cookies.txt \
+  -d '{"name":"Test Project","description":"Project scope verification"}')
+echo "$PROJECT" | grep -q '"success":true' && pass "Project created" || fail "Project creation failed"
+PROJECT_ID=$(echo "$PROJECT" | grep -o '"_id":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+info "Switching active project..."
+SWITCH_PROJECT=$(curl -sf -X PUT "$BASE/org/switch-project/$PROJECT_ID" \
+  -H "x-org-id: $ORG_ID" \
+  -b cookies.txt)
+echo "$SWITCH_PROJECT" | grep -q '"success":true' && pass "Project switched" || fail "Project switch failed"
+
+# 6. Create an entry
 info "Creating knowledge entry..."
 ENTRY=$(curl -sf -X POST "$BASE/entries" \
   -H "Content-Type: application/json" \
+  -H "x-org-id: $ORG_ID" \
+  -H "x-project-id: $PROJECT_ID" \
   -b cookies.txt \
-  -d "{\"orgId\":\"$ORG_ID\",\"title\":\"Test Architecture Decision\",\"type\":\"architecture\",\"what\":\"We use Redis for caching\",\"why\":\"Performance improvement\",\"dos\":[\"Set TTL\"],\"donts\":[\"Never cache auth\"]}")
+  -d "{\"orgId\":\"$ORG_ID\",\"projectId\":\"$PROJECT_ID\",\"title\":\"Test Architecture Decision\",\"type\":\"architecture\",\"what\":\"We use Redis for caching\",\"why\":\"Performance improvement\",\"dos\":[\"Set TTL\"],\"donts\":[\"Never cache auth\"]}")
 echo "$ENTRY" | grep -q '"success":true' && pass "Entry created" || fail "Entry creation failed"
 ENTRY_ID=$(echo "$ENTRY" | grep -o '"_id":"[^"]*"' | head -1 | cut -d'"' -f4)
 
-# 6. List entries
+# 7. List entries
 info "Listing entries..."
-LIST=$(curl -sf "$BASE/entries?orgId=$ORG_ID" -b cookies.txt)
+LIST=$(curl -sf "$BASE/entries?orgId=$ORG_ID&projectId=$PROJECT_ID" \
+  -H "x-org-id: $ORG_ID" \
+  -H "x-project-id: $PROJECT_ID" \
+  -b cookies.txt)
 echo "$LIST" | grep -q '"success":true' && pass "Entries listed" || fail "List failed"
 
-# 7. Get analytics
+# 8. Get analytics
 info "Checking analytics..."
 sleep 2
-ANALYTICS=$(curl -sf "$BASE/analytics/overview?orgId=$ORG_ID" -b cookies.txt)
+ANALYTICS=$(curl -sf "$BASE/analytics/overview?orgId=$ORG_ID&projectId=$PROJECT_ID" \
+  -H "x-org-id: $ORG_ID" \
+  -H "x-project-id: $PROJECT_ID" \
+  -b cookies.txt)
 echo "$ANALYTICS" | grep -q '"success":true' && pass "Analytics retrieved" || fail "Analytics failed"
 
-# 8. Check frontend
+# 9. Check frontend
 info "Checking frontend..."
 curl -sf http://localhost:3000 > /dev/null && pass "Frontend accessible" || fail "Frontend down"
 

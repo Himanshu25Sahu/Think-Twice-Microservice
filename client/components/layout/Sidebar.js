@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { logout } from '@/redux/slices/authSlice';
 import { switchOrg } from '@/redux/slices/orgSlice';
+import { createProject, initializeProjects, switchProject } from '@/redux/slices/projectSlice';
 import api from '@/services/api';
 import {
   HomeIcon,
@@ -24,9 +25,12 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useSelector((state) => state.auth);
   const { orgs, activeOrg } = useSelector((state) => state.orgs);
+  const { projects, activeProject } = useSelector((state) => state.projects);
   const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
+  const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
 
   const currentOrg = orgs.find((o) => o._id === activeOrg);
+  const currentProject = projects.find((project) => project._id === activeProject);
 
   const userRole = (() => {
     if (!currentOrg) return 'viewer';
@@ -36,8 +40,36 @@ export default function Sidebar() {
 
   const handleSwitchOrg = async (orgId) => {
     await dispatch(switchOrg(orgId));
+    await dispatch(initializeProjects(orgId));
     setIsOrgDropdownOpen(false);
+    setIsProjectDropdownOpen(false);
     router.push('/dashboard');
+  };
+
+  const handleSwitchProject = async (projectId) => {
+    await dispatch(switchProject(projectId));
+    setIsProjectDropdownOpen(false);
+    router.push('/dashboard');
+  };
+
+  const handleCreateProject = async () => {
+    if (userRole !== 'owner' || !activeOrg) {
+      return;
+    }
+
+    const name = window.prompt('Project name');
+    if (!name?.trim()) {
+      return;
+    }
+
+    const description = window.prompt('Project description (optional)') || '';
+    const result = await dispatch(createProject({ orgId: activeOrg, name: name.trim(), description }));
+
+    if (result.type.endsWith('/fulfilled')) {
+      await dispatch(initializeProjects(activeOrg));
+      await dispatch(switchProject(result.payload._id));
+      setIsProjectDropdownOpen(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -398,6 +430,42 @@ export default function Sidebar() {
                   {org._id === activeOrg && <CheckIcon style={{ width: 14, height: 14 }} />}
                 </button>
               ))}
+            </div>
+          )}
+        </div>
+
+        <div className="sb-org-section">
+          <button
+            onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
+            className="sb-org-btn"
+          >
+            <div className="sb-org-icon">
+              {currentProject?.name?.slice(0, 2).toUpperCase() || 'PR'}
+            </div>
+            <div className="sb-org-name">
+              <p className="sb-org-label">project</p>
+              <p className="sb-org-value">{currentProject?.name || 'Select Project'}</p>
+            </div>
+            <ChevronDownIcon className={`sb-org-chevron ${isProjectDropdownOpen ? 'open' : ''}`} />
+          </button>
+
+          {isProjectDropdownOpen && (
+            <div className="sb-org-dropdown">
+              {projects.map((project) => (
+                <button
+                  key={project._id}
+                  onClick={() => handleSwitchProject(project._id)}
+                  className={`sb-org-item ${project._id === activeProject ? 'active' : ''}`}
+                >
+                  <span>{project.name}</span>
+                  {project._id === activeProject && <CheckIcon style={{ width: 14, height: 14 }} />}
+                </button>
+              ))}
+              {userRole === 'owner' && (
+                <button onClick={handleCreateProject} className="sb-org-item">
+                  <span>+ Create Project</span>
+                </button>
+              )}
             </div>
           )}
         </div>

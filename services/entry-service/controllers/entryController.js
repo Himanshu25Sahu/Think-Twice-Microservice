@@ -12,12 +12,39 @@ const sanitizeEntry = (entry) => {
   return entry;
 };
 
-const generateCacheKey = (orgId, queryParams) => {
+const generateCacheKey = (orgId, projectId, queryParams) => {
   const hash = crypto
     .createHash('md5')
     .update(JSON.stringify(queryParams))
     .digest('hex');
-  return `entries:${orgId}:${hash}`;
+  return `entries:${orgId}:${projectId}:${hash}`;
+};
+
+const isLegacyProjectEntry = (entryProjectId) => {
+  return entryProjectId === undefined || entryProjectId === null || entryProjectId === '';
+};
+
+const matchesProjectScope = (entryProjectId, projectId, defaultProjectId) => {
+  if (entryProjectId === projectId) {
+    return true;
+  }
+
+  return projectId === defaultProjectId && isLegacyProjectEntry(entryProjectId);
+};
+
+const addProjectScope = (query, projectId, defaultProjectId) => {
+  if (projectId === defaultProjectId) {
+    query.$or = [
+      { projectId },
+      { projectId: { $exists: false } },
+      { projectId: null },
+      { projectId: '' },
+    ];
+    return query;
+  }
+
+  query.projectId = projectId;
+  return query;
 };
 
 export const getEntries = async (req, res) => {
@@ -25,6 +52,8 @@ export const getEntries = async (req, res) => {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     const userId = req.headers['x-user-id'];
     const orgId = req.orgId;
+    const projectId = req.projectId;
+    const defaultProjectId = req.defaultProjectId;
 
     const { q, type, tag, page = 1, limit = 20, sort = 'newest' } = req.query;
 
@@ -32,10 +61,10 @@ export const getEntries = async (req, res) => {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
     const skip = (pageNum - 1) * limitNum;
 
-    console.log(`[ENTRY] List entries: org=${orgId} trace=${traceId}`);
+    console.log(`[ENTRY] List entries: org=${orgId} project=${projectId} trace=${traceId}`);
 
     // Generate cache key
-    const cacheKey = generateCacheKey(orgId, { q, type, tag, page: pageNum, limit: limitNum, sort });
+    const cacheKey = generateCacheKey(orgId, projectId, { q, type, tag, page: pageNum, limit: limitNum, sort });
 
     // Check cache
     const cached = await getCache(cacheKey);
@@ -52,6 +81,7 @@ export const getEntries = async (req, res) => {
       orgId,
       status: { $ne: 'archived' },
     };
+    query = addProjectScope(query, projectId, defaultProjectId);
 
     // Text search
     if (q) {
@@ -117,6 +147,8 @@ export const getEntry = async (req, res) => {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     const { id } = req.params;
     const orgId = req.orgId;
+    const projectId = req.projectId;
+    const defaultProjectId = req.defaultProjectId;
 
     console.log(`[ENTRY] Get entry: ${id} trace=${traceId}`);
 
@@ -129,7 +161,7 @@ export const getEntry = async (req, res) => {
       });
     }
 
-    if (entry.orgId !== orgId) {
+    if (entry.orgId !== orgId || !matchesProjectScope(entry.projectId, projectId, defaultProjectId)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied',
@@ -157,6 +189,7 @@ export const createEntry = async (req, res) => {
     const userEmail = req.headers['x-user-email'];
     const userName = req.headers['x-user-name'] || userEmail;
     const orgId = req.orgId;
+    const projectId = req.projectId;
 
     // Handle both JSON and multipart form data
     let { title, type, what, why, context, status } = req.body;
@@ -168,7 +201,7 @@ export const createEntry = async (req, res) => {
     if (typeof donts === 'string') donts = [donts];
     if (typeof tags === 'string') tags = [tags];
 
-    console.log(`[ENTRY] Create entry: org=${orgId} user=${userId} trace=${traceId}`);
+    console.log(`[ENTRY] Create entry: org=${orgId} project=${projectId} user=${userId} trace=${traceId}`);
 
     // Validation
     if (!title || !type || !what || !why) {
@@ -201,6 +234,7 @@ export const createEntry = async (req, res) => {
       title,
       type,
       orgId,
+      projectId,
       authorId: userId,
       authorName: userName,
       what,
@@ -216,12 +250,13 @@ export const createEntry = async (req, res) => {
     await entry.save();
 
     // Invalidate cache
-    await invalidateCache(`entries:${orgId}:*`);
+    await invalidateCache(`entries:${orgId}:${projectId}:*`);
 
     // Emit event
     await emitEvent('entry:created', {
       entryId: entry._id.toString(),
       orgId,
+      projectId,
       authorId: userId,
       type,
       title,
@@ -249,6 +284,8 @@ export const updateEntry = async (req, res) => {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     const userId = req.headers['x-user-id'];
     const orgId = req.orgId;
+    const projectId = req.projectId;
+    const defaultProjectId = req.defaultProjectId;
     const { id } = req.params;
 
     const { title, type, what, why, dos, donts, context, tags, status } = req.body;
@@ -260,6 +297,13 @@ export const updateEntry = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Entry not found',
+      });
+    }
+
+    if (entry.orgId !== orgId || !matchesProjectScope(entry.projectId, projectId, defaultProjectId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
       });
     }
 
@@ -306,17 +350,21 @@ export const updateEntry = async (req, res) => {
     if (status !== undefined && ['draft', 'published', 'archived'].includes(status)) {
       entry.status = status;
     }
+    if (isLegacyProjectEntry(entry.projectId)) {
+      entry.projectId = projectId;
+    }
 
     entry.updatedAt = new Date();
     await entry.save();
 
     // Invalidate cache
-    await invalidateCache(`entries:${orgId}:*`);
+    await invalidateCache(`entries:${orgId}:${projectId}:*`);
 
     // Emit event
     await emitEvent('entry:updated', {
       entryId: entry._id.toString(),
       orgId,
+      projectId,
       authorId: userId,
     });
 
@@ -342,6 +390,8 @@ export const deleteEntry = async (req, res) => {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     const userId = req.headers['x-user-id'];
     const orgId = req.orgId;
+    const projectId = req.projectId;
+    const defaultProjectId = req.defaultProjectId;
     const { id } = req.params;
 
     console.log(`[ENTRY] Delete entry: ${id} trace=${traceId}`);
@@ -351,6 +401,13 @@ export const deleteEntry = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Entry not found',
+      });
+    }
+
+    if (entry.orgId !== orgId || !matchesProjectScope(entry.projectId, projectId, defaultProjectId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
       });
     }
 
@@ -387,12 +444,13 @@ export const deleteEntry = async (req, res) => {
     await entry.save();
 
     // Invalidate cache
-    await invalidateCache(`entries:${orgId}:*`);
+    await invalidateCache(`entries:${orgId}:${projectId}:*`);
 
     // Emit event
     await emitEvent('entry:deleted', {
       entryId: entry._id.toString(),
       orgId,
+      projectId,
       authorId: userId,
     });
 
@@ -417,6 +475,8 @@ export const toggleUpvote = async (req, res) => {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     const userId = req.headers['x-user-id'];
     const orgId = req.orgId;
+    const projectId = req.projectId;
+    const defaultProjectId = req.defaultProjectId;
     const { id } = req.params;
 
     console.log(`[ENTRY] Toggle upvote: entry=${id} user=${userId} trace=${traceId}`);
@@ -429,7 +489,7 @@ export const toggleUpvote = async (req, res) => {
       });
     }
 
-    if (entry.orgId !== orgId) {
+    if (entry.orgId !== orgId || !matchesProjectScope(entry.projectId, projectId, defaultProjectId)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied',
@@ -455,7 +515,7 @@ export const toggleUpvote = async (req, res) => {
     await entry.save();
 
     // Invalidate cache
-    await invalidateCache(`entries:${orgId}:*`);
+    await invalidateCache(`entries:${orgId}:${projectId}:*`);
 
     res.json({
       success: true,
@@ -480,6 +540,8 @@ export const toggleDownvote = async (req, res) => {
     const traceId = req.headers['x-trace-id'] || 'unknown';
     const userId = req.headers['x-user-id'];
     const orgId = req.orgId;
+    const projectId = req.projectId;
+    const defaultProjectId = req.defaultProjectId;
     const { id } = req.params;
 
     console.log(`[ENTRY] Toggle downvote: entry=${id} user=${userId} trace=${traceId}`);
@@ -492,7 +554,7 @@ export const toggleDownvote = async (req, res) => {
       });
     }
 
-    if (entry.orgId !== orgId) {
+    if (entry.orgId !== orgId || !matchesProjectScope(entry.projectId, projectId, defaultProjectId)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied',
@@ -523,7 +585,7 @@ export const toggleDownvote = async (req, res) => {
     await entry.save();
 
     // Invalidate cache
-    await invalidateCache(`entries:${orgId}:*`);
+    await invalidateCache(`entries:${orgId}:${projectId}:*`);
 
     res.json({
       success: true,

@@ -12,6 +12,11 @@ const userActivitySchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    projectId: {
+      type: String,
+      default: '',
+      index: true,
+    },
     entriesCreated: {
       type: Number,
       default: 0,
@@ -51,6 +56,6 @@ const userActivitySchema = new mongoose.Schema(
 );
 
 // Compound unique index
-userActivitySchema.index({ userId: 1, orgId: 1 }, { unique: true });
+userActivitySchema.index({ userId: 1, orgId: 1, projectId: 1 }, { unique: true });
 
 export default mongoose.model('UserActivity', userActivitySchema);

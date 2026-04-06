@@ -3,12 +3,42 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '@/services/api';
 
+const getStoredOrgId = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return window.localStorage.getItem('activeOrgId');
+};
+
+const persistOrgId = (orgId) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (orgId) {
+    window.localStorage.setItem('activeOrgId', orgId);
+    return;
+  }
+
+  window.localStorage.removeItem('activeOrgId');
+};
+
+const clearStoredProjectId = () => {
+  if (typeof window !== 'undefined') {
+    window.localStorage.removeItem('activeProjectId');
+  }
+};
+
 export const fetchMyOrgs = createAsyncThunk(
   'orgs/fetchMyOrgs',
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
     try {
       const response = await api.get('/org/my-orgs');
-      return response.data.data;
+      return {
+        orgs: response.data.data,
+        preferredOrgId: getState().auth.user?.activeOrg || getStoredOrgId(),
+      };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch organizations');
     }
@@ -114,8 +144,9 @@ const orgSlice = createSlice({
       })
       .addCase(fetchMyOrgs.fulfilled, (state, action) => {
         state.loading = false;
-        state.orgs = action.payload;
-        state.activeOrg = action.payload[0]?._id || null;
+        state.orgs = action.payload.orgs || [];
+        state.activeOrg = action.payload.orgs.find((org) => org._id === action.payload.preferredOrgId)?._id || action.payload.orgs[0]?._id || null;
+        persistOrgId(state.activeOrg);
       })
       .addCase(fetchMyOrgs.rejected, (state, action) => {
         state.loading = false;
@@ -129,6 +160,8 @@ const orgSlice = createSlice({
         const org = action.payload.data;
         state.orgs.push(org);
         state.activeOrg = org._id;
+        persistOrgId(org._id);
+        clearStoredProjectId();
       })
       .addCase(createOrg.rejected, (state, action) => {
         state.loading = false;
@@ -142,6 +175,8 @@ const orgSlice = createSlice({
         const org = action.payload.data;
         state.orgs.push(org);
         state.activeOrg = org._id;
+        persistOrgId(org._id);
+        clearStoredProjectId();
       })
       .addCase(joinOrg.rejected, (state, action) => {
         state.loading = false;
@@ -149,6 +184,9 @@ const orgSlice = createSlice({
       })
       .addCase(switchOrg.fulfilled, (state, action) => {
         state.activeOrg = action.meta.arg;
+        persistOrgId(action.meta.arg);
+        clearStoredProjectId();
+        state.orgDetails = null;
       })
       .addCase(fetchOrgDetails.fulfilled, (state, action) => {
         state.orgDetails = action.payload;

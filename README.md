@@ -41,6 +41,16 @@ A multi-tenant knowledge logging platform for engineering teams. Document archit
 | Org       | 5003 | MongoDB (tt-orgs) | Organization management, multi-tenancy |
 | Analytics | 5004 | MongoDB (tt-analytics) | Event-driven metrics aggregation |
 
+## 🧩 Projects Inside Organizations
+
+- Organizations now contain multiple projects.
+- New organizations automatically get a `Default Project` so new entry flows are immediately usable.
+- Entry, voting, and analytics requests are scoped by both `orgId` and `projectId`.
+- The client sends active context headers on every request: `x-org-id` and `x-project-id`.
+- Only org owners can create projects. All org members can list and switch projects inside the active org.
+- Legacy entries without `projectId` are treated as part of the org's first project until backfilled.
+- Recommended backfill for older data: set `projectId` on existing `tt-entries.entries` documents to the intended project ID.
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -110,6 +120,7 @@ This script will:
 - Check all service health endpoints
 - Create a test user
 - Create an organization
+- Create and switch to a project
 - Create a knowledge entry
 - Verify analytics aggregation
 - Check frontend accessibility
@@ -161,8 +172,8 @@ All `.env` files are created automatically during setup:
 - Service-to-service calls (e.g., Entry → Org for membership check)
 
 ### Asynchronous (Redis Streams)
-- Entry Service publishes `entry:created`, `entry:updated`, `entry:deleted` events
-- Org Service publishes `org:member.joined` events
+- Entry Service publishes `entry:created`, `entry:updated`, `entry:deleted` with `orgId` + `projectId`
+- Org Service publishes org events with `projectId` included for downstream compatibility
 - Analytics Service consumes events and aggregates metrics
 
 ## 📚 API Endpoints Summary
@@ -183,11 +194,14 @@ POST   /org/join               Join by invite code
 GET    /org/my-orgs            List user's organizations
 GET    /org/:id                Get org details
 PUT    /org/switch/:id         Set active organization
+POST   /org/:orgId/projects    Create project (owner only)
+GET    /org/:orgId/projects    List projects in org
+PUT    /org/switch-project/:id Set active project in current org
 ```
 
 ### Entry Service
 ```
-GET    /entries                List entries (with filters)
+GET    /entries                List entries (requires x-org-id + x-project-id)
 GET    /entries/:id            Get entry details
 POST   /entries                Create entry
 PUT    /entries/:id            Update entry
@@ -197,7 +211,7 @@ POST   /entries/:id/upvote     Toggle upvote
 
 ### Analytics Service
 ```
-GET    /analytics/org/:orgId         Get org metrics
+GET    /analytics/org/:orgId         Get org/project metrics
 GET    /analytics/user/:userId       Get user activity
 GET    /analytics/overview           Get combined dashboard
 ```

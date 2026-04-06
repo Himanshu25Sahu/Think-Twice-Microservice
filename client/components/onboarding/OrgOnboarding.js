@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { createOrg, joinOrg, fetchMyOrgs } from '@/redux/slices/orgSlice';
+import { initializeProjects } from '@/redux/slices/projectSlice';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Toast } from '@/components/ui/Toast';
@@ -44,7 +45,11 @@ export function OrgOnboarding() {
       // Check if fulfilled (no error), not if result.payload.success
       if (result.type.endsWith('/fulfilled')) {
         setToast({ type: 'success', message: `Organization "${createData.name}" created! Redirecting...` });
-        await dispatch(fetchMyOrgs());
+        const orgResult = await dispatch(fetchMyOrgs());
+        const preferredOrgId = orgResult.payload?.orgs?.find((org) => org._id === orgResult.payload?.preferredOrgId)?._id || orgResult.payload?.orgs?.[0]?._id;
+        if (preferredOrgId) {
+          await dispatch(initializeProjects(preferredOrgId));
+        }
         setTimeout(() => router.push('/dashboard'), 1000);
       } else {
         setToast({ type: 'error', message: result.payload || 'Failed to create organization' });
@@ -67,7 +72,11 @@ export function OrgOnboarding() {
       // Check if fulfilled (no error), not if result.payload.success
       if (result.type.endsWith('/fulfilled')) {
         setToast({ type: 'success', message: 'Joined organization! Redirecting...' });
-        await dispatch(fetchMyOrgs());
+        const orgResult = await dispatch(fetchMyOrgs());
+        const preferredOrgId = orgResult.payload?.orgs?.find((org) => org._id === orgResult.payload?.preferredOrgId)?._id || orgResult.payload?.orgs?.[0]?._id;
+        if (preferredOrgId) {
+          await dispatch(initializeProjects(preferredOrgId));
+        }
         setTimeout(() => router.push('/dashboard'), 1000);
       } else {
         setToast({ type: 'error', message: result.payload || 'Failed to join organization' });

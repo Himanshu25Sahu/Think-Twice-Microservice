@@ -1,6 +1,29 @@
 import OrgMetrics from '../models/OrgMetrics.js';
 import UserActivity from '../models/UserActivity.js';
 
+const normalizeProjectId = (projectId) => projectId || '';
+
+const getMetricScopes = (projectId) => {
+  const normalizedProjectId = normalizeProjectId(projectId);
+  return Array.from(new Set(['', normalizedProjectId]));
+};
+
+const getOrCreateOrgMetrics = async (orgId, projectId) => {
+  let metrics = await OrgMetrics.findOne({ orgId, projectId });
+  if (!metrics) {
+    metrics = new OrgMetrics({ orgId, projectId });
+  }
+  return metrics;
+};
+
+const getOrCreateUserActivity = async (userId, orgId, projectId) => {
+  let activity = await UserActivity.findOne({ userId, orgId, projectId });
+  if (!activity) {
+    activity = new UserActivity({ userId, orgId, projectId });
+  }
+  return activity;
+};
+
 /**
  * Generic consumer starter — reusable pattern for listening to Redis Streams
  * @param {RedisClient} redisClient — Connected Redis client
@@ -80,63 +103,49 @@ export const startConsumer = async (redisClient, streamName, groupName, consumer
  * Increments metrics: totalEntries, entriesByType, weeklyActivity, topContributors
  */
 export const onEntryCreated = async (data) => {
-  const { entryId, orgId, authorId, type, title } = data;
+  const { entryId, orgId, projectId, authorId, type, title } = data;
 
-  console.log(`[ANALYTICS] 📝 Entry created: ${entryId} (type: ${type}) in org ${orgId}`);
+  console.log(`[ANALYTICS] 📝 Entry created: ${entryId} (type: ${type}) in org ${orgId}/${normalizeProjectId(projectId) || 'aggregate'}`);
 
-  // Get or create org metrics
-  let metrics = await OrgMetrics.findOne({ orgId });
-  if (!metrics) {
-    metrics = new OrgMetrics({ orgId });
+  for (const scopeProjectId of getMetricScopes(projectId)) {
+    const metrics = await getOrCreateOrgMetrics(orgId, scopeProjectId);
+
+    metrics.totalEntries += 1;
+    if (metrics.entriesByType[type] !== undefined) {
+      metrics.entriesByType[type] += 1;
+    }
+
+    const now = new Date();
+    const isoWeek = getISOWeek(now);
+    const existingWeek = metrics.weeklyActivity.find((week) => week.week === isoWeek);
+    if (existingWeek) {
+      existingWeek.count += 1;
+    } else {
+      metrics.weeklyActivity.push({ week: isoWeek, count: 1 });
+    }
+
+    const contributor = metrics.topContributors.find((item) => item.userId === authorId);
+    if (contributor) {
+      contributor.count += 1;
+    } else {
+      metrics.topContributors.push({ userId: authorId, count: 1 });
+    }
+    metrics.topContributors.sort((a, b) => b.count - a.count);
+    metrics.topContributors = metrics.topContributors.slice(0, 10);
+    metrics.lastUpdated = new Date();
+    await metrics.save();
+
+    const userActivity = await getOrCreateUserActivity(authorId, orgId, scopeProjectId);
+    userActivity.entriesCreated += 1;
+    if (userActivity.entriesByType[type] !== undefined) {
+      userActivity.entriesByType[type] += 1;
+    }
+    userActivity.lastActive = new Date();
+    await userActivity.save();
   }
-
-  // Increment total entries
-  metrics.totalEntries += 1;
-
-  // Increment entry type count
-  if (metrics.entriesByType[type] !== undefined) {
-    metrics.entriesByType[type] += 1;
-  }
-
-  // Update weekly activity (ISO week format)
-  const now = new Date();
-  const isoWeek = getISOWeek(now);
-  const existingWeek = metrics.weeklyActivity.find((w) => w.week === isoWeek);
-  if (existingWeek) {
-    existingWeek.count += 1;
-  } else {
-    metrics.weeklyActivity.push({ week: isoWeek, count: 1 });
-  }
-
-  // Update top contributors
-  const contributor = metrics.topContributors.find((c) => c.userId === authorId);
-  if (contributor) {
-    contributor.count += 1;
-  } else {
-    metrics.topContributors.push({ userId: authorId, count: 1 });
-  }
-  // Keep only top 10
-  metrics.topContributors.sort((a, b) => b.count - a.count);
-  metrics.topContributors = metrics.topContributors.slice(0, 10);
-
-  metrics.lastUpdated = new Date();
-  await metrics.save();
-
-  // Update user activity
-  let userActivity = await UserActivity.findOne({ userId: authorId, orgId });
-  if (!userActivity) {
-    userActivity = new UserActivity({ userId: authorId, orgId });
-  }
-
-  userActivity.entriesCreated += 1;
-  if (userActivity.entriesByType[type] !== undefined) {
-    userActivity.entriesByType[type] += 1;
-  }
-  userActivity.lastActive = new Date();
-  await userActivity.save();
 
   console.log(
-    `[ANALYTICS] 📊 Updated metrics: org=${orgId}, type=${type}, contributor=${authorId}`
+    `[ANALYTICS] 📊 Updated metrics: org=${orgId}, project=${normalizeProjectId(projectId) || 'aggregate'}, type=${type}, contributor=${authorId}`
   );
 };
 
@@ -145,22 +154,23 @@ export const onEntryCreated = async (data) => {
  * Decrements totalEntries (type counts are historical)
  */
 export const onEntryDeleted = async (data) => {
-  const { entryId, orgId } = data;
+  const { entryId, orgId, projectId } = data;
 
-  console.log(`[ANALYTICS] 🗑️ Entry deleted: ${entryId} in org ${orgId}`);
+  console.log(`[ANALYTICS] 🗑️ Entry deleted: ${entryId} in org ${orgId}/${normalizeProjectId(projectId) || 'aggregate'}`);
 
-  let metrics = await OrgMetrics.findOne({ orgId });
-  if (!metrics) {
-    return; // Org has no metrics yet
+  for (const scopeProjectId of getMetricScopes(projectId)) {
+    const metrics = await OrgMetrics.findOne({ orgId, projectId: scopeProjectId });
+    if (!metrics) {
+      continue;
+    }
+
+    if (metrics.totalEntries > 0) {
+      metrics.totalEntries -= 1;
+    }
+
+    metrics.lastUpdated = new Date();
+    await metrics.save();
   }
-
-  // Decrement total entries
-  if (metrics.totalEntries > 0) {
-    metrics.totalEntries -= 1;
-  }
-
-  metrics.lastUpdated = new Date();
-  await metrics.save();
 
   console.log(`[ANALYTICS] 📊 Total entries decremented for org ${orgId}`);
 };
@@ -170,23 +180,22 @@ export const onEntryDeleted = async (data) => {
  * Updates lastUpdated timestamp
  */
 export const onEntryUpdated = async (data) => {
-  const { entryId, orgId, authorId } = data;
+  const { entryId, orgId, projectId, authorId } = data;
 
-  console.log(`[ANALYTICS] ✏️ Entry updated: ${entryId} in org ${orgId}`);
+  console.log(`[ANALYTICS] ✏️ Entry updated: ${entryId} in org ${orgId}/${normalizeProjectId(projectId) || 'aggregate'}`);
 
-  let metrics = await OrgMetrics.findOne({ orgId });
-  if (!metrics) {
-    return;
-  }
+  for (const scopeProjectId of getMetricScopes(projectId)) {
+    const metrics = await OrgMetrics.findOne({ orgId, projectId: scopeProjectId });
+    if (metrics) {
+      metrics.lastUpdated = new Date();
+      await metrics.save();
+    }
 
-  metrics.lastUpdated = new Date();
-  await metrics.save();
-
-  // Update user activity
-  let userActivity = await UserActivity.findOne({ userId: authorId, orgId });
-  if (userActivity) {
-    userActivity.lastActive = new Date();
-    await userActivity.save();
+    const userActivity = await UserActivity.findOne({ userId: authorId, orgId, projectId: scopeProjectId });
+    if (userActivity) {
+      userActivity.lastActive = new Date();
+      await userActivity.save();
+    }
   }
 
   console.log(`[ANALYTICS] 📊 Updated timestamp for org ${orgId}`);

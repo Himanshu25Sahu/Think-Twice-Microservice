@@ -9,6 +9,7 @@ import api from '@/services/api';
 
 export default function AnalyticsPage() {
   const { activeOrg } = useSelector((state) => state.orgs);
+  const { activeProject } = useSelector((state) => state.projects);
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,7 +37,7 @@ export default function AnalyticsPage() {
     const fetchMetrics = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/analytics/org/${activeOrg}`);
+        const response = await api.get(`/analytics/org/${activeOrg}?projectId=${activeProject}`);
         setMetrics(response.data.data);
       } catch (err) {
         setError('Failed to load analytics');
@@ -46,10 +47,12 @@ export default function AnalyticsPage() {
       }
     };
 
-    if (activeOrg) {
+    if (activeOrg && activeProject) {
       fetchMetrics();
+    } else {
+      setLoading(false);
     }
-  }, [activeOrg]);
+  }, [activeOrg, activeProject]);
 
   const getTopCategory = () => {
     if (!metrics?.entriesByType) return '-';

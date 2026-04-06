@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { fetchEntries, deleteEntry } from '@/redux/slices/entrySlice';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { ProfileSkeleton } from '@/components/ui/ProfileSkeleton';
 import { Badge } from '@/components/ui/Badge';
 
 const TYPE_META = {
@@ -19,16 +20,17 @@ export default function ProfilePage() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { orgs, activeOrg } = useSelector((state) => state.orgs);
+  const { activeProject } = useSelector((state) => state.projects);
   const { entries, loading } = useSelector((state) => state.entries);
   const [toast, setToast] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (activeOrg) {
-      dispatch(fetchEntries({ orgId: activeOrg, page: 1, limit: 5 }));
+    if (activeOrg && activeProject) {
+      dispatch(fetchEntries({ orgId: activeOrg, projectId: activeProject, page: 1, limit: 5 }));
     }
-  }, [activeOrg, dispatch]);
+  }, [activeOrg, activeProject, dispatch]);
 
   const myEntries = useMemo(() => {
     return entries.filter(e => e.authorId === user._id);
@@ -56,7 +58,7 @@ export default function ProfilePage() {
   const handleDelete = async (entryId) => {
     setDeleting(true);
     try {
-      await dispatch(deleteEntry({ id: entryId, orgId: activeOrg })).unwrap();
+      await dispatch(deleteEntry({ id: entryId, orgId: activeOrg, projectId: activeProject })).unwrap();
       setToast({ type: 'success', msg: 'Entry deleted' });
     } catch (err) {
       setToast({ type: 'error', msg: err || 'Failed to delete entry' });
@@ -70,7 +72,7 @@ export default function ProfilePage() {
   // Active org name
   const activeOrgData = orgs?.find(o => o._id === activeOrg);
 
-  if (loading) return <Skeleton count={5} />;
+  if (loading) return <ProfileSkeleton />;
 
   return (
     <>

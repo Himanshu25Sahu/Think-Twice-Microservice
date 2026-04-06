@@ -5,11 +5,12 @@ import api from '@/services/api';
 
 export const fetchEntries = createAsyncThunk(
   'entries/fetchEntries',
-  async ({ orgId, type, query, tag, page = 1, limit = 12, sort = 'newest' }, { rejectWithValue }) => {
+  async ({ orgId, projectId, type, query, tag, page = 1, limit = 12, sort = 'newest' }, { rejectWithValue }) => {
     try {
       // Extract ID if orgId is an object, otherwise use as-is
       const orgIdString = typeof orgId === 'object' ? orgId._id : orgId;
-      let url = `/entries?orgId=${orgIdString}&page=${page}&limit=${limit}&sort=${sort}`;
+      const projectIdString = typeof projectId === 'object' ? projectId._id : projectId;
+      let url = `/entries?orgId=${orgIdString}&projectId=${projectIdString}&page=${page}&limit=${limit}&sort=${sort}`;
       if (type && type !== 'all') url += `&type=${type}`;
       if (query) url += `&q=${encodeURIComponent(query)}`;
       if (tag) url += `&tag=${encodeURIComponent(tag)}`;
@@ -24,11 +25,12 @@ export const fetchEntries = createAsyncThunk(
 
 export const fetchEntry = createAsyncThunk(
   'entries/fetchEntry',
-  async ({ id, orgId }, { rejectWithValue }) => {
+  async ({ id, orgId, projectId }, { rejectWithValue }) => {
     try {
       // Extract ID if orgId is an object, otherwise use as-is
       const orgIdString = typeof orgId === 'object' ? orgId._id : orgId;
-      const response = await api.get(`/entries/${id}?orgId=${orgIdString}`);
+      const projectIdString = typeof projectId === 'object' ? projectId._id : projectId;
+      const response = await api.get(`/entries/${id}?orgId=${orgIdString}&projectId=${projectIdString}`);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch entry');
@@ -43,12 +45,14 @@ export const createEntry = createAsyncThunk(
       const isFormData = data instanceof FormData;
       let url = '/entries';
       let orgId = '';
+      let projectId = '';
       
-      // Extract orgId from FormData if present
+      // Extract scope from FormData if present
       if (isFormData) {
         orgId = data.get('orgId');
-        if (orgId) {
-          url = `/entries?orgId=${orgId}`;
+        projectId = data.get('projectId');
+        if (orgId && projectId) {
+          url = `/entries?orgId=${orgId}&projectId=${projectId}`;
         }
       }
       
@@ -76,9 +80,9 @@ export const updateEntry = createAsyncThunk(
 
 export const deleteEntry = createAsyncThunk(
   'entries/deleteEntry',
-  async ({ id, orgId }, { rejectWithValue }) => {
+  async ({ id, orgId, projectId }, { rejectWithValue }) => {
     try {
-      await api.delete(`/entries/${id}?orgId=${orgId}`);
+      await api.delete(`/entries/${id}?orgId=${orgId}&projectId=${projectId}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete entry');
@@ -88,9 +92,9 @@ export const deleteEntry = createAsyncThunk(
 
 export const toggleUpvote = createAsyncThunk(
   'entries/toggleUpvote',
-  async ({ id, orgId }, { rejectWithValue }) => {
+  async ({ id, orgId, projectId }, { rejectWithValue }) => {
     try {
-      const response = await api.post(`/entries/${id}/upvote?orgId=${orgId}`);
+      const response = await api.post(`/entries/${id}/upvote?orgId=${orgId}&projectId=${projectId}`);
       return { id, ...response.data.data };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to toggle upvote');
@@ -100,9 +104,9 @@ export const toggleUpvote = createAsyncThunk(
 
 export const toggleDownvote = createAsyncThunk(
   'entries/toggleDownvote',
-  async ({ id, orgId }, { rejectWithValue }) => {
+  async ({ id, orgId, projectId }, { rejectWithValue }) => {
     try {
-      const response = await api.post(`/entries/${id}/downvote?orgId=${orgId}`);
+      const response = await api.post(`/entries/${id}/downvote?orgId=${orgId}&projectId=${projectId}`);
       return { id, ...response.data.data };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to toggle downvote');

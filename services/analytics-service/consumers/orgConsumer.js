@@ -12,9 +12,9 @@ export const onMemberJoined = async (data) => {
   console.log(`[ANALYTICS] 👤 Member joined: ${userId} (${role}) in org ${orgId}`);
 
   // Get or create org metrics
-  let metrics = await OrgMetrics.findOne({ orgId });
+  let metrics = await OrgMetrics.findOne({ orgId, projectId: '' });
   if (!metrics) {
-    metrics = new OrgMetrics({ orgId });
+    metrics = new OrgMetrics({ orgId, projectId: '' });
   }
 
   // Increment total members
@@ -23,11 +23,12 @@ export const onMemberJoined = async (data) => {
   await metrics.save();
 
   // Create user activity if doesn't exist
-  const existing = await UserActivity.findOne({ userId, orgId });
+  const existing = await UserActivity.findOne({ userId, orgId, projectId: '' });
   if (!existing) {
     const userActivity = new UserActivity({
       userId,
       orgId,
+      projectId: '',
       entriesCreated: 0,
       lastActive: new Date(),
     });
