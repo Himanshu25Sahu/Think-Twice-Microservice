@@ -57,6 +57,12 @@ const entrySchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    images: [
+      {
+        type: String,
+        match: /^https?:\/\/.+/,
+      },
+    ],
     tags: [
       {
         type: String,

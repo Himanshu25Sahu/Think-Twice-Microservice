@@ -46,10 +46,18 @@ export const orgAccess = async (req, res, next) => {
         });
       }
       // Cached role data
-      const roleData = cached;
+      let roleData = cached;
+      if (typeof cached === 'string') {
+        try {
+          roleData = JSON.parse(cached);
+        } catch {
+          roleData = { role: cached };
+        }
+      }
+      const normalizedRole = roleData?.role ? String(roleData.role).toLowerCase().trim() : null;
       req.orgId = orgId;
-      req.userRole = roleData.role;
-      console.log(`[ENTRY] Access granted (cached): ${userId} to ${orgId}, role=${roleData.role} trace=${traceId}`);
+      req.userRole = normalizedRole;
+      console.log(`[ENTRY] Access granted (cached): ${userId} to ${orgId}, role=${normalizedRole} trace=${traceId}`);
     } else {
       // Not in cache, call org-service
       try {
@@ -65,7 +73,7 @@ export const orgAccess = async (req, res, next) => {
           // Find user's role in the organization
           const org = response.data.data;
           const member = org.members.find((m) => m.userId === userId);
-          const userRole = member ? member.role : null;
+          const userRole = member ? String(member.role).toLowerCase().trim() : null;
 
           if (!userRole) {
             // Member not found - access denied
@@ -78,7 +86,7 @@ export const orgAccess = async (req, res, next) => {
           }
 
           // Cache allow with role for 5 minutes
-          await setCache(cacheKey, JSON.stringify({ role: userRole }), 300);
+          await setCache(cacheKey, { role: userRole }, 300);
           req.orgId = orgId;
           req.userRole = userRole;
           console.log(`[ENTRY] Access granted: ${userId} to ${orgId}, role=${userRole} trace=${traceId}`);
@@ -168,13 +176,14 @@ export const orgAccess = async (req, res, next) => {
 export const requireRole = (...allowedRoles) => {
   return (req, res, next) => {
     const traceId = req.headers['x-trace-id'] || 'unknown';
-    const userRole = req.userRole;
+    const userRole = req.userRole ? String(req.userRole).toLowerCase().trim() : null;
+    const normalizedAllowedRoles = allowedRoles.map((role) => String(role).toLowerCase().trim());
 
-    if (!userRole || !allowedRoles.includes(userRole)) {
-      console.log(`[ENTRY] Role check failed: user role ${userRole} not in ${allowedRoles.join(', ')} trace=${traceId}`);
+    if (!userRole || !normalizedAllowedRoles.includes(userRole)) {
+      console.log(`[ENTRY] Role check failed: user role ${userRole} not in ${normalizedAllowedRoles.join(', ')} trace=${traceId}`);
       return res.status(403).json({
         success: false,
-        message: `Only users with roles [${allowedRoles.join(', ')}] can perform this action`,
+        message: `Only users with roles [${normalizedAllowedRoles.join(', ')}] can perform this action`,
       });
     }
 

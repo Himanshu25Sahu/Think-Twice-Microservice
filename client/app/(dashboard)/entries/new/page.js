@@ -67,6 +67,8 @@ export default function NewEntryPage() {
 
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
 
@@ -107,6 +109,26 @@ export default function NewEntryPage() {
     }
   };
 
+  const handleAddImage = (files) => {
+    if (!files) return;
+    const newFiles = Array.from(files).slice(0, 3 - imageFiles.length); // Max 3 total
+    const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+    setImageFiles((prev) => [...prev, ...newFiles]);
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
+  };
+
+  const handleRemoveImage = (index) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => {
+      const newPreviews = prev.filter((_, i) => i !== index);
+      // Revoke object URLs to prevent memory leaks
+      newPreviews.forEach((_, i) => {
+        if (i !== index && prev[i]) URL.revokeObjectURL(prev[i]);
+      });
+      return newPreviews;
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = {};
@@ -132,7 +154,13 @@ export default function NewEntryPage() {
       formData.dos.filter(d => d.trim()).forEach(d => submitData.append('dos[]', d));
       formData.donts.filter(d => d.trim()).forEach(d => submitData.append('donts[]', d));
       formData.tags.forEach(t => submitData.append('tags[]', t));
-      if (imageFile) submitData.append('image', imageFile);
+      
+      // Add images (prefer new multi-image upload over legacy single image)
+      if (imageFiles.length > 0) {
+        imageFiles.forEach((file) => submitData.append('images', file));
+      } else if (imageFile) {
+        submitData.append('image', imageFile);
+      }
 
       const result = await dispatch(createEntry(submitData));
       if (result.meta.requestStatus === 'fulfilled') {
@@ -448,58 +476,113 @@ export default function NewEntryPage() {
           background: rgba(248, 113, 113, 0.1);
         }
 
-        /* Image upload */
+        /* Image upload - multiple */
+        .ne-images-preview-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          gap: 0.75rem;
+          margin-bottom: 0.75rem;
+        }
+
         .ne-image-preview-wrap {
           position: relative;
-          display: inline-block;
-          margin-bottom: 0.75rem;
+          display: block;
           border-radius: 0.625rem;
           overflow: hidden;
+          aspect-ratio: 4 / 3;
+          border: 1px solid #1e1e30;
+          background: #0a0a12;
         }
 
         .ne-image-preview {
           display: block;
-          max-height: 180px;
+          width: 100%;
+          height: 100%;
           border-radius: 0.625rem;
-          border: 1px solid #1e1e30;
           object-fit: cover;
+        }
+
+        .ne-image-number {
+          position: absolute;
+          top: 0.375rem;
+          right: 0.375rem;
+          background: rgba(10, 10, 20, 0.9);
+          backdrop-filter: blur(4px);
+          color: #a0a0b0;
+          padding: 0.25rem 0.5rem;
+          border-radius: 9999px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          font-family: 'DM Mono', monospace;
         }
 
         .ne-image-remove {
           position: absolute;
-          top: 0.5rem;
-          right: 0.5rem;
-          width: 1.625rem;
-          height: 1.625rem;
+          top: 0.35rem;
+          left: 0.35rem;
+          width: 1.5rem;
+          height: 1.5rem;
           border-radius: 9999px;
           border: none;
-          background: rgba(10, 10, 20, 0.85);
+          background: rgba(248, 113, 113, 0.9);
           backdrop-filter: blur(4px);
-          color: #f87171;
+          color: #fef2f2;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: background 140ms;
+          transition: all 140ms;
+          padding: 0;
         }
 
         .ne-image-remove:hover {
-          background: rgba(248, 113, 113, 0.2);
+          background: rgba(220, 38, 38, 1);
+          transform: scale(1.1);
+        }
+
+        .ne-file-input-label {
+          display: block;
+          position: relative;
+          width: 100%;
+          padding: 2rem;
+          border: 2px dashed #22223a;
+          border-radius: 0.625rem;
+          background: rgba(13, 13, 24, 0.5);
+          cursor: pointer;
+          transition: all 140ms;
+          margin-bottom: 0.5rem;
+        }
+
+        .ne-file-input-label:hover {
+          border-color: #818cf8;
+          background: rgba(129, 140, 248, 0.05);
         }
 
         .ne-file-input {
-          display: block;
-          width: 100%;
-          font-size: 0.8125rem;
-          color: #4b4b6a;
-          font-family: 'DM Sans', sans-serif;
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 0;
+          height: 0;
+          opacity: 0;
         }
 
-        .ne-file-input::file-selector-button {
-          margin-right: 0.75rem;
-          padding: 0.4375rem 0.875rem;
-          border-radius: 0.4375rem;
-          border: 1px solid #22223a;
+        .ne-file-input-text {
+          display: block;
+          text-align: center;
+          color: #4b4b6a;
+          font-size: 0.875rem;
+          font-family: 'DM Sans', sans-serif;
+          text-transform: slightly-small;
+        }
+
+        .ne-file-hint {
+          font-size: 0.75rem;
+          color: #666688;
+          font-family: 'DM Mono', monospace;
+          margin: 0;
+          font-weight: 300;
+        }
           background: #12121e;
           color: #8888aa;
           font-size: 0.8125rem;
@@ -857,34 +940,52 @@ export default function NewEntryPage() {
               />
             </div>
 
-            {/* Image */}
+            {/* Images */}
             <div className="ne-section">
               <label className="ne-label">
-                Image
-                <span className="ne-label-optional">optional</span>
+                Images
+                <span className="ne-label-optional">optional, up to 3</span>
               </label>
-              {imagePreview && (
-                <div className="ne-image-preview-wrap">
-                  <img src={imagePreview} alt="Preview" className="ne-image-preview" />
-                  <button
-                    type="button"
-                    onClick={() => { setImageFile(null); setImagePreview(null); }}
-                    className="ne-image-remove"
-                  >
-                    <XIcon className="w-3 h-3" />
-                  </button>
+              
+              {/* Image Previews */}
+              {imagePreviews.length > 0 && (
+                <div className="ne-images-preview-grid">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="ne-image-preview-wrap">
+                      <img src={preview} alt={`Preview ${index + 1}`} className="ne-image-preview" />
+                      <div className="ne-image-number">{index + 1}</div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(index)}
+                        className="ne-image-remove"
+                        aria-label={`Remove image ${index + 1}`}
+                      >
+                        <XIcon className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) { setImageFile(file); setImagePreview(URL.createObjectURL(file)); }
-                }}
-                disabled={loading}
-                className="ne-file-input"
-              />
+              
+              {/* File Input (only show if less than 3 images) */}
+              {imagePreviews.length < 3 && (
+                <label className="ne-file-input-label">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/jpg,image/jpeg,image/png,image/webp"
+                    onChange={(e) => handleAddImage(e.target.files)}
+                    disabled={loading}
+                    className="ne-file-input"
+                  />
+                  <span className="ne-file-input-text">
+                    {imagePreviews.length === 0
+                      ? 'Click to upload or drag images here'
+                      : `Add up to ${3 - imagePreviews.length} more image${3 - imagePreviews.length === 1 ? '' : 's'}`}
+                  </span>
+                </label>
+              )}
+              <p className="ne-file-hint">Supported: JPG, PNG, WebP (max 5MB each)</p>
             </div>
 
             {/* Actions */}

@@ -219,15 +219,51 @@ export const createEntry = async (req, res) => {
     }
 
     // Handle image upload if present
-    // req.file.path contains cloudinary url
+    // Supports legacy req.file, req.files array, and req.files object from upload.fields
     let imageUrl = '';
+    let imageUrls = [];
     try {
-      imageUrl = req.file ? req.file.path : '';
-    if(imageUrl) {
-      console.log(`[ENTRY] Image uploaded: ${imageUrl} trace=${traceId}`);
-    }
+      // Single image upload (backward compatibility)
+      if (req.file) {
+        imageUrl = req.file.path;
+        imageUrls.push(imageUrl);
+        console.log(`[ENTRY] Image uploaded: ${imageUrl} trace=${traceId}`);
+      }
+      // Multiple images upload (array form)
+      else if (req.files && Array.isArray(req.files)) {
+        imageUrls = req.files.slice(0, 3).map((f) => f.path); // Max 3 images
+        if (imageUrls.length > 0) imageUrl = imageUrls[0]; // Set first as main image for backward compatibility
+        console.log(`[ENTRY] ${imageUrls.length} images uploaded trace=${traceId}`);
+      }
+      // Multiple images upload (fields form)
+      else if (req.files && typeof req.files === 'object') {
+        const single = req.files.image?.[0]?.path;
+        const multiple = req.files.images || req.files['images[]'] || [];
+        imageUrls = multiple.slice(0, 3).map((f) => f.path).filter(Boolean);
+
+        if (single) {
+          imageUrl = single;
+          if (imageUrls.length === 0) {
+            imageUrls = [single];
+          }
+        } else if (imageUrls.length > 0) {
+          imageUrl = imageUrls[0];
+        }
+
+        if (imageUrls.length > 0 || imageUrl) {
+          console.log(`[ENTRY] ${imageUrls.length || 1} images uploaded trace=${traceId}`);
+        }
+      }
+      // Validate images array from body (for JSON updates)
+      const bodyImages = req.body['images[]'] || req.body.images || [];
+      if (Array.isArray(bodyImages) && bodyImages.length > 0) {
+        imageUrls = bodyImages.slice(0, 3);
+        if (!imageUrl && imageUrls.length > 0) {
+          imageUrl = imageUrls[0];
+        }
+      }
     } catch (error) {
-      console.log("### image up;oad error ",error)
+      console.log("### image upload error", error);
     }
 
     const entry = new Entry({
@@ -243,6 +279,7 @@ export const createEntry = async (req, res) => {
       donts: donts || [],
       context: context || '',
       image: imageUrl,
+      images: imageUrls,
       tags: (tags || []).map((t) => t.toLowerCase()),
       status: status || 'published',
     });
@@ -350,6 +387,18 @@ export const updateEntry = async (req, res) => {
     if (status !== undefined && ['draft', 'published', 'archived'].includes(status)) {
       entry.status = status;
     }
+    
+    // Handle images array update
+    const bodyImages = req.body['images[]'] || req.body.images;
+    if (bodyImages !== undefined) {
+      if (Array.isArray(bodyImages)) {
+        entry.images = bodyImages.slice(0, 3); // Max 3 images
+        if (bodyImages.length > 0) entry.image = bodyImages[0]; // Update main image too
+      } else {
+        entry.images = [];
+      }
+    }
+    
     if (isLegacyProjectEntry(entry.projectId)) {
       entry.projectId = projectId;
     }

@@ -10,7 +10,17 @@ router.get('/', orgAccess, entryController.getEntries);
 router.get('/:id', orgAccess, entryController.getEntry);
 
 // Write operations (members and above can create)
-router.post('/', orgAccess, requireRole('owner', 'admin', 'member'), upload.single('image'), entryController.createEntry);
+router.post(
+	'/',
+	orgAccess,
+	requireRole('owner', 'admin', 'member'),
+	upload.fields([
+		{ name: 'image', maxCount: 1 },
+		{ name: 'images', maxCount: 3 },
+		{ name: 'images[]', maxCount: 3 },
+	]),
+	entryController.createEntry
+);
 
 // Update and delete operations (admin and owner can always update/delete; members can delete their own)
 router.put('/:id', orgAccess, requireRole('owner', 'admin'), entryController.updateEntry);

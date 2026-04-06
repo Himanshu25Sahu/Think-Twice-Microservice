@@ -55,3 +55,4 @@ server/uploads/*
 !/server/uploads/.gitkeep
 services/decision-service/uploads/*
 !/services/decision-service/uploads/.gitkeep
+todo.txt

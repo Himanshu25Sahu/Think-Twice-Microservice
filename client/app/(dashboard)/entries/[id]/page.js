@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Toast } from '@/components/ui/Toast';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { ImageCarousel } from '@/components/ui/ImageCarousel';
 import { ArrowLeftIcon, TriangleUpIcon, EditIcon, TrashIcon } from '@/components/icons';
 import Link from 'next/link';
 
@@ -718,8 +719,13 @@ export default function EntryDetailPage() {
                 </div>
               )}
 
-              {/* Image */}
-              {currentEntry.image && (
+              {/* Images - Carousel or Legacy Single Image */}
+              {(currentEntry.images && currentEntry.images.length > 0) ? (
+                <div className="ed-section">
+                  <p className="ed-label">Images</p>
+                  <ImageCarousel images={currentEntry.images} />
+                </div>
+              ) : currentEntry.image ? (
                 <div className="ed-section">
                   <p className="ed-label">Diagram / Image</p>
                   <img
@@ -728,7 +734,7 @@ export default function EntryDetailPage() {
                     className="ed-image"
                   />
                 </div>
-              )}
+              ) : null}
 
               {/* Edit footer */}
               {isEditing && (

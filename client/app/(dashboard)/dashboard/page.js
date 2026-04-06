@@ -615,10 +615,25 @@ export default function DashboardPage() {
                           {meta && <span>{meta.icon}</span>}
                           <span>{entry.type?.replace('-', ' ') || 'entry'}</span>
                         </div>
-                        <div className="db-card-arrow">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M5 12h14M12 5l7 7-7 7"/>
-                          </svg>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          {(entry.images && entry.images.length > 0) && (
+                            <div style={{
+                              fontSize: '0.6875rem',
+                              color: '#9999bb',
+                              background: 'rgba(153, 153, 187, 0.1)',
+                              border: '1px solid rgba(153, 153, 187, 0.3)',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '9999px',
+                              fontFamily: "'DM Mono', monospace",
+                            }}>
+                              🖼️ {entry.images.length}
+                            </div>
+                          )}
+                          <div className="db-card-arrow">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                          </div>
                         </div>
                       </div>
 
