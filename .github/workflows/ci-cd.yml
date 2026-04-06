@@ -54,8 +54,14 @@ jobs:
       - name: Build client
         run: npm run build --prefix client
 
-      - name: JS syntax check (all tracked JS files)
-        run: git ls-files "*.js" | xargs -I {} node --check "{}"
+      - name: JS syntax check (server-side JS files)
+        run: |
+          files=$(git ls-files "*.js" ":!:client/**")
+          if [ -z "$files" ]; then
+            echo "No server-side JS files found for syntax check."
+            exit 0
+          fi
+          echo "$files" | xargs -I {} node --check "{}"
 
   docker-publish:
     name: CD (Build and Publish Docker Images)
