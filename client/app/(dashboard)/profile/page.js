@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchEntries } from '@/redux/slices/entrySlice';
+import { fetchEntries, deleteEntry } from '@/redux/slices/entrySlice';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
@@ -21,6 +21,8 @@ export default function ProfilePage() {
   const { orgs, activeOrg } = useSelector((state) => state.orgs);
   const { entries, loading } = useSelector((state) => state.entries);
   const [toast, setToast] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (activeOrg) {
@@ -50,6 +52,20 @@ export default function ProfilePage() {
   const initials = user.name
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : '??';
+
+  const handleDelete = async (entryId) => {
+    setDeleting(true);
+    try {
+      await dispatch(deleteEntry({ id: entryId, orgId: activeOrg })).unwrap();
+      setToast({ type: 'success', msg: 'Entry deleted' });
+    } catch (err) {
+      setToast({ type: 'error', msg: err || 'Failed to delete entry' });
+    } finally {
+      setDeleting(false);
+      setConfirmDeleteId(null);
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
 
   // Active org name
   const activeOrgData = orgs?.find(o => o._id === activeOrg);
@@ -324,6 +340,102 @@ export default function ProfilePage() {
           font-family: 'DM Mono', monospace;
           font-weight: 300;
         }
+
+        /* ── Delete button ── */
+        .pf-delete-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 1.75rem;
+          height: 1.75rem;
+          border-radius: 0.375rem;
+          border: 1px solid transparent;
+          background: transparent;
+          color: #555580;
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: background 140ms, color 140ms, border-color 140ms;
+        }
+
+        .pf-delete-btn:hover {
+          background: #f8717120;
+          border-color: #f8717140;
+          color: #f87171;
+        }
+
+        /* ── Confirm inline ── */
+        .pf-confirm-row {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.625rem 0;
+          border-bottom: 1px solid #13131f;
+        }
+
+        .pf-confirm-row:last-child { border-bottom: none; }
+
+        .pf-confirm-text {
+          flex: 1;
+          font-size: 0.775rem;
+          font-family: 'DM Mono', monospace;
+          color: #f87171;
+          font-weight: 300;
+        }
+
+        .pf-confirm-yes {
+          padding: 0.25rem 0.625rem;
+          border-radius: 0.375rem;
+          border: 1px solid #f8717160;
+          background: #f8717115;
+          color: #f87171;
+          font-size: 0.7rem;
+          font-family: 'DM Mono', monospace;
+          cursor: pointer;
+          transition: background 140ms;
+        }
+
+        .pf-confirm-yes:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pf-confirm-yes:not(:disabled):hover { background: #f8717130; }
+
+        .pf-confirm-no {
+          padding: 0.25rem 0.625rem;
+          border-radius: 0.375rem;
+          border: 1px solid #2a2a40;
+          background: transparent;
+          color: #7878a0;
+          font-size: 0.7rem;
+          font-family: 'DM Mono', monospace;
+          cursor: pointer;
+          transition: background 140ms;
+        }
+
+        .pf-confirm-no:hover { background: #1a1a2a; }
+
+        /* ── Toast ── */
+        .pf-toast {
+          position: fixed;
+          bottom: 1.5rem;
+          right: 1.5rem;
+          padding: 0.625rem 1rem;
+          border-radius: 0.5rem;
+          font-size: 0.8rem;
+          font-family: 'DM Mono', monospace;
+          font-weight: 400;
+          z-index: 999;
+          pointer-events: none;
+        }
+
+        .pf-toast.success {
+          background: #0d1f17;
+          border: 1px solid #34d39940;
+          color: #34d399;
+        }
+
+        .pf-toast.error {
+          background: #1f0d0d;
+          border: 1px solid #f8717140;
+          color: #f87171;
+        }
       `}</style>
 
       <div className="pf-outer">
@@ -388,58 +500,96 @@ export default function ProfilePage() {
                 <div className="pf-entries-list">
                   {myEntries.map((entry) => {
                     const meta = TYPE_META[entry.type];
-                    return (
-                      <Link key={entry._id} href={`/entries/${entry._id}`} className="pf-entry-link">
-                        <div className="pf-entry-row">
-                          {/* Type dot */}
-                          {meta && (
-                            <span
-                              className="pf-entry-type-dot"
-                              style={{ background: meta.color, opacity: 0.7 }}
-                            />
-                          )}
 
-                          {/* Body */}
-                          <div className="pf-entry-body">
-                            <p className="pf-entry-title">{entry.title}</p>
-                            {entry.content && (
-                              <p className="pf-entry-preview">{entry.content}</p>
-                            )}
-                          </div>
-
-                          {/* Vote counts */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#34d399' }}>
-                              ▲ {entry.upvotes?.length || 0}
-                            </span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#f87171' }}>
-                              ▼ {entry.downvotes?.length || 0}
-                            </span>
-                          </div>
-
-                          {/* Type pill */}
-                          {meta && (
-                            <div
-                              className="pf-entry-pill"
-                              style={{
-                                color: meta.color,
-                                borderColor: `${meta.color}33`,
-                                background: `${meta.color}0f`,
-                              }}
-                            >
-                              <span>{meta.icon}</span>
-                              <span>{entry.type.replace('-', ' ')}</span>
-                            </div>
-                          )}
-
-                          {/* Arrow */}
-                          <span className="pf-entry-arrow">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                          </span>
+                    if (confirmDeleteId === entry._id) {
+                      return (
+                        <div key={entry._id} className="pf-confirm-row">
+                          <span className="pf-confirm-text">delete &quot;{entry.title}&quot;?</span>
+                          <button
+                            className="pf-confirm-yes"
+                            disabled={deleting}
+                            onClick={() => handleDelete(entry._id)}
+                          >
+                            {deleting ? '...' : 'delete'}
+                          </button>
+                          <button
+                            className="pf-confirm-no"
+                            onClick={() => setConfirmDeleteId(null)}
+                          >
+                            cancel
+                          </button>
                         </div>
-                      </Link>
+                      );
+                    }
+
+                    return (
+                      <div key={entry._id} className="pf-entry-row" style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                        <Link href={`/entries/${entry._id}`} className="pf-entry-link" style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                            {/* Type dot */}
+                            {meta && (
+                              <span
+                                className="pf-entry-type-dot"
+                                style={{ background: meta.color, opacity: 0.7 }}
+                              />
+                            )}
+
+                            {/* Body */}
+                            <div className="pf-entry-body">
+                              <p className="pf-entry-title">{entry.title}</p>
+                              {entry.content && (
+                                <p className="pf-entry-preview">{entry.content}</p>
+                              )}
+                            </div>
+
+                            {/* Vote counts */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#34d399' }}>
+                                ▲ {entry.upvotes?.length || 0}
+                              </span>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#f87171' }}>
+                                ▼ {entry.downvotes?.length || 0}
+                              </span>
+                            </div>
+
+                            {/* Type pill */}
+                            {meta && (
+                              <div
+                                className="pf-entry-pill"
+                                style={{
+                                  color: meta.color,
+                                  borderColor: `${meta.color}33`,
+                                  background: `${meta.color}0f`,
+                                }}
+                              >
+                                <span>{meta.icon}</span>
+                                <span>{entry.type.replace('-', ' ')}</span>
+                              </div>
+                            )}
+
+                            {/* Arrow */}
+                            <span className="pf-entry-arrow">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                              </svg>
+                            </span>
+                          </div>
+                        </Link>
+
+                        {/* Delete button */}
+                        <button
+                          className="pf-delete-btn"
+                          title="Delete entry"
+                          onClick={() => setConfirmDeleteId(entry._id)}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                            <path d="M10 11v6M14 11v6"/>
+                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                          </svg>
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -449,6 +599,11 @@ export default function ProfilePage() {
 
         </div>
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div className={`pf-toast ${toast.type}`}>{toast.msg}</div>
+      )}
     </>
   );
 }

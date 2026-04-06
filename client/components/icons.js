@@ -5,21 +5,22 @@ export const SearchIcon = () => (
   </svg>
 );
 
-export const PlusIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M10 5v10M5 10h10"></path>
+export const PlusIcon = ({ className }) => (
+  <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 8v8M8 12h8" />
   </svg>
 );
 
-export const ChevronDownIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="m6 8 4 4 4-4"></path>
+export const ChevronDownIcon = ({ className }) => (
+  <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m6 9 6 6 6-6" />
   </svg>
 );
 
-export const CheckIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <path d="m3 10 5 5 9-10"></path>
+export const CheckIcon = ({ className }) => (
+  <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 13l4 4L19 7" />
   </svg>
 );
 
@@ -48,36 +49,42 @@ export const CopyIcon = () => (
   </svg>
 );
 
-export const LogoutIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M13 6l4 4m0 0l-4 4m4-4H7m4-10H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10"></path>
+export const LogoutIcon = ({ className }) => (
+  <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <polyline points="16 17 21 12 16 7" />
+    <line x1="21" y1="12" x2="9" y2="12" />
   </svg>
 );
 
-export const SettingsIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="10" cy="10" r="2"></circle>
-    <path d="M10 4v2.5M10 13.5v2.5M4.5 10h2.5M13.5 10h2.5M5.64 5.64l1.77 1.77M12.59 12.59l1.77 1.77M5.64 14.36l1.77-1.77M12.59 7.41l1.77-1.77"></path>
+export const SettingsIcon = ({ className }) => (
+  <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 );
 
-export const UserIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="10" cy="7.5" r="2.5"></circle>
-    <path d="M3.5 15a6.5 6.5 0 1 1 13 0v1.5"></path>
+export const UserIcon = ({ className }) => (
+  <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
   </svg>
 );
 
-export const ChartIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M3 18h14v-2M4 14h2v2H4zM8 10h2v6H8zM12 6h2v10h-2z"></path>
+export const ChartIcon = ({ className }) => (
+  <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" />
+    <line x1="2" y1="20" x2="22" y2="20" />
   </svg>
 );
 
-export const HomeIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M2 10l8-8 8 8v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7z"></path>
-    <path d="M7 17v-7h6v7"></path>
+export const HomeIcon = ({ className }) => (
+  <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12L12 3l9 9" />
+    <path d="M9 21V12h6v9" />
+    <path d="M5 10v11h14V10" />
   </svg>
 );
 

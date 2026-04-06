@@ -36,7 +36,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 5001
-      MONGODB_URI: mongodb://mongodb:27017/tt-auth
+      MONGODB_URI: mongodb://host.docker.internal:27017/tt-auth
       JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-in-production}
       JWT_EXPIRES_IN: 3d
     ports:
@@ -55,7 +55,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 5003
-      MONGODB_URI: mongodb://mongodb:27017/tt-orgs
+      MONGODB_URI: mongodb://host.docker.internal:27017/tt-orgs
       REDIS_URL: redis://redis:6379
       AUTH_SERVICE_URL: http://auth-service:5001
     ports:
@@ -78,7 +78,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 5002
-      MONGODB_URI: mongodb://mongodb:27017/tt-entries
+      MONGODB_URI: mongodb://host.docker.internal:27017/tt-entries
       REDIS_URL: redis://redis:6379
       ORG_SERVICE_URL: http://org-service:5003
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
@@ -104,7 +104,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 5004
-      MONGODB_URI: mongodb://mongodb:27017/tt-analytics
+      MONGODB_URI: mongodb://host.docker.internal:27017/tt-analytics
       REDIS_URL: redis://redis:6379
     ports:
       - "5004:5004"
@@ -145,8 +145,10 @@ services:
     build:
       context: ./client
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:5000
+        NEXT_PUBLIC_API_URL: http://gateway:5000
     container_name: tt-client
+    environment:
+      - NEXT_PUBLIC_API_URL=http://gateway:5000
     ports:
       - "3000:3000"
     depends_on:
