@@ -39,7 +39,7 @@ jobs:
 
       - name: Install service dependencies
         run: |
-          npm ci --prefix client
+          npm ci --include=dev --prefix client
           npm ci --prefix gateway
           npm ci --prefix services/auth-service
           npm ci --prefix services/org-service
