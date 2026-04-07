@@ -3,8 +3,14 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import entryRoutes from './routes/entryRoutes.js';
+import { initCacheInvalidation } from './utils/cacheInvalidator.js';
 
 dotenv.config();
+
+// Initialize cache invalidation listeners
+initCacheInvalidation().catch((err) => {
+  console.warn('[ENTRY] ⚠ Cache invalidation init failed (non-fatal):', err.message);
+});
 
 const app = express();
 

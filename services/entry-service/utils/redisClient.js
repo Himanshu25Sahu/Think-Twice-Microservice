@@ -39,10 +39,19 @@ export const setCache = async (key, value, ttl = 300) => {
 
 export const invalidateCache = async (pattern) => {
   try {
-    const keys = await redisClient.keys(pattern);
+    // Use SCAN for production safety with large key sets
+    const keys = [];
+    let cursor = 0;
+    
+    do {
+      const result = await redisClient.scan(cursor, { MATCH: pattern, COUNT: 100 });
+      cursor = result.cursor;
+      keys.push(...result.keys);
+    } while (cursor !== 0);
+    
     if (keys.length > 0) {
       await redisClient.del(keys);
-      console.log(`[ENTRY] Invalidated ${keys.length} cache keys`);
+      console.log(`[ENTRY] Invalidated ${keys.length} cache keys matching ${pattern}`);
     }
   } catch (error) {
     console.error('[ENTRY] Cache invalidation error:', error);

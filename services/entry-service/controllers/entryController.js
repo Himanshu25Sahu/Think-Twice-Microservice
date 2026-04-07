@@ -56,6 +56,64 @@ const normalizeMentionedUserIds = (value) => {
   return [...new Set(normalized)];
 };
 
+/**
+ * Reusable helper for paginated entry queries
+ * Handles caching, filtering, sorting, and pagination
+ * @param {Object} query - MongoDB query filter
+ * @param {Object} options - Pagination & sorting options
+ * @param {number} options.page - Page number (1-based)
+ * @param {number} options.limit - Items per page (max 100)
+ * @param {Object} options.sortObj - MongoDB sort object
+ * @param {string} options.cacheKey - Redis cache key (optional)
+ * @returns {Promise<Object>} - { entries, pagination: { page, limit, total, pages } }
+ */
+export const getPaginatedEntries = async (query, options = {}) => {
+  const {
+    page = 1,
+    limit = 20,
+    sortObj = { createdAt: -1 },
+    cacheKey,
+  } = options;
+
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+  const skip = (pageNum - 1) * limitNum;
+
+  // Check cache if cacheKey provided
+  if (cacheKey) {
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      return cached;
+    }
+  }
+
+  // Execute query
+  const entries = await Entry.find(query)
+    .sort(sortObj)
+    .skip(skip)
+    .limit(limitNum)
+    .lean();
+
+  const total = await Entry.countDocuments(query);
+
+  const result = {
+    entries: entries.map(sanitizeEntry),
+    pagination: {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      pages: Math.ceil(total / limitNum),
+    },
+  };
+
+  // Cache if cacheKey provided
+  if (cacheKey) {
+    await setCache(cacheKey, result, 300); // 5 min TTL
+  }
+
+  return result;
+};
+
 export const getEntries = async (req, res) => {
   try {
     const traceId = req.headers['x-trace-id'] || 'unknown';
@@ -68,7 +126,6 @@ export const getEntries = async (req, res) => {
 
     const pageNum = Math.max(1, parseInt(page) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
-    const skip = (pageNum - 1) * limitNum;
 
     console.log(`[ENTRY] List entries: org=${orgId} project=${projectId} trace=${traceId}`);
 
@@ -128,27 +185,13 @@ export const getEntries = async (req, res) => {
       sortObj = { 'upvotes.length': -1 };
     }
 
-    // Execute query
-    const entries = await Entry.find(query)
-      .sort(sortObj)
-      .skip(skip)
-      .limit(limitNum)
-      .lean();
-
-    const total = await Entry.countDocuments(query);
-
-    const result = {
-      entries: entries.map(sanitizeEntry),
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum),
-      },
-    };
-
-    // Cache result for 5 minutes
-    await setCache(cacheKey, result, 300);
+    // Use helper for pagination & cache management
+    const result = await getPaginatedEntries(query, {
+      page: pageNum,
+      limit: limitNum,
+      sortObj,
+      cacheKey,
+    });
 
     res.json({
       success: true,
@@ -952,6 +995,19 @@ export const getGraph = async (req, res) => {
 
     console.log(`[ENTRY] Get graph: org=${orgId} project=${projectId} trace=${traceId}`);
 
+    // Generate cache key for graph (much shorter TTL: 60s)
+    const graphCacheKey = `graph:${orgId}:${projectId}`;
+
+    // Check cache
+    const cachedGraph = await getCache(graphCacheKey);
+    if (cachedGraph) {
+      console.log(`[ENTRY] Graph cache hit: ${graphCacheKey} trace=${traceId}`);
+      return res.json({
+        success: true,
+        data: cachedGraph,
+      });
+    }
+
     // Fetch all entries for this org/project
     let query = {
       orgId,
@@ -997,6 +1053,14 @@ export const getGraph = async (req, res) => {
       }
     });
 
+    const result = {
+      nodes,
+      edges,
+    };
+
+    // Cache result for 60 seconds (shorter than entries since graph changes frequently)
+    await setCache(graphCacheKey, result, 60);
+
     console.log(`[ENTRY] Graph response: org=${orgId} project=${projectId} nodes=${nodes.length} edges=${edges.length} trace=${traceId}`);
     if (edges.length > 0) {
       console.log('[ENTRY] Edges:', JSON.stringify(edges.slice(0, 2), null, 2));
@@ -1004,10 +1068,7 @@ export const getGraph = async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        nodes,
-        edges,
-      },
+      data: result,
     });
   } catch (error) {
     const traceId = req.headers['x-trace-id'] || 'unknown';

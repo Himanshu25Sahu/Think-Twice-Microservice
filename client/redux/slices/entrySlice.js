@@ -122,17 +122,28 @@ const entrySlice = createSlice({
     total: 0,
     page: 1,
     totalPages: 0,
+    hasMore: true,
     filters: { type: 'all', query: '', tag: '' },
     loading: false,
+    cacheInvalidated: false,
     error: null,
   },
   reducers: {
     setFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
       state.page = 1;
+      state.cacheInvalidated = true; // Reset on filter change
     },
     setPage: (state, action) => {
       state.page = action.payload;
+    },
+    resetCache: (state) => {
+      // Reset entries and pagination on any mutation
+      state.entries = [];
+      state.page = 1;
+      state.totalPages = 0;
+      state.hasMore = true;
+      state.cacheInvalidated = true;
     },
     clearCurrentEntry: (state) => {
       state.currentEntry = null;
@@ -148,10 +159,22 @@ const entrySlice = createSlice({
       })
       .addCase(fetchEntries.fulfilled, (state, action) => {
         state.loading = false;
-        state.entries = action.payload.entries || [];
+        const pageNum = action.payload.pagination?.page || 1;
+        const totalPages = action.payload.pagination?.pages || 0;
+
+        // If first page or invalid page, reset; else append for infinite scroll
+        if (pageNum === 1 || state.cacheInvalidated) {
+          state.entries = action.payload.entries || [];
+          state.cacheInvalidated = false;
+        } else {
+          state.entries.push(...(action.payload.entries || []));
+        }
+
         state.total = action.payload.pagination?.total || 0;
-        state.totalPages = action.payload.pagination?.pages || 0;
-        state.page = action.payload.pagination?.page || 1;
+        state.totalPages = totalPages;
+        state.page = pageNum;
+        state.hasMore = pageNum < totalPages;
+        state.error = null;
       })
       .addCase(fetchEntries.rejected, (state, action) => {
         state.loading = false;
@@ -161,7 +184,12 @@ const entrySlice = createSlice({
         state.currentEntry = action.payload;
       })
       .addCase(createEntry.fulfilled, (state, action) => {
-        state.entries.unshift(action.payload);
+        // Reset cache on create - next fetch will get fresh data
+        state.entries = [];
+        state.page = 1;
+        state.totalPages = 0;
+        state.hasMore = true;
+        state.cacheInvalidated = true;
       })
       .addCase(updateEntry.fulfilled, (state, action) => {
         const index = state.entries.findIndex((e) => e._id === action.payload._id);
@@ -172,6 +200,7 @@ const entrySlice = createSlice({
       })
       .addCase(deleteEntry.fulfilled, (state, action) => {
         state.entries = state.entries.filter((e) => e._id !== action.payload);
+        state.total = Math.max(0, state.total - 1);
       })
       .addCase(toggleUpvote.fulfilled, (state, action) => {
         const { id, upvoted, upvotes, downvotes } = action.payload;
@@ -200,5 +229,5 @@ const entrySlice = createSlice({
   },
 });
 
-export const { setFilters, setPage, clearCurrentEntry, clearError } = entrySlice.actions;
+export const { setFilters, setPage, resetCache, clearCurrentEntry, clearError } = entrySlice.actions;
 export default entrySlice.reducer;

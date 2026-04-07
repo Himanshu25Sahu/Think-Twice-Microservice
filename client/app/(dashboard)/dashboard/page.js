@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchEntries } from '@/redux/slices/entrySlice';
+import { fetchEntries, setFilters, resetCache } from '@/redux/slices/entrySlice';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 
@@ -16,40 +16,90 @@ const TYPE_META = {
 
 export default function DashboardPage() {
   const dispatch = useDispatch();
-  const { entries, loading, page, totalPages } = useSelector((state) => state.entries);
+  const { entries, loading, page, totalPages, hasMore, total, filters } = useSelector((state) => state.entries);
   const { activeOrg } = useSelector((state) => state.orgs);
   const { activeProject } = useSelector((state) => state.projects);
-  const [filterType, setFilterType] = useState('all');
+  
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const endOfListRef = useRef(null);
+  
+  // Debounce search query (300ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
+  // Fetch entries when org/project changes or filters change
   useEffect(() => {
     if (activeOrg && activeProject) {
-      dispatch(fetchEntries({ orgId: activeOrg, projectId: activeProject, type: filterType !== 'all' ? filterType : undefined, page: 1 }));
+      dispatch(resetCache());
+      dispatch(fetchEntries({
+        orgId: activeOrg,
+        projectId: activeProject,
+        type: filters.type !== 'all' ? filters.type : undefined,
+        query: debouncedQuery || undefined,
+        tag: filters.tag || undefined,
+        page: 1,
+        limit: 12,
+      }));
     }
-  }, [activeOrg, activeProject, filterType, dispatch]);
+  }, [activeOrg, activeProject, filters.type, debouncedQuery, filters.tag, dispatch]);
 
+  // Infinite scroll: fetch next page when user scrolls to bottom
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && page < totalPages) {
+          dispatch(fetchEntries({
+            orgId: activeOrg,
+            projectId: activeProject,
+            type: filters.type !== 'all' ? filters.type : undefined,
+            query: debouncedQuery || undefined,
+            tag: filters.tag || undefined,
+            page: page + 1,
+            limit: 12,
+          }));
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (endOfListRef.current) {
+      observer.observe(endOfListRef.current);
+    }
+
+    return () => {
+      if (endOfListRef.current) {
+        observer.unobserve(endOfListRef.current);
+      }
+    };
+  }, [dispatch, activeOrg, activeProject, page, totalPages, hasMore, loading, filters, debouncedQuery]);
+
+  const handleFilterChange = (type) => {
+    dispatch(setFilters({ type, query: '', tag: '' }));
+  };
+
+  const types = ['all', 'architecture', 'debugging', 'feature', 'best-practice', 'incident'];
+
+  // Client-side filtering for search within current entries (local preview)
   const filteredEntries = entries.filter((entry) =>
     entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     entry.what?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     entry.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const types = ['all', 'architecture', 'debugging', 'feature', 'best-practice', 'incident'];
-
-  const handleFilterChange = (type) => setFilterType(type);
-
-  const handlePrevPage = () => {
-    dispatch(fetchEntries({ orgId: activeOrg, projectId: activeProject, type: filterType !== 'all' ? filterType : undefined, page: page - 1 }));
-  };
-
-  const handleNextPage = () => {
-    dispatch(fetchEntries({ orgId: activeOrg, projectId: activeProject, type: filterType !== 'all' ? filterType : undefined, page: page + 1 }));
-  };
-
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
+
+        @keyframes pulse {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 1; }
+        }
 
         .db-root {
           font-family: 'DM Sans', sans-serif;
@@ -542,7 +592,7 @@ export default function DashboardPage() {
         {/* Filter pills */}
         <div className="db-filters">
           {types.map((type) => {
-            const isActive = filterType === type;
+            const isActive = filters.type === type;
             const meta = TYPE_META[type];
             const label = type === 'all' ? 'All' : type.replace('-', ' ');
             return (
@@ -559,8 +609,8 @@ export default function DashboardPage() {
           })}
         </div>
 
-        {/* Loading skeletons */}
-        {loading && (
+        {/* Loading skeletons (first page only) */}
+        {loading && page === 1 && (
           <div className="db-grid">
             {[1,2,3,4,5,6].map((i) => (
               <div key={i} className="db-skeleton" />
@@ -569,7 +619,7 @@ export default function DashboardPage() {
         )}
 
         {/* Empty state */}
-        {!loading && filteredEntries.length === 0 && (
+        {!loading && page === 1 && filteredEntries.length === 0 && (
           <div className="db-empty">
             <div className="db-empty-icon">📚</div>
             <h3 className="db-empty-title">
@@ -578,9 +628,9 @@ export default function DashboardPage() {
             <p className="db-empty-msg">
               {searchQuery
                 ? `Nothing matched "${searchQuery}" — try a different term`
-                : filterType === 'all'
+                : filters.type === 'all'
                 ? 'Start documenting decisions by creating your first entry.'
-                : `No ${filterType} entries found.`}
+                : `No ${filters.type} entries found.`}
             </p>
             {!searchQuery && (
               <Link href="/entries/new" className="db-empty-cta">
@@ -668,28 +718,61 @@ export default function DashboardPage() {
               })}
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
+            {/* Pagination controls */}
+            {!loading && entries.length > 0 && (
               <div className="db-pagination">
-                <button
-                  disabled={page === 1}
-                  onClick={handlePrevPage}
-                  className="db-page-btn"
-                >
-                  ← Prev
-                </button>
                 <div className="db-page-info">
-                  <span className="db-page-current">{page}</span>
+                  <span className="db-page-current">{entries.length}</span>
                   <span className="db-page-sep">/</span>
-                  <span className="db-page-total">{totalPages}</span>
+                  <span className="db-page-total">{total}</span>
                 </div>
-                <button
-                  disabled={page === totalPages}
-                  onClick={handleNextPage}
-                  className="db-page-btn"
-                >
-                  Next →
-                </button>
+                {hasMore ? (
+                  <p style={{ fontSize: '0.8125rem', color: '#7878a0', marginLeft: '1rem' }}>
+                    Scroll to load more...
+                  </p>
+                ) : (
+                  <p style={{ fontSize: '0.8125rem', color: '#5050708', marginLeft: '1rem' }}>
+                    No more entries
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Infinite scroll sentinel */}
+            <div ref={endOfListRef} style={{ height: '20px', marginTop: '2rem' }} />
+
+            {/* Loading indicator for infinite scroll */}
+            {loading && page > 1 && (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                padding: '2rem',
+                gap: '0.5rem'
+              }}>
+                <div style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#818cf8',
+                  animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                  animationDelay: '0ms'
+                }} />
+                <div style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#818cf8',
+                  animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                  animationDelay: '200ms'
+                }} />
+                <div style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#818cf8',
+                  animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                  animationDelay: '400ms'
+                }} />
               </div>
             )}
           </>
