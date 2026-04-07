@@ -43,7 +43,7 @@ export default function DashboardPage() {
         query: debouncedQuery || undefined,
         tag: filters.tag || undefined,
         page: 1,
-        limit: 12,
+        limit: 6,
       }));
     }
   }, [activeOrg, activeProject, filters.type, debouncedQuery, filters.tag, dispatch]);
@@ -60,7 +60,7 @@ export default function DashboardPage() {
             query: debouncedQuery || undefined,
             tag: filters.tag || undefined,
             page: page + 1,
-            limit: 12,
+            limit: 6,
           }));
         }
       },
