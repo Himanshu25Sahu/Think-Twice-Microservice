@@ -12,6 +12,7 @@ import {
   HomeIcon,
   PlusIcon,
   ChartIcon,
+  GraphIcon,
   SettingsIcon,
   LogoutIcon,
   ChevronDownIcon,
@@ -85,6 +86,7 @@ export default function Sidebar() {
   const navItems = [
     { href: '/dashboard', label: 'Home', icon: HomeIcon },
     ...(userRole !== 'viewer' ? [{ href: '/entries/new', label: 'New Entry', icon: PlusIcon }] : []),
+    { href: '/graph', label: 'Decision Graph', icon: GraphIcon },
     { href: '/analytics', label: 'Analytics', icon: ChartIcon },
     { href: '/settings', label: 'Settings', icon: SettingsIcon },
   ];

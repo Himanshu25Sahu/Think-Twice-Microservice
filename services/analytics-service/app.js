@@ -11,6 +11,10 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy', service: 'analytics-service' });
 });
 
+app.get('/api/health', (req, res) => {
+  res.json({ success: true, status: 'ok', service: 'analytics-service' });
+});
+
 // Analytics routes
 app.use('/analytics', analyticsRoutes);
 

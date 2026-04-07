@@ -18,11 +18,11 @@ info() { echo -e "${YELLOW}→ $1${NC}"; }
 
 # 1. Health checks
 info "Checking service health..."
-curl -sf "$BASE/health" > /dev/null && pass "Gateway healthy" || fail "Gateway down"
-curl -sf http://localhost:5001/health > /dev/null && pass "Auth Service healthy" || fail "Auth Service down"
-curl -sf http://localhost:5002/health > /dev/null && pass "Entry Service healthy" || fail "Entry Service down"
-curl -sf http://localhost:5003/health > /dev/null && pass "Org Service healthy" || fail "Org Service down"
-curl -sf http://localhost:5004/health > /dev/null && pass "Analytics Service healthy" || fail "Analytics Service down"
+curl -sf "$BASE/api/health" > /dev/null && pass "Gateway healthy" || fail "Gateway down"
+curl -sf http://localhost:5001/api/health > /dev/null && pass "Auth Service healthy" || fail "Auth Service down"
+curl -sf http://localhost:5002/api/health > /dev/null && pass "Entry Service healthy" || fail "Entry Service down"
+curl -sf http://localhost:5003/api/health > /dev/null && pass "Org Service healthy" || fail "Org Service down"
+curl -sf http://localhost:5004/api/health > /dev/null && pass "Analytics Service healthy" || fail "Analytics Service down"
 
 # 2. Register a user
 info "Registering test user..."
@@ -80,6 +80,35 @@ LIST=$(curl -sf "$BASE/entries?orgId=$ORG_ID&projectId=$PROJECT_ID" \
   -H "x-project-id: $PROJECT_ID" \
   -b cookies.txt)
 echo "$LIST" | grep -q '"success":true' && pass "Entries listed" || fail "List failed"
+
+# 7a. Create second entry for relation testing
+info "Creating second entry for relations..."
+ENTRY2=$(curl -sf -X POST "$BASE/entries" \
+  -H "Content-Type: application/json" \
+  -H "x-org-id: $ORG_ID" \
+  -H "x-project-id: $PROJECT_ID" \
+  -b cookies.txt \
+  -d "{\"orgId\":\"$ORG_ID\",\"projectId\":\"$PROJECT_ID\",\"title\":\"Use Async Queues\",\"type\":\"architecture\",\"what\":\"Implement async queues\",\"why\":\"Improve scalability\",\"dos\":[\"Use queues\"],\"donts\":[\"Sync processing\"]}")
+echo "$ENTRY2" | grep -q '"success":true' && pass "Second entry created" || fail "Second entry creation failed"
+ENTRY2_ID=$(echo "$ENTRY2" | grep -o '"_id":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+# 7b. Add relation between entries
+info "Adding relation between entries..."
+RELATION=$(curl -sf -X POST "$BASE/entries/$ENTRY_ID/relations" \
+  -H "Content-Type: application/json" \
+  -H "x-org-id: $ORG_ID" \
+  -H "x-project-id: $PROJECT_ID" \
+  -b cookies.txt \
+  -d "{\"targetEntryId\":\"$ENTRY2_ID\",\"type\":\"impacts\"}")
+echo "$RELATION" | grep -q '"success":true' && pass "Relation added" || fail "Relation creation failed"
+
+# 7c. Get decision graph
+info "Fetching decision graph..."
+GRAPH=$(curl -sf "$BASE/entries/graph?orgId=$ORG_ID&projectId=$PROJECT_ID" \
+  -H "x-org-id: $ORG_ID" \
+  -H "x-project-id: $PROJECT_ID" \
+  -b cookies.txt)
+echo "$GRAPH" | grep -q '"nodes"' && pass "Graph retrieved" || fail "Graph fetch failed"
 
 # 8. Get analytics
 info "Checking analytics..."

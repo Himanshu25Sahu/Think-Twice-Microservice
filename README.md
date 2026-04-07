@@ -207,6 +207,9 @@ POST   /entries                Create entry
 PUT    /entries/:id            Update entry
 DELETE /entries/:id            Delete entry
 POST   /entries/:id/upvote     Toggle upvote
+POST   /entries/:id/relations  Add decision relation
+DELETE /entries/:id/relations/:targetId  Remove decision relation
+GET    /entries/graph          Get full decision graph (nodes + edges)
 ```
 
 ### Analytics Service
@@ -215,6 +218,30 @@ GET    /analytics/org/:orgId         Get org/project metrics
 GET    /analytics/user/:userId       Get user activity
 GET    /analytics/overview           Get combined dashboard
 ```
+
+## 🔗 Decision Graph / Impact Map
+
+Users can link decisions to each other to visualize how they affect the organization.
+
+**Relations Types:**
+- **impacts** (red): This decision impacts another
+- **depends_on** (blue): This decision depends on another
+- **replaces** (amber): This decision replaces another
+- **related_to** (purple): This decision is related to another
+- **blocks** (pink): This decision blocks another
+
+**Features:**
+- Interactive graph visualization (React Flow)
+- Click to view full entry details
+- Filter by relation type
+- See ripple effects of decisions
+- Beautiful dark-mode UI with Tailwind
+- Responsive on all screen sizes
+
+**Access:**
+- Open graph at: **`/graph`** (inside project dashboard)
+- Backend: POST/DELETE relations via `/entries/:id/relations`
+- Frontend: Redux slice manages graph state + React Flow visualization
 
 ## 🎯 Resume Highlights
 

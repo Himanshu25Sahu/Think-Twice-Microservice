@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter, useParams } from 'next/navigation';
-import { fetchEntry, updateEntry, deleteEntry, toggleUpvote, toggleDownvote } from '@/redux/slices/entrySlice';
+import { fetchEntry, updateEntry, deleteEntry, toggleUpvote, toggleDownvote, fetchEntries } from '@/redux/slices/entrySlice';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Toast } from '@/components/ui/Toast';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ImageCarousel } from '@/components/ui/ImageCarousel';
+import EntryRelations from '@/components/EntryRelations';
 import { ArrowLeftIcon, TriangleUpIcon, EditIcon, TrashIcon } from '@/components/icons';
 import Link from 'next/link';
 
@@ -27,7 +28,7 @@ export default function EntryDetailPage() {
   const params = useParams();
   const { id } = params;
 
-  const { currentEntry, loading } = useSelector((state) => state.entries);
+  const { currentEntry, loading, entries: allEntries } = useSelector((state) => state.entries);
   const { user } = useSelector((state) => state.auth);
   const { activeOrg } = useSelector((state) => state.orgs);
   const { activeProject } = useSelector((state) => state.projects);
@@ -37,7 +38,10 @@ export default function EntryDetailPage() {
   const [optimisticVotes, setOptimisticVotes] = useState({ upvotes: null, downvotes: null, userUpvoted: null, userDownvoted: null });
 
   useEffect(() => {
-    if (id && activeOrg && activeProject) dispatch(fetchEntry({ id, orgId: activeOrg, projectId: activeProject }));
+    if (id && activeOrg && activeProject) {
+      dispatch(fetchEntry({ id, orgId: activeOrg, projectId: activeProject }));
+      dispatch(fetchEntries({ orgId: activeOrg, projectId: activeProject, limit: 100 }));
+    }
   }, [id, dispatch, activeOrg, activeProject]);
 
   useEffect(() => {
@@ -735,6 +739,9 @@ export default function EntryDetailPage() {
                   />
                 </div>
               ) : null}
+
+              {/* Decision Relations */}
+              <EntryRelations entryId={currentEntry._id} entries={allEntries} />
 
               {/* Edit footer */}
               {isEditing && (

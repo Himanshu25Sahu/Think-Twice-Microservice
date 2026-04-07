@@ -130,3 +130,14 @@ export const TrashIcon = () => (
     <path d="M3 6h14M8 6V4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2M7 9v8a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V9"></path>
   </svg>
 );
+
+export const GraphIcon = ({ className }) => (
+  <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="5" cy="5" r="2" />
+    <circle cx="19" cy="5" r="2" />
+    <circle cx="12" cy="19" r="2" />
+    <line x1="7" y1="6" x2="17" y2="6" />
+    <line x1="7" y1="6" x2="12" y2="18" />
+    <line x1="17" y1="6" x2="12" y2="18" />
+  </svg>
+);

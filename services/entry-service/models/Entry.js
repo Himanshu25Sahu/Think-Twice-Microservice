@@ -85,6 +85,22 @@ const entrySchema = new mongoose.Schema(
         type: String,
       },
     ],
+    relations: [
+      {
+        targetEntryId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Entry',
+        },
+        type: {
+          type: String,
+          enum: ['impacts', 'depends_on', 'replaces', 'related_to', 'blocks'],
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     createdAt: {
       type: Date,
       default: Date.now,

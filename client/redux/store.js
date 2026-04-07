@@ -3,6 +3,7 @@ import authSlice from './slices/authSlice.js';
 import entrySlice from './slices/entrySlice.js';
 import orgSlice from './slices/orgSlice.js';
 import projectSlice from './slices/projectSlice.js';
+import graphSlice from './slices/graphSlice.js';
 
 const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ const store = configureStore({
     entries: entrySlice,
     orgs: orgSlice,
     projects: projectSlice,
+    graph: graphSlice,
   },
 });
 

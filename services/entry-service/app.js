@@ -35,6 +35,17 @@ app.get('/health', (req, res) => {
   });
 });
 
+app.get('/api/health', (req, res) => {
+  const traceId = req.headers['x-trace-id'] || 'unknown';
+  res.json({
+    success: true,
+    status: 'ok',
+    service: 'entry-service',
+    timestamp: new Date().toISOString(),
+    traceId,
+  });
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({

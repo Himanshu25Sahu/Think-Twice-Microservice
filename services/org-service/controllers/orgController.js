@@ -122,7 +122,16 @@ export const createOrganization = async (req, res) => {
       // Don't fail the request, just log the error
     }
 
-    // Emit event
+    // Emit events
+    // 1. Owner joined event (for analytics to count totalMembers)
+    await emitEvent('org:member.joined', {
+      orgId: org._id.toString(),
+      projectId: defaultProject._id.toString(),
+      userId,
+      role: 'owner',
+    });
+
+    // 2. Org created event
     await emitEvent('org:created', {
       orgId: org._id.toString(),
       projectId: defaultProject._id.toString(),
@@ -196,6 +205,9 @@ export const joinOrganization = async (req, res) => {
 
     await org.save();
 
+    // Get the default project for this org
+    const defaultProject = await Project.findOne({ orgId: org._id, isDefault: true });
+
     // Call auth service
     try {
       const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
@@ -217,7 +229,7 @@ export const joinOrganization = async (req, res) => {
     // Emit event
     await emitEvent('org:member.joined', {
       orgId: org._id.toString(),
-      projectId: '',
+      projectId: defaultProject ? defaultProject._id.toString() : '',
       userId,
       role: 'member',
     });

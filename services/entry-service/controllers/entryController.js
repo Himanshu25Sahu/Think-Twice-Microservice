@@ -653,3 +653,277 @@ export const toggleDownvote = async (req, res) => {
     });
   }
 };
+
+export const addRelation = async (req, res) => {
+  try {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const userId = req.headers['x-user-id'];
+    const orgId = req.orgId;
+    const projectId = req.projectId;
+    const defaultProjectId = req.defaultProjectId;
+    const { id } = req.params;
+    const { targetEntryId, type } = req.body;
+
+    console.log(`[ENTRY] Add relation: ${id} → ${targetEntryId} (${type}) trace=${traceId}`);
+
+    // Validation
+    if (!targetEntryId || !type) {
+      return res.status(400).json({
+        success: false,
+        message: 'targetEntryId and type are required',
+      });
+    }
+
+    if (!['impacts', 'depends_on', 'replaces', 'related_to', 'blocks'].includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid relation type',
+      });
+    }
+
+    // Fetch source entry
+    const sourceEntry = await Entry.findById(id);
+    if (!sourceEntry) {
+      return res.status(404).json({
+        success: false,
+        message: 'Source entry not found',
+      });
+    }
+
+    if (sourceEntry.orgId !== orgId || !matchesProjectScope(sourceEntry.projectId, projectId, defaultProjectId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
+    }
+
+    // Fetch target entry
+    const targetEntry = await Entry.findById(targetEntryId);
+    if (!targetEntry) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target entry not found',
+      });
+    }
+
+    if (targetEntry.orgId !== orgId || !matchesProjectScope(targetEntry.projectId, projectId, defaultProjectId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Target entry not in same org/project',
+      });
+    }
+
+    // Prevent self-reference
+    if (id === targetEntryId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot create relation to self',
+      });
+    }
+
+    // Check if relation already exists
+    const relationExists = sourceEntry.relations.some(
+      (rel) => rel.targetEntryId.toString() === targetEntryId && rel.type === type
+    );
+
+    if (relationExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'Relation already exists',
+      });
+    }
+
+    // Add relation (ensure relations array exists)
+    if (!sourceEntry.relations) {
+      sourceEntry.relations = [];
+    }
+
+    sourceEntry.relations.push({
+      targetEntryId,
+      type,
+      createdAt: new Date(),
+    });
+
+    await sourceEntry.save();
+
+    // Invalidate cache
+    await invalidateCache(`entries:${orgId}:${projectId}:*`);
+
+    // Emit event
+    await emitEvent('entry:relation:changed', {
+      sourceEntryId: id,
+      targetEntryId,
+      type,
+      action: 'added',
+      orgId,
+      projectId,
+      userId,
+    });
+
+    console.log(`[ENTRY] Relation added: ${id} → ${targetEntryId} trace=${traceId}`);
+
+    res.json({
+      success: true,
+      message: 'Relation added successfully',
+      data: {
+        relation: sourceEntry.relations[sourceEntry.relations.length - 1],
+      },
+    });
+  } catch (error) {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    console.error(`[ENTRY] Add relation error: ${error.message} trace=${traceId}`);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const removeRelation = async (req, res) => {
+  try {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const userId = req.headers['x-user-id'];
+    const orgId = req.orgId;
+    const projectId = req.projectId;
+    const defaultProjectId = req.defaultProjectId;
+    const { id, targetId } = req.params;
+
+    console.log(`[ENTRY] Remove relation: ${id} → ${targetId} trace=${traceId}`);
+
+    const entry = await Entry.findById(id);
+    if (!entry) {
+      return res.status(404).json({
+        success: false,
+        message: 'Entry not found',
+      });
+    }
+
+    if (entry.orgId !== orgId || !matchesProjectScope(entry.projectId, projectId, defaultProjectId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
+    }
+
+    // Find and remove relation
+    const relationIndex = entry.relations.findIndex(
+      (rel) => rel.targetEntryId.toString() === targetId
+    );
+
+    if (relationIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Relation not found',
+      });
+    }
+
+    const removedRelation = entry.relations[relationIndex];
+    entry.relations.splice(relationIndex, 1);
+
+    await entry.save();
+
+    // Invalidate cache
+    await invalidateCache(`entries:${orgId}:${projectId}:*`);
+
+    // Emit event
+    await emitEvent('entry:relation:changed', {
+      sourceEntryId: id,
+      targetEntryId: targetId,
+      type: removedRelation.type,
+      action: 'removed',
+      orgId,
+      projectId,
+      userId,
+    });
+
+    console.log(`[ENTRY] Relation removed: ${id} → ${targetId} trace=${traceId}`);
+
+    res.json({
+      success: true,
+      message: 'Relation removed successfully',
+    });
+  } catch (error) {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    console.error(`[ENTRY] Remove relation error: ${error.message} trace=${traceId}`);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getGraph = async (req, res) => {
+  try {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const orgId = req.orgId;
+    const projectId = req.projectId;
+    const defaultProjectId = req.defaultProjectId;
+
+    console.log(`[ENTRY] Get graph: org=${orgId} project=${projectId} trace=${traceId}`);
+
+    // Fetch all entries for this org/project
+    let query = {
+      orgId,
+      status: { $ne: 'archived' },
+    };
+    query = addProjectScope(query, projectId, defaultProjectId);
+
+    const entries = await Entry.find(query)
+      .select('_id title type projectId relations')
+      .lean();
+
+    // Build nodes and edges
+    const nodes = entries.map((entry) => ({
+      id: entry._id.toString(),
+      data: {
+        label: entry.title,
+        type: entry.type,
+      },
+      type: 'default',
+    }));
+
+    const edges = [];
+    entries.forEach((entry) => {
+      if (entry.relations && entry.relations.length > 0) {
+        entry.relations.forEach((relation) => {
+          // Check if target entry exists in the project
+          const targetExists = entries.some(
+            (e) => e._id.toString() === relation.targetEntryId.toString()
+          );
+
+          if (targetExists) {
+            edges.push({
+              id: `${entry._id.toString()}-${relation.targetEntryId.toString()}-${relation.type}`,
+              source: entry._id.toString(),
+              target: relation.targetEntryId.toString(),
+              data: {
+                type: relation.type,
+              },
+              label: relation.type.replace('_', ' '),
+            });
+          }
+        });
+      }
+    });
+
+    console.log(`[ENTRY] Graph response: org=${orgId} project=${projectId} nodes=${nodes.length} edges=${edges.length} trace=${traceId}`);
+    if (edges.length > 0) {
+      console.log('[ENTRY] Edges:', JSON.stringify(edges.slice(0, 2), null, 2));
+    }
+
+    res.json({
+      success: true,
+      data: {
+        nodes,
+        edges,
+      },
+    });
+  } catch (error) {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    console.error(`[ENTRY] Get graph error: ${error.message} trace=${traceId}`);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
