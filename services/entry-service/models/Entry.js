@@ -85,6 +85,12 @@ const entrySchema = new mongoose.Schema(
         type: String,
       },
     ],
+    mentions: [
+      {
+        type: String,
+        ref: 'User',
+      },
+    ],
     relations: [
       {
         targetEntryId: {
@@ -120,5 +126,6 @@ entrySchema.index({ title: 'text', what: 'text', why: 'text', tags: 'text' });
 entrySchema.index({ orgId: 1, status: 1, createdAt: -1 });
 entrySchema.index({ orgId: 1, projectId: 1 });
 entrySchema.index({ orgId: 1, projectId: 1, status: 1, createdAt: -1 });
+entrySchema.index({ orgId: 1, projectId: 1, mentions: 1, createdAt: -1 });
 
 export default mongoose.model('Entry', entrySchema);

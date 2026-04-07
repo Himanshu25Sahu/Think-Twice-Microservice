@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { createEntry } from '@/redux/slices/entrySlice';
+import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Toast } from '@/components/ui/Toast';
@@ -71,10 +72,63 @@ export default function NewEntryPage() {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [mentionedUserIds, setMentionedUserIds] = useState([]);
+  const [mentionSuggestions, setMentionSuggestions] = useState([]);
+  const [mentionField, setMentionField] = useState(null);
+  const [mentionRange, setMentionRange] = useState(null);
+
+  const searchMentionUsers = async (query) => {
+    if (!query || query.length < 1) {
+      setMentionSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await api.get(`/entries/search-mentions?q=${encodeURIComponent(query)}`);
+      setMentionSuggestions(response.data?.data || []);
+    } catch {
+      setMentionSuggestions([]);
+    }
+  };
+
+  const handleMentionSelect = (member) => {
+    if (!mentionField || !mentionRange) return;
+
+    const currentValue = formData[mentionField] || '';
+    const nextValue = `${currentValue.slice(0, mentionRange.start)}${member.username}${currentValue.slice(mentionRange.end)}`;
+
+    setFormData((prev) => ({ ...prev, [mentionField]: nextValue }));
+    setMentionedUserIds((prev) => [...new Set([...prev, member._id])]);
+    setMentionSuggestions([]);
+    setMentionField(null);
+    setMentionRange(null);
+  };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, selectionStart } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name !== 'what' && name !== 'why') {
+      return;
+    }
+
+    const cursor = typeof selectionStart === 'number' ? selectionStart : value.length;
+    const beforeCursor = value.slice(0, cursor);
+    const mentionMatch = beforeCursor.match(/(^|\s)@([a-zA-Z0-9._-]*)$/);
+
+    if (!mentionMatch) {
+      setMentionSuggestions([]);
+      setMentionField(null);
+      setMentionRange(null);
+      return;
+    }
+
+    const mentionQuery = mentionMatch[2] || '';
+    const mentionStart = cursor - mentionQuery.length;
+
+    setMentionField(name);
+    setMentionRange({ start: mentionStart, end: cursor });
+    searchMentionUsers(mentionQuery);
   };
 
   const handleArrayChange = (field, index, value) => {
@@ -154,7 +208,8 @@ export default function NewEntryPage() {
       formData.dos.filter(d => d.trim()).forEach(d => submitData.append('dos[]', d));
       formData.donts.filter(d => d.trim()).forEach(d => submitData.append('donts[]', d));
       formData.tags.forEach(t => submitData.append('tags[]', t));
-      
+      mentionedUserIds.forEach((id) => submitData.append('mentionedUserIds[]', id));
+
       // Add images (prefer new multi-image upload over legacy single image)
       if (imageFiles.length > 0) {
         imageFiles.forEach((file) => submitData.append('images', file));
@@ -314,6 +369,53 @@ export default function NewEntryPage() {
         textarea.ne-input {
           resize: vertical;
           min-height: 88px;
+        }
+
+        .ne-mention-wrap {
+          position: relative;
+        }
+
+        .ne-mention-dropdown {
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: calc(100% + 0.35rem);
+          background: #101022;
+          border: 1px solid #26264a;
+          border-radius: 0.5rem;
+          z-index: 20;
+          overflow: hidden;
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+        }
+
+        .ne-mention-option {
+          width: 100%;
+          border: none;
+          background: transparent;
+          color: #d4d4e8;
+          padding: 0.5rem 0.75rem;
+          text-align: left;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.5rem;
+          cursor: pointer;
+          font-size: 0.8125rem;
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .ne-mention-option:hover {
+          background: #1b1b33;
+        }
+
+        .ne-mention-name {
+          color: #cfd0f6;
+        }
+
+        .ne-mention-username {
+          color: #7c7db0;
+          font-family: 'DM Mono', monospace;
+          font-size: 0.75rem;
         }
 
         .ne-error-msg {
@@ -777,15 +879,34 @@ export default function NewEntryPage() {
                 What happened?
                 <span className="ne-label-required">required</span>
               </label>
-              <textarea
-                name="what"
-                value={formData.what}
-                onChange={handleChange}
-                placeholder="Describe the situation or decision in plain terms..."
-                rows={3}
-                disabled={loading}
-                className={`ne-input ${fieldErrors.what ? 'ne-error' : ''}`}
-              />
+              <div className="ne-mention-wrap">
+                <textarea
+                  name="what"
+                  value={formData.what}
+                  onChange={handleChange}
+                  onBlur={() => setTimeout(() => setMentionSuggestions([]), 120)}
+                  placeholder="Describe the situation or decision in plain terms..."
+                  rows={3}
+                  disabled={loading}
+                  className={`ne-input ${fieldErrors.what ? 'ne-error' : ''}`}
+                />
+                {mentionField === 'what' && mentionSuggestions.length > 0 && (
+                  <div className="ne-mention-dropdown">
+                    {mentionSuggestions.map((member) => (
+                      <button
+                        key={member._id}
+                        type="button"
+                        className="ne-mention-option"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleMentionSelect(member)}
+                      >
+                        <span className="ne-mention-name">{member.name}</span>
+                        <span className="ne-mention-username">@{member.username}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               {fieldErrors.what && <p className="ne-error-msg">⚑ {fieldErrors.what}</p>}
             </div>
 
@@ -794,15 +915,34 @@ export default function NewEntryPage() {
                 Why?
                 <span className="ne-label-required">required</span>
               </label>
-              <textarea
-                name="why"
-                value={formData.why}
-                onChange={handleChange}
-                placeholder="Explain the reasoning and trade-offs..."
-                rows={3}
-                disabled={loading}
-                className={`ne-input ${fieldErrors.why ? 'ne-error' : ''}`}
-              />
+              <div className="ne-mention-wrap">
+                <textarea
+                  name="why"
+                  value={formData.why}
+                  onChange={handleChange}
+                  onBlur={() => setTimeout(() => setMentionSuggestions([]), 120)}
+                  placeholder="Explain the reasoning and trade-offs..."
+                  rows={3}
+                  disabled={loading}
+                  className={`ne-input ${fieldErrors.why ? 'ne-error' : ''}`}
+                />
+                {mentionField === 'why' && mentionSuggestions.length > 0 && (
+                  <div className="ne-mention-dropdown">
+                    {mentionSuggestions.map((member) => (
+                      <button
+                        key={member._id}
+                        type="button"
+                        className="ne-mention-option"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleMentionSelect(member)}
+                      >
+                        <span className="ne-mention-name">{member.name}</span>
+                        <span className="ne-mention-username">@{member.username}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               {fieldErrors.why && <p className="ne-error-msg">⚑ {fieldErrors.why}</p>}
             </div>
 

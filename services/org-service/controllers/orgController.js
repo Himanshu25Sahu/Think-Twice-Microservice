@@ -360,6 +360,91 @@ export const getOrganization = async (req, res) => {
   }
 };
 
+export const searchOrganizationMembers = async (req, res) => {
+  try {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const userId = req.headers['x-user-id'];
+    const { orgId } = req.params;
+    const q = String(req.query.q || '').trim().toLowerCase();
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User ID not provided',
+      });
+    }
+
+    const org = await Organization.findById(orgId);
+    if (!org) {
+      return res.status(404).json({
+        success: false,
+        message: 'Organization not found',
+      });
+    }
+
+    const isMember = org.members.some((member) => member.userId === userId);
+    if (org.owner !== userId && !isMember) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
+    }
+
+    const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
+    const members = await Promise.all(
+      org.members.map(async (member) => {
+        try {
+          const userResponse = await axios.get(`${authService}/auth/me`, {
+            headers: {
+              'x-trace-id': traceId,
+              'x-user-id': member.userId,
+            },
+          });
+
+          const profile = userResponse.data.data?.user || {};
+          const name = profile.name || 'Unknown';
+          const username = (name || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '.')
+            .replace(/^\.+|\.+$/g, '');
+
+          return {
+            _id: member.userId,
+            name,
+            username,
+            avatar: '',
+          };
+        } catch (error) {
+          return null;
+        }
+      })
+    );
+
+    const filteredMembers = members
+      .filter(Boolean)
+      .filter((member) => {
+        if (!q) return true;
+        return (
+          member.name.toLowerCase().includes(q) ||
+          member.username.toLowerCase().includes(q)
+        );
+      })
+      .slice(0, 8);
+
+    res.json({
+      success: true,
+      data: filteredMembers,
+    });
+  } catch (error) {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    console.error(`[ORG] Search members error: ${error.message} trace=${traceId}`);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export const switchOrganization = async (req, res) => {
   try {
     const traceId = req.headers['x-trace-id'] || 'unknown';

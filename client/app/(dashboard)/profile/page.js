@@ -36,6 +36,10 @@ export default function ProfilePage() {
     return entries.filter(e => e.authorId === user._id);
   }, [entries, user._id]);
 
+  const mentionedInEntries = useMemo(() => {
+    return entries.filter(e => e.mentions && e.mentions.includes(user._id));
+  }, [entries, user._id]);
+
   const stats = useMemo(() => {
     const totalUpvotes = myEntries.reduce((sum, e) => sum + (e.upvotes?.length || 0), 0);
     const totalDownvotes = myEntries.reduce((sum, e) => sum + (e.downvotes?.length || 0), 0);
@@ -591,6 +595,86 @@ export default function ProfilePage() {
                             <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
                           </svg>
                         </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Mentioned in entries ── */}
+          <div className="pf-card">
+            <div className="pf-card-inner">
+              <p className="pf-section-label">Mentioned In</p>
+
+              {mentionedInEntries.length === 0 ? (
+                <p className="pf-empty">no mentions yet — collaborate with your team</p>
+              ) : (
+                <div className="pf-entries-list">
+                  {mentionedInEntries.map((entry) => {
+                    const meta = TYPE_META[entry.type];
+
+                    return (
+                      <div key={entry._id} className="pf-entry-row" style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                        <Link href={`/entries/${entry._id}`} className="pf-entry-link" style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                            {/* Type dot */}
+                            {meta && (
+                              <span
+                                className="pf-entry-type-dot"
+                                style={{ background: meta.color, opacity: 0.7 }}
+                              />
+                            )}
+
+                            {/* Body */}
+                            <div className="pf-entry-body">
+                              <p className="pf-entry-title">{entry.title}</p>
+                              {entry.content && (
+                                <p className="pf-entry-preview">{entry.content}</p>
+                              )}
+                            </div>
+
+                            {/* Author name */}
+                            {entry.authorName && (
+                              <span style={{ fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#7878a0', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                by {entry.authorName}
+                              </span>
+                            )}
+
+                            {/* Vote counts */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#34d399' }}>
+                                ▲ {entry.upvotes?.length || 0}
+                              </span>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#f87171' }}>
+                                ▼ {entry.downvotes?.length || 0}
+                              </span>
+                            </div>
+
+                            {/* Type pill */}
+                            {meta && (
+                              <div
+                                className="pf-entry-pill"
+                                style={{
+                                  color: meta.color,
+                                  borderColor: `${meta.color}33`,
+                                  background: `${meta.color}0f`,
+                                }}
+                              >
+                                <span>{meta.icon}</span>
+                                <span>{entry.type.replace('-', ' ')}</span>
+                              </div>
+                            )}
+
+                            {/* Arrow */}
+                            <span className="pf-entry-arrow">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                              </svg>
+                            </span>
+                          </div>
+                        </Link>
                       </div>
                     );
                   })}

@@ -47,6 +47,15 @@ const addProjectScope = (query, projectId, defaultProjectId) => {
   return query;
 };
 
+const normalizeMentionedUserIds = (value) => {
+  const rawList = Array.isArray(value) ? value : value ? [value] : [];
+  const normalized = rawList
+    .map((item) => String(item).trim())
+    .filter(Boolean);
+
+  return [...new Set(normalized)];
+};
+
 export const getEntries = async (req, res) => {
   try {
     const traceId = req.headers['x-trace-id'] || 'unknown';
@@ -55,7 +64,7 @@ export const getEntries = async (req, res) => {
     const projectId = req.projectId;
     const defaultProjectId = req.defaultProjectId;
 
-    const { q, type, tag, page = 1, limit = 20, sort = 'newest' } = req.query;
+    const { q, type, tag, mentionedUserId, page = 1, limit = 20, sort = 'newest' } = req.query;
 
     const pageNum = Math.max(1, parseInt(page) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
@@ -64,7 +73,15 @@ export const getEntries = async (req, res) => {
     console.log(`[ENTRY] List entries: org=${orgId} project=${projectId} trace=${traceId}`);
 
     // Generate cache key
-    const cacheKey = generateCacheKey(orgId, projectId, { q, type, tag, page: pageNum, limit: limitNum, sort });
+    const cacheKey = generateCacheKey(orgId, projectId, {
+      q,
+      type,
+      tag,
+      mentionedUserId,
+      page: pageNum,
+      limit: limitNum,
+      sort,
+    });
 
     // Check cache
     const cached = await getCache(cacheKey);
@@ -96,6 +113,11 @@ export const getEntries = async (req, res) => {
     // Filter by tag
     if (tag) {
       query.tags = tag.toLowerCase();
+    }
+
+    // Filter by mentioned user
+    if (mentionedUserId) {
+      query.mentions = String(mentionedUserId).trim();
     }
 
     // Determine sort
@@ -138,6 +160,36 @@ export const getEntries = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+export const searchMentions = async (req, res) => {
+  try {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    const userId = req.headers['x-user-id'];
+    const orgId = req.orgId;
+    const { q = '' } = req.query;
+
+    const orgService = process.env.ORG_SERVICE_URL || 'http://localhost:5003';
+    const response = await axios.get(`${orgService}/org/${orgId}/members/search`, {
+      params: { q },
+      headers: {
+        'x-trace-id': traceId,
+        'x-user-id': userId,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: response.data.data || [],
+    });
+  } catch (error) {
+    const traceId = req.headers['x-trace-id'] || 'unknown';
+    console.error(`[ENTRY] Search mentions error: ${error.message} trace=${traceId}`);
+    res.status(error.response?.status || 500).json({
+      success: false,
+      message: error.response?.data?.message || 'Failed to search org members',
     });
   }
 };
@@ -196,10 +248,12 @@ export const createEntry = async (req, res) => {
     let dos = req.body['dos[]'] || req.body.dos || [];
     let donts = req.body['donts[]'] || req.body.donts || [];
     let tags = req.body['tags[]'] || req.body.tags || [];
+    let mentionedUserIds = req.body['mentionedUserIds[]'] || req.body.mentionedUserIds || [];
     // Ensure arrays (single value comes as string, not array)
     if (typeof dos === 'string') dos = [dos];
     if (typeof donts === 'string') donts = [donts];
     if (typeof tags === 'string') tags = [tags];
+    mentionedUserIds = normalizeMentionedUserIds(mentionedUserIds);
 
     console.log(`[ENTRY] Create entry: org=${orgId} project=${projectId} user=${userId} trace=${traceId}`);
 
@@ -281,6 +335,7 @@ export const createEntry = async (req, res) => {
       image: imageUrl,
       images: imageUrls,
       tags: (tags || []).map((t) => t.toLowerCase()),
+      mentions: mentionedUserIds,
       status: status || 'published',
     });
 
@@ -299,6 +354,17 @@ export const createEntry = async (req, res) => {
         type,
         title,
       });
+
+      if (mentionedUserIds.length > 0) {
+        await emitEvent('entry:mentioned', {
+          eventType: 'entry:mentioned',
+          orgId,
+          projectId,
+          entryId: entry._id.toString(),
+          mentionedUserIds,
+          authorId: userId,
+        });
+      }
     } catch (emitError) {
       console.error(`[ENTRY] Event emission failed but entry was saved: ${emitError.message} trace=${traceId}`);
       // Continue - entry was saved, just event wasn't emitted
@@ -331,6 +397,12 @@ export const updateEntry = async (req, res) => {
     const { id } = req.params;
 
     const { title, type, what, why, dos, donts, context, tags, status } = req.body;
+    const hasMentionedUserIdsField =
+      Object.prototype.hasOwnProperty.call(req.body, 'mentionedUserIds') ||
+      Object.prototype.hasOwnProperty.call(req.body, 'mentionedUserIds[]');
+    const mentionedUserIds = normalizeMentionedUserIds(
+      req.body['mentionedUserIds[]'] || req.body.mentionedUserIds
+    );
 
     console.log(`[ENTRY] Update entry: ${id} trace=${traceId}`);
 
@@ -392,6 +464,9 @@ export const updateEntry = async (req, res) => {
     if (status !== undefined && ['draft', 'published', 'archived'].includes(status)) {
       entry.status = status;
     }
+    if (hasMentionedUserIdsField) {
+      entry.mentions = mentionedUserIds;
+    }
     
     // Handle images array update
     const bodyImages = req.body['images[]'] || req.body.images;
@@ -421,6 +496,17 @@ export const updateEntry = async (req, res) => {
       projectId,
       authorId: userId,
     });
+
+    if (entry.mentions?.length > 0) {
+      await emitEvent('entry:mentioned', {
+        eventType: 'entry:mentioned',
+        orgId,
+        projectId,
+        entryId: entry._id.toString(),
+        mentionedUserIds: entry.mentions,
+        authorId: userId,
+      });
+    }
 
     console.log(`[ENTRY] Entry updated: ${id} trace=${traceId}`);
 

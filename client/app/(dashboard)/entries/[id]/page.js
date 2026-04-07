@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter, useParams } from 'next/navigation';
 import { fetchEntry, updateEntry, deleteEntry, toggleUpvote, toggleDownvote, fetchEntries } from '@/redux/slices/entrySlice';
+import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -36,6 +37,9 @@ export default function EntryDetailPage() {
   const [toast, setToast] = useState(null);
   const [editData, setEditData] = useState(null);
   const [optimisticVotes, setOptimisticVotes] = useState({ upvotes: null, downvotes: null, userUpvoted: null, userDownvoted: null });
+  const [mentionSuggestions, setMentionSuggestions] = useState([]);
+  const [mentionField, setMentionField] = useState(null);
+  const [mentionRange, setMentionRange] = useState(null);
 
   useEffect(() => {
     if (id && activeOrg && activeProject) {
@@ -46,18 +50,81 @@ export default function EntryDetailPage() {
 
   useEffect(() => {
     if (currentEntry && !editData) {
-      setEditData(currentEntry);
+      setEditData({
+        ...currentEntry,
+        mentionedUserIds: currentEntry.mentions || [],
+      });
       setOptimisticVotes({ upvotes: null, downvotes: null, userUpvoted: null, userDownvoted: null });
     }
   }, [currentEntry, editData]);
 
-  const handleEditChange = (field, value) => {
+  const searchMentionUsers = async (query) => {
+    if (!query || query.length < 1) {
+      setMentionSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await api.get(`/entries/search-mentions?q=${encodeURIComponent(query)}`);
+      setMentionSuggestions(response.data?.data || []);
+    } catch {
+      setMentionSuggestions([]);
+    }
+  };
+
+  const handleMentionSelect = (member) => {
+    if (!mentionField || !mentionRange) return;
+
+    const currentValue = editData?.[mentionField] || '';
+    const nextValue = `${currentValue.slice(0, mentionRange.start)}${member.username}${currentValue.slice(mentionRange.end)}`;
+
+    setEditData((prev) => ({
+      ...prev,
+      [mentionField]: nextValue,
+      mentionedUserIds: [...new Set([...(prev.mentionedUserIds || []), member._id])],
+    }));
+
+    setMentionSuggestions([]);
+    setMentionField(null);
+    setMentionRange(null);
+  };
+
+  const handleEditChange = (field, value, selectionStart = value.length) => {
     setEditData((prev) => ({ ...prev, [field]: value }));
+
+    if (field !== 'what' && field !== 'why') {
+      return;
+    }
+
+    const beforeCursor = value.slice(0, selectionStart);
+    const mentionMatch = beforeCursor.match(/(^|\s)@([a-zA-Z0-9._-]*)$/);
+
+    if (!mentionMatch) {
+      setMentionSuggestions([]);
+      setMentionField(null);
+      setMentionRange(null);
+      return;
+    }
+
+    const mentionQuery = mentionMatch[2] || '';
+    const mentionStart = selectionStart - mentionQuery.length;
+
+    setMentionField(field);
+    setMentionRange({ start: mentionStart, end: selectionStart });
+    searchMentionUsers(mentionQuery);
   };
 
   const handleSave = async () => {
     try {
-      const result = await dispatch(updateEntry({ id, data: { ...editData, orgId: activeOrg, projectId: activeProject } }));
+      const result = await dispatch(updateEntry({
+        id,
+        data: {
+          ...editData,
+          mentionedUserIds: editData?.mentionedUserIds || [],
+          orgId: activeOrg,
+          projectId: activeProject,
+        },
+      }));
       if (result.meta.requestStatus === 'fulfilled') {
         setToast({ type: 'success', message: 'Entry updated successfully!' });
         setIsEditing(false);
@@ -376,6 +443,53 @@ export default function EntryDetailPage() {
           box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
         }
 
+        .ed-mention-wrap {
+          position: relative;
+        }
+
+        .ed-mention-dropdown {
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: calc(100% + 0.35rem);
+          background: #101022;
+          border: 1px solid #26264a;
+          border-radius: 0.5rem;
+          z-index: 20;
+          overflow: hidden;
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+        }
+
+        .ed-mention-option {
+          width: 100%;
+          border: none;
+          background: transparent;
+          color: #d4d4e8;
+          padding: 0.5rem 0.75rem;
+          text-align: left;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.5rem;
+          cursor: pointer;
+          font-size: 0.8125rem;
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .ed-mention-option:hover {
+          background: #1b1b33;
+        }
+
+        .ed-mention-name {
+          color: #cfd0f6;
+        }
+
+        .ed-mention-username {
+          color: #7c7db0;
+          font-family: 'DM Mono', monospace;
+          font-size: 0.75rem;
+        }
+
         /* ── Dos / Donts ── */
         .ed-dos-grid {
           display: grid;
@@ -641,13 +755,32 @@ export default function EntryDetailPage() {
               <div className="ed-section">
                 <p className="ed-label">What happened?</p>
                 {isEditing ? (
-                  <textarea
-                    value={editData?.what || ''}
-                    onChange={(e) => handleEditChange('what', e.target.value)}
-                    className="ed-input"
-                    rows={4}
-                    placeholder="Describe the situation or decision..."
-                  />
+                  <div className="ed-mention-wrap">
+                    <textarea
+                      value={editData?.what || ''}
+                      onChange={(e) => handleEditChange('what', e.target.value, e.target.selectionStart)}
+                      onBlur={() => setTimeout(() => setMentionSuggestions([]), 120)}
+                      className="ed-input"
+                      rows={4}
+                      placeholder="Describe the situation or decision..."
+                    />
+                    {mentionField === 'what' && mentionSuggestions.length > 0 && (
+                      <div className="ed-mention-dropdown">
+                        {mentionSuggestions.map((member) => (
+                          <button
+                            key={member._id}
+                            type="button"
+                            className="ed-mention-option"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleMentionSelect(member)}
+                          >
+                            <span className="ed-mention-name">{member.name}</span>
+                            <span className="ed-mention-username">@{member.username}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <p className="ed-body">{currentEntry.what}</p>
                 )}
@@ -657,13 +790,32 @@ export default function EntryDetailPage() {
               <div className="ed-section">
                 <p className="ed-label">Why?</p>
                 {isEditing ? (
-                  <textarea
-                    value={editData?.why || ''}
-                    onChange={(e) => handleEditChange('why', e.target.value)}
-                    className="ed-input"
-                    rows={4}
-                    placeholder="Explain the reasoning and trade-offs..."
-                  />
+                  <div className="ed-mention-wrap">
+                    <textarea
+                      value={editData?.why || ''}
+                      onChange={(e) => handleEditChange('why', e.target.value, e.target.selectionStart)}
+                      onBlur={() => setTimeout(() => setMentionSuggestions([]), 120)}
+                      className="ed-input"
+                      rows={4}
+                      placeholder="Explain the reasoning and trade-offs..."
+                    />
+                    {mentionField === 'why' && mentionSuggestions.length > 0 && (
+                      <div className="ed-mention-dropdown">
+                        {mentionSuggestions.map((member) => (
+                          <button
+                            key={member._id}
+                            type="button"
+                            className="ed-mention-option"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleMentionSelect(member)}
+                          >
+                            <span className="ed-mention-name">{member.name}</span>
+                            <span className="ed-mention-username">@{member.username}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <p className="ed-body">{currentEntry.why}</p>
                 )}
