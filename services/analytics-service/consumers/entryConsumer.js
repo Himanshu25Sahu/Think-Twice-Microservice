@@ -9,18 +9,22 @@ const getMetricScopes = (projectId) => {
 };
 
 const getOrCreateOrgMetrics = async (orgId, projectId) => {
-  let metrics = await OrgMetrics.findOne({ orgId, projectId });
-  if (!metrics) {
-    metrics = new OrgMetrics({ orgId, projectId });
-  }
+  // Use findOneAndUpdate with upsert to avoid duplicate key errors
+  let metrics = await OrgMetrics.findOneAndUpdate(
+    { orgId, projectId },
+    { $setOnInsert: { orgId, projectId } },
+    { upsert: true, new: true }
+  );
   return metrics;
 };
 
 const getOrCreateUserActivity = async (userId, orgId, projectId) => {
-  let activity = await UserActivity.findOne({ userId, orgId, projectId });
-  if (!activity) {
-    activity = new UserActivity({ userId, orgId, projectId });
-  }
+  // Use findOneAndUpdate with upsert to avoid duplicate key errors
+  let activity = await UserActivity.findOneAndUpdate(
+    { userId, orgId, projectId },
+    { $setOnInsert: { userId, orgId, projectId } },
+    { upsert: true, new: true }
+  );
   return activity;
 };
 
@@ -33,13 +37,15 @@ const getOrCreateUserActivity = async (userId, orgId, projectId) => {
  * @param {Function} handler — Async function to handle each event
  */
 export const startConsumer = async (redisClient, streamName, groupName, consumerName, handler) => {
-  // Create consumer group (idempotent operation)
+  // Create consumer group if missing.
   try {
     await redisClient.xGroupCreate(streamName, groupName, '0', { MKSTREAM: true });
     console.log(`[ANALYTICS] 📋 Consumer group "${groupName}" created for "${streamName}"`);
   } catch (err) {
-    // BUSYGROUP error means group already exists — this is expected
-    if (!err.message.includes('BUSYGROUP')) {
+    if (err.message.includes('BUSYGROUP')) {
+      // Group already exists - keep existing offsets.
+    } else {
+      console.error(`[ANALYTICS] ❌ Error creating consumer group: ${err.message}`);
       throw err;
     }
   }
@@ -49,7 +55,7 @@ export const startConsumer = async (redisClient, streamName, groupName, consumer
   // Infinite loop consuming events
   while (true) {
     try {
-      // Read up to 10 messages, block for 5 seconds if none
+      // Read up to 10 messages, block if none.
       const results = await redisClient.xReadGroup(
         groupName,
         consumerName,
@@ -65,7 +71,7 @@ export const startConsumer = async (redisClient, streamName, groupName, consumer
         }
       );
 
-      // No new messages
+      // No new messages.
       if (!results || results.length === 0) {
         continue;
       }
@@ -86,12 +92,21 @@ export const startConsumer = async (redisClient, streamName, groupName, consumer
             await redisClient.xAck(streamName, groupName, message.id);
             console.log(`[ANALYTICS] ✅ Processed ${streamName}: ${message.id}`);
           } catch (err) {
-            console.error(`[ANALYTICS] ❌ Handler error for ${streamName}: ${err.message}`);
+            console.error(`[ANALYTICS] ❌ Handler error for ${streamName} ${message.id}: ${err.message}`);
+            console.error(`[ANALYTICS] ❌ Stack:`, err.stack);
+            // Still ACK the message to prevent stuck processing
+            try {
+              await redisClient.xAck(streamName, groupName, message.id);
+              console.log(`[ANALYTICS] ⚠️  Marked failed message as processed (ACK): ${message.id}`);
+            } catch (ackErr) {
+              console.error(`[ANALYTICS] ❌ Failed to ACK failed message: ${ackErr.message}`);
+            }
           }
         }
       }
     } catch (err) {
       console.error(`[ANALYTICS] ❌ Consumer error on ${streamName}: ${err.message}`);
+      console.error(`[ANALYTICS] Stack trace:`, err.stack);
       // Backoff 5 seconds before retrying
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
@@ -104,6 +119,12 @@ export const startConsumer = async (redisClient, streamName, groupName, consumer
  */
 export const onEntryCreated = async (data) => {
   const { entryId, orgId, projectId, authorId, type, title } = data;
+
+  // Validation - skip if missing required fields
+  if (!entryId || !orgId || !authorId || !type) {
+    console.warn(`[ANALYTICS] ⚠️  Skipping incomplete entry event. Required fields: entryId=${entryId}, orgId=${orgId}, projectId=${projectId}, authorId=${authorId}, type=${type}`);
+    return; // Skip this event but don't throw
+  }
 
   console.log(`[ANALYTICS] 📝 Entry created: ${entryId} (type: ${type}) in org ${orgId}/${normalizeProjectId(projectId) || 'aggregate'}`);
 

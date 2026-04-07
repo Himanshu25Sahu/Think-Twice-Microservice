@@ -37,7 +37,8 @@ export default function AnalyticsPage() {
     const fetchMetrics = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/analytics/org/${activeOrg}?projectId=${activeProject}`);
+        const projectQuery = activeProject ? `?projectId=${activeProject}` : '';
+        const response = await api.get(`/analytics/org/${activeOrg}${projectQuery}`);
         setMetrics(response.data.data);
       } catch (err) {
         setError('Failed to load analytics');
@@ -47,7 +48,7 @@ export default function AnalyticsPage() {
       }
     };
 
-    if (activeOrg && activeProject) {
+    if (activeOrg) {
       fetchMetrics();
     } else {
       setLoading(false);

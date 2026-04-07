@@ -290,14 +290,19 @@ export const createEntry = async (req, res) => {
     await invalidateCache(`entries:${orgId}:${projectId}:*`);
 
     // Emit event
-    await emitEvent('entry:created', {
-      entryId: entry._id.toString(),
-      orgId,
-      projectId,
-      authorId: userId,
-      type,
-      title,
-    });
+    try {
+      await emitEvent('entry:created', {
+        entryId: entry._id.toString(),
+        orgId,
+        projectId,
+        authorId: userId,
+        type,
+        title,
+      });
+    } catch (emitError) {
+      console.error(`[ENTRY] Event emission failed but entry was saved: ${emitError.message} trace=${traceId}`);
+      // Continue - entry was saved, just event wasn't emitted
+    }
 
     console.log(`[ENTRY] Entry created: ${entry._id} trace=${traceId}`);
 

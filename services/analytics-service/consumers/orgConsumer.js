@@ -21,29 +21,27 @@ export const onMemberJoined = async (data) => {
   // Store metrics for both aggregate scope AND specific projectId scope
   for (const scopeProjectId of getMetricScopes(projectId)) {
     // Get or create org metrics
-    let metrics = await OrgMetrics.findOne({ orgId, projectId: scopeProjectId });
-    if (!metrics) {
-      metrics = new OrgMetrics({ orgId, projectId: scopeProjectId });
-    }
+    let metrics = await OrgMetrics.findOneAndUpdate(
+      { orgId, projectId: scopeProjectId },
+      { $setOnInsert: { orgId, projectId: scopeProjectId } },
+      { upsert: true, new: true }
+    );
 
     // Increment total members
     metrics.totalMembers += 1;
-    metrics.lastUpdated = new Date();
-    await metrics.save();
+    await OrgMetrics.findOneAndUpdate(
+      { orgId, projectId: scopeProjectId },
+      { $set: { totalMembers: metrics.totalMembers, lastUpdated: new Date() } },
+      { new: true }
+    );
 
     // Create user activity if doesn't exist
-    const existing = await UserActivity.findOne({ userId, orgId, projectId: scopeProjectId });
-    if (!existing) {
-      const userActivity = new UserActivity({
-        userId,
-        orgId,
-        projectId: scopeProjectId,
-        entriesCreated: 0,
-        lastActive: new Date(),
-      });
-      await userActivity.save();
-      console.log(`[ANALYTICS] 📊 Created UserActivity for ${userId} in org ${orgId}/${normalizeProjectId(scopeProjectId) || 'aggregate'}`);
-    }
+    const userActivity = await UserActivity.findOneAndUpdate(
+      { userId, orgId, projectId: scopeProjectId },
+      { $setOnInsert: { userId, orgId, projectId: scopeProjectId, entriesCreated: 0, lastActive: new Date() } },
+      { upsert: true, new: true }
+    );
+    void userActivity;
   }
 
   console.log(`[ANALYTICS] 📊 Updated member count for org ${orgId}`);
