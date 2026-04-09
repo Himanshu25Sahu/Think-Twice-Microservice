@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import entryRoutes from './routes/entryRoutes.js';
 import { initCacheInvalidation } from './utils/cacheInvalidator.js';
+import { orgServiceBreaker } from './utils/circuitBreaker.js';
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.get('/health', (req, res) => {
     service: 'entry-service',
     timestamp: new Date().toISOString(),
     traceId,
+    circuitBreaker: orgServiceBreaker.getState(),
   });
 });
 
@@ -49,6 +51,7 @@ app.get('/api/health', (req, res) => {
     service: 'entry-service',
     timestamp: new Date().toISOString(),
     traceId,
+    circuitBreaker: orgServiceBreaker.getState(),
   });
 });
 

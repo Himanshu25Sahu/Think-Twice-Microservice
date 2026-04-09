@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { getCache, setCache } from '../utils/redisClient.js';
+import { orgServiceBreaker } from '../utils/circuitBreaker.js';
+import { withRetry } from '../utils/retry.js';
 
 const getProjectCacheKey = (orgId, projectId) => `org:project:${orgId}:${projectId}`;
 
@@ -62,12 +64,18 @@ export const orgAccess = async (req, res, next) => {
       // Not in cache, call org-service
       try {
         const orgService = process.env.ORG_SERVICE_URL || 'http://localhost:5003';
-        const response = await axios.get(`${orgService}/org/${orgId}`, {
-          headers: {
-            'x-trace-id': traceId,
-            'x-user-id': userId,
-          },
-        });
+        const response = await orgServiceBreaker.execute(() =>
+          withRetry(() =>
+            axios.get(`${orgService}/org/${orgId}`, {
+              headers: {
+                'x-trace-id': traceId,
+                'x-user-id': userId,
+              },
+              timeout: 5000,
+            }),
+            { maxRetries: 2, baseDelay: 100 }
+          )
+        );
 
         if (response.data.success) {
           // Find user's role in the organization
@@ -92,6 +100,25 @@ export const orgAccess = async (req, res, next) => {
           console.log(`[ENTRY] Access granted: ${userId} to ${orgId}, role=${userRole} trace=${traceId}`);
         }
       } catch (orgError) {
+        if (orgError.message.includes('Circuit breaker OPEN')) {
+          // Circuit is open — try to use cached data
+          console.log(`[ENTRY] Circuit breaker open, checking cache for ${orgId}:${userId}`);
+          const cachedRole = await getCache(cacheKey);
+          if (cachedRole && cachedRole !== 'denied') {
+            let roleData = cachedRole;
+            if (typeof cachedRole === 'string') {
+              try { roleData = JSON.parse(cachedRole); } catch { roleData = { role: cachedRole }; }
+            }
+            const normalizedRole = roleData?.role ? String(roleData.role).toLowerCase().trim() : null;
+            if (normalizedRole) {
+              req.orgId = orgId;
+              req.userRole = normalizedRole;
+              return next();
+            }
+          }
+          return res.status(503).json({ success: false, message: 'Org service temporarily unavailable' });
+        }
+
         if (orgError.response?.status === 403) {
           // Cache deny for 5 minutes
           await setCache(cacheKey, 'denied', 300);

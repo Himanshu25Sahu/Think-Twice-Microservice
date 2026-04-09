@@ -1,6 +1,7 @@
 import express from 'express';
 import * as entryController from '../controllers/entryController.js';
 import orgAccess, { requireRole } from '../middleware/orgAccess.js';
+import { idempotency } from '../middleware/idempotency.js';
 import upload from '../utils/upload.js';
 
 const router = express.Router();
@@ -14,6 +15,7 @@ router.get('/:id', orgAccess, entryController.getEntry);
 // Write operations (members and above can create)
 router.post(
 	'/',
+	idempotency,
 	orgAccess,
 	requireRole('owner', 'admin', 'member'),
 	upload.fields([

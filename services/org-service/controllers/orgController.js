@@ -4,6 +4,7 @@ import { emitEvent } from '../utils/eventEmitter.js';
 import slugify from 'slugify';
 import { randomBytes } from 'crypto';
 import axios from 'axios';
+import { withRetry } from '../utils/retry.js';
 
 const generateInviteCode = () => randomBytes(4).toString('hex').toUpperCase();
 
@@ -106,7 +107,7 @@ export const createOrganization = async (req, res) => {
     // Call auth service to add org to user
     try {
       const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
-      await axios.put(
+      await withRetry(() => axios.put(
         `${authService}/auth/add-org`,
         { userId, orgId: org._id.toString() },
         {
@@ -114,8 +115,9 @@ export const createOrganization = async (req, res) => {
             'x-trace-id': traceId,
             'Content-Type': 'application/json',
           },
+          timeout: 5000,
         }
-      );
+      ));
       console.log(`[ORG] Added org to user in auth service trace=${traceId}`);
     } catch (authError) {
       console.error(`[ORG] Auth service call failed: ${authError.message} trace=${traceId}`);
@@ -211,7 +213,7 @@ export const joinOrganization = async (req, res) => {
     // Call auth service
     try {
       const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
-      await axios.put(
+      await withRetry(() => axios.put(
         `${authService}/auth/add-org`,
         { userId, orgId: org._id.toString() },
         {
@@ -219,8 +221,9 @@ export const joinOrganization = async (req, res) => {
             'x-trace-id': traceId,
             'Content-Type': 'application/json',
           },
+          timeout: 5000,
         }
-      );
+      ));
       console.log(`[ORG] Added org to user in auth service trace=${traceId}`);
     } catch (authError) {
       console.error(`[ORG] Auth service call failed: ${authError.message} trace=${traceId}`);
@@ -322,15 +325,16 @@ export const getOrganization = async (req, res) => {
       const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
       const memberPromises = enrichedOrg.members.map(async (member) => {
         try {
-          const userResponse = await axios.get(
+          const userResponse = await withRetry(() => axios.get(
             `${authService}/auth/me`,
             {
               headers: {
                 'x-trace-id': traceId,
                 'x-user-id': member.userId,
               },
+              timeout: 5000,
             }
-          );
+          ));
           member.name = userResponse.data.data?.user?.name || 'Unknown';
           member.email = userResponse.data.data?.user?.email || 'unknown@example.com';
         } catch (err) {
@@ -394,12 +398,13 @@ export const searchOrganizationMembers = async (req, res) => {
     const members = await Promise.all(
       org.members.map(async (member) => {
         try {
-          const userResponse = await axios.get(`${authService}/auth/me`, {
+          const userResponse = await withRetry(() => axios.get(`${authService}/auth/me`, {
             headers: {
               'x-trace-id': traceId,
               'x-user-id': member.userId,
             },
-          });
+            timeout: 5000,
+          }));
 
           const profile = userResponse.data.data?.user || {};
           const name = profile.name || 'Unknown';
@@ -480,7 +485,7 @@ export const switchOrganization = async (req, res) => {
     // Call auth service to update active org
     try {
       const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
-      await axios.put(
+      await withRetry(() => axios.put(
         `${authService}/auth/update-active-org`,
         { orgId: orgId.toString() },
         {
@@ -489,8 +494,9 @@ export const switchOrganization = async (req, res) => {
             'x-user-id': userId,
             'Content-Type': 'application/json',
           },
+          timeout: 5000,
         }
-      );
+      ));
       console.log(`[ORG] Updated active org in auth service trace=${traceId}`);
     } catch (authError) {
       console.error(`[ORG] Auth service call failed: ${authError.message} trace=${traceId}`);
@@ -683,7 +689,7 @@ export const removeMember = async (req, res) => {
     // Call auth service to remove org from user
     try {
       const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
-      await axios.put(
+      await withRetry(() => axios.put(
         `${authService}/auth/remove-org`,
         { userId: memberId, orgId: org._id.toString() },
         {
@@ -691,8 +697,9 @@ export const removeMember = async (req, res) => {
             'x-trace-id': traceId,
             'Content-Type': 'application/json',
           },
+          timeout: 5000,
         }
-      );
+      ));
       console.log(`[ORG] Removed org from user in auth service trace=${traceId}`);
     } catch (authError) {
       console.error(`[ORG] Auth service call failed: ${authError.message} trace=${traceId}`);
@@ -909,7 +916,7 @@ export const switchProject = async (req, res) => {
 
     try {
       const authService = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
-      await axios.put(
+      await withRetry(() => axios.put(
         `${authService}/auth/update-active-project`,
         { projectId: projectId.toString() },
         {
@@ -918,8 +925,9 @@ export const switchProject = async (req, res) => {
             'x-user-id': userId,
             'Content-Type': 'application/json',
           },
+          timeout: 5000,
         }
-      );
+      ));
     } catch (authError) {
       console.error(`[ORG] Auth project switch failed: ${authError.message} trace=${traceId}`);
       return res.status(503).json({

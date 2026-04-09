@@ -130,13 +130,20 @@ services:
       ORG_SERVICE_URL: http://org-service:5003
       ENTRY_SERVICE_URL: http://entry-service:5002
       ANALYTICS_SERVICE_URL: http://analytics-service:5004
+      REDIS_URL: redis://redis:6379
     ports:
       - "5000:5000"
     depends_on:
-      - auth-service
-      - org-service
-      - entry-service
-      - analytics-service
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      org-service:
+        condition: service_started
+      entry-service:
+        condition: service_started
+      analytics-service:
+        condition: service_started
     networks:
       - tt-network
     restart: unless-stopped
