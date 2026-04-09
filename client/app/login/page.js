@@ -23,6 +23,25 @@ export default function LoginPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleTestLogin = () => {
+    setFormData({ email: 'himpreetak@gmail.com', password: '123456' });
+    setTimeout(() => {
+      dispatch(login({ email: 'himpreetak@gmail.com', password: '123456' })).then(async (result) => {
+        if (result.meta.requestStatus === 'fulfilled') {
+          const orgResult = await dispatch(fetchMyOrgs());
+          const preferredOrgId = orgResult.payload?.orgs?.find((org) => org._id === orgResult.payload?.preferredOrgId)?._id || orgResult.payload?.orgs?.[0]?._id;
+          if (preferredOrgId) {
+            await dispatch(initializeProjects(preferredOrgId));
+          }
+          setToast({ type: 'success', message: `Welcome back, ${result.payload.user.name}!` });
+          setTimeout(() => router.push('/dashboard'), 1000);
+        } else {
+          setToast({ type: 'error', message: result.payload?.message || 'Login failed' });
+        }
+      });
+    }, 0);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -112,12 +131,16 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Demo Credentials */}
-        <div className="mt-6 p-3 rounded bg-indigo-600/10 border border-indigo-600/20 text-indigo-400 text-sm">
-          <p className="font-semibold mb-1">Demo Credentials</p>
-          <p>Email: <code className="text-indigo-300 bg-indigo-600/20 px-1 rounded">test@example.com</code></p>
-          <p>Password: <code className="text-indigo-300 bg-indigo-600/20 px-1 rounded">password123</code></p>
-        </div>
+        {/* Test User Login */}
+        <button
+          type="button"
+          onClick={handleTestLogin}
+          disabled={loading}
+          className="mt-6 w-full flex items-center justify-center gap-2.5 p-3.5 rounded-lg bg-indigo-600/10 border border-indigo-500/25 text-indigo-300 text-sm font-medium hover:bg-indigo-600/20 hover:border-indigo-500/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          {loading ? 'Signing in…' : 'Continue as Test User'}
+        </button>
       </div>
 
       {/* Toast Notification */}
