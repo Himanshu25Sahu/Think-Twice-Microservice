@@ -57,6 +57,101 @@ app.get('/health', (req, res) => {
   });
 });
 
+// ============ KEEPALIVE ENDPOINT ============
+// Ping this endpoint periodically (e.g., via external cron job) to keep all services alive
+// Usage: GET /keepalive or POST /keepalive (no auth required)
+app.get('/keepalive', (req, res) => {
+  keepaliveHandler(req, res);
+});
+
+app.post('/keepalive', (req, res) => {
+  keepaliveHandler(req, res);
+});
+
+const keepaliveHandler = async (req, res) => {
+  const services = [
+    { name: 'auth-service', url: `${AUTH_SERVICE_URL}/health` },
+    { name: 'entry-service', url: `${ENTRY_SERVICE_URL}/health` },
+    { name: 'org-service', url: `${ORG_SERVICE_URL}/health` },
+    { name: 'analytics-service', url: `${ANALYTICS_SERVICE_URL}/health` },
+  ];
+
+  console.log(`[GATEWAY] 🔴 KEEPALIVE PING at ${new Date().toISOString()}`);
+
+  try {
+    // Ping all services concurrently with a timeout
+    const results = await Promise.all(
+      services.map(async (service) => {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout per service
+
+          const response = await fetch(service.url, {
+            method: 'GET',
+            signal: controller.signal,
+            headers: {
+              'x-trace-id': req.traceId,
+            },
+          });
+
+          clearTimeout(timeout);
+
+          if (response.ok) {
+            console.log(`[GATEWAY] ✅ ${service.name} - OK (${response.status})`);
+            return {
+              service: service.name,
+              status: 'alive',
+              statusCode: response.status,
+              timestamp: new Date().toISOString(),
+            };
+          } else {
+            console.log(`[GATEWAY] ⚠️ ${service.name} - Responded with ${response.status}`);
+            return {
+              service: service.name,
+              status: 'warning',
+              statusCode: response.status,
+              timestamp: new Date().toISOString(),
+            };
+          }
+        } catch (error) {
+          console.error(`[GATEWAY] ❌ ${service.name} - Error: ${error.message}`);
+          return {
+            service: service.name,
+            status: 'dead',
+            error: error.message,
+            timestamp: new Date().toISOString(),
+          };
+        }
+      })
+    );
+
+    const allAlive = results.every((r) => r.status === 'alive');
+
+    res.status(allAlive ? 200 : 207).json({
+      success: allAlive,
+      status: allAlive ? 'all services alive' : 'some services unreachable',
+      gateway: {
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+      },
+      services: results,
+      traceId: req.traceId,
+    });
+  } catch (error) {
+    console.error(`[GATEWAY] ❌ Keepalive handler error:`, error.message);
+    res.status(500).json({
+      success: false,
+      status: 'error',
+      message: error.message,
+      gateway: {
+        status: 'ERROR',
+        timestamp: new Date().toISOString(),
+      },
+      traceId: req.traceId,
+    });
+  }
+};
+
 // ============ ROUTING TO SERVICES ============
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:5001';
 const ENTRY_SERVICE_URL = process.env.ENTRY_SERVICE_URL || 'http://localhost:5002';
