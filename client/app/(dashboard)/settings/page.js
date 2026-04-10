@@ -76,6 +76,10 @@ export default function SettingsPage() {
   if (loading) return <Skeleton count={4} />;
 
   const isOwner = orgDetails && user && orgDetails.owner === user._id;
+  const ownerMember = orgDetails?.members?.find((member) => member.userId === orgDetails?.owner);
+  const ownerDisplay = orgDetails?.owner === user?._id
+    ? `${user?.name} (you)`
+    : ownerMember?.name || ownerMember?.email || `···${orgDetails?.owner?.slice(-6)}`;
 
   return (
     <>
@@ -103,14 +107,6 @@ export default function SettingsPage() {
           padding-bottom: 1.25rem;
           border-bottom: 1px solid #1a1a2a;
           margin-bottom: 0.25rem;
-        }
-
-        .st-page-title {
-          font-size: 1.5rem;
-          font-weight: 600;
-          color: #e4e4f0;
-          letter-spacing: -0.02em;
-          line-height: 1.2;
         }
 
         .st-page-subtitle {
@@ -352,8 +348,7 @@ export default function SettingsPage() {
 
           {/* Page header */}
           <div className="st-page-header">
-            <h1 className="st-page-title">Settings</h1>
-            <p className="st-page-subtitle">manage your organization and team</p>
+            <p className="st-page-subtitle">Manage your organization and team</p>
           </div>
 
           {/* Org details */}
@@ -369,11 +364,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="st-info-row">
                   <span className="st-info-label">owner</span>
-                  <span className="st-info-value">
-                    {orgDetails?.owner === user?._id
-                      ? `${user?.name} (you)`
-                      : `···${orgDetails?.owner?.slice(-6)}`}
-                  </span>
+                  <span className="st-info-value">{ownerDisplay}</span>
                 </div>
                 <div className="st-info-row">
                   <span className="st-info-label">created</span>

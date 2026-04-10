@@ -20,6 +20,13 @@ const generateCacheKey = (orgId, projectId, queryParams) => {
   return `entries:${orgId}:${projectId}:${hash}`;
 };
 
+const invalidateEntryAndGraphCache = async (orgId, projectId) => {
+  await Promise.all([
+    invalidateCache(`entries:${orgId}:${projectId}:*`),
+    invalidateCache(`graph:${orgId}:${projectId}`),
+  ]);
+};
+
 const isLegacyProjectEntry = (entryProjectId) => {
   return entryProjectId === undefined || entryProjectId === null || entryProjectId === '';
 };
@@ -384,8 +391,8 @@ export const createEntry = async (req, res) => {
 
     await entry.save();
 
-    // Invalidate cache
-    await invalidateCache(`entries:${orgId}:${projectId}:*`);
+    // Invalidate list + graph cache after creation (new node appears in graph)
+    await invalidateEntryAndGraphCache(orgId, projectId);
 
     // Emit event
     try {
@@ -529,8 +536,8 @@ export const updateEntry = async (req, res) => {
     entry.updatedAt = new Date();
     await entry.save();
 
-    // Invalidate cache
-    await invalidateCache(`entries:${orgId}:${projectId}:*`);
+    // Invalidate list + graph cache after update (node title/type may change)
+    await invalidateEntryAndGraphCache(orgId, projectId);
 
     // Emit event
     await emitEvent('entry:updated', {
@@ -626,8 +633,22 @@ export const deleteEntry = async (req, res) => {
     entry.status = 'archived';
     await entry.save();
 
-    // Invalidate cache
-    await invalidateCache(`entries:${orgId}:${projectId}:*`);
+    // Remove inbound relations pointing to this entry from other entries in same scope.
+    const relationCleanupQuery = {
+      orgId,
+      _id: { $ne: entry._id },
+      'relations.targetEntryId': entry._id,
+    };
+    addProjectScope(relationCleanupQuery, projectId, defaultProjectId);
+
+    await Entry.updateMany(relationCleanupQuery, {
+      $pull: {
+        relations: { targetEntryId: entry._id },
+      },
+    });
+
+    // Invalidate list + graph cache after deletion and relation cleanup
+    await invalidateEntryAndGraphCache(orgId, projectId);
 
     // Emit event
     await emitEvent('entry:deleted', {
@@ -831,6 +852,13 @@ export const addRelation = async (req, res) => {
       });
     }
 
+    if (sourceEntry.status === 'archived') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot add relation from an archived entry',
+      });
+    }
+
     // Fetch target entry
     const targetEntry = await Entry.findById(targetEntryId);
     if (!targetEntry) {
@@ -844,6 +872,13 @@ export const addRelation = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: 'Target entry not in same org/project',
+      });
+    }
+
+    if (targetEntry.status === 'archived') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot relate to an archived entry',
       });
     }
 
@@ -880,8 +915,8 @@ export const addRelation = async (req, res) => {
 
     await sourceEntry.save();
 
-    // Invalidate cache
-    await invalidateCache(`entries:${orgId}:${projectId}:*`);
+    // Invalidate list + graph cache so relation appears immediately in graph
+    await invalidateEntryAndGraphCache(orgId, projectId);
 
     // Emit event
     await emitEvent('entry:relation:changed', {
@@ -956,8 +991,8 @@ export const removeRelation = async (req, res) => {
 
     await entry.save();
 
-    // Invalidate cache
-    await invalidateCache(`entries:${orgId}:${projectId}:*`);
+    // Invalidate list + graph cache so relation removal appears immediately in graph
+    await invalidateEntryAndGraphCache(orgId, projectId);
 
     // Emit event
     await emitEvent('entry:relation:changed', {
@@ -1029,6 +1064,7 @@ export const getGraph = async (req, res) => {
       type: 'default',
     }));
 
+    const edgeIds = new Set();
     const edges = [];
     entries.forEach((entry) => {
       if (entry.relations && entry.relations.length > 0) {
@@ -1039,8 +1075,14 @@ export const getGraph = async (req, res) => {
           );
 
           if (targetExists) {
+            const edgeId = `${entry._id.toString()}-${relation.targetEntryId.toString()}-${relation.type}`;
+            if (edgeIds.has(edgeId)) {
+              return;
+            }
+            edgeIds.add(edgeId);
+
             edges.push({
-              id: `${entry._id.toString()}-${relation.targetEntryId.toString()}-${relation.type}`,
+              id: edgeId,
               source: entry._id.toString(),
               target: relation.targetEntryId.toString(),
               data: {

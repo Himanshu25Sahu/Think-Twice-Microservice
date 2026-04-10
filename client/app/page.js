@@ -1,9 +1,7 @@
 import Link from 'next/link';
 
 export default function Home() {
-  return (
-    <div className="min-h-screen bg-[#0a0a0f] text-[#e4e4e7]">
-      <style>{`
+  const homeStyles = `
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(24px); }
           to   { opacity: 1; transform: translateY(0); }
@@ -93,7 +91,11 @@ export default function Home() {
           .flow-row { flex-direction: column; align-items: stretch; }
           .flow-arr  { transform: rotate(90deg); }
         }
-      `}</style>
+      `;
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0f] text-[#e4e4e7]">
+      <style dangerouslySetInnerHTML={{ __html: homeStyles }} />
 
       {/* ── NAVBAR ── */}
       <nav className="sticky top-0 z-50 bg-[#0a0a0f]/85 backdrop-blur-md border-b border-[#1e1e2e] px-6 py-3.5">
