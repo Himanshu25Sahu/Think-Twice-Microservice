@@ -1,28 +1,67 @@
 import { redisClient } from '../utils/redisClient.js';
 
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const MAX_REQUESTS = 500; // per window per IP
+const MAX_REQUESTS = {
+  login: 120,
+  default: 500,
+};
+const RATE_LIMIT_BYPASS_PATHS = new Set(['/api/health', '/api/keepalive', '/health', '/keepalive']);
+
+const getClientIp = (req) => {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  if (typeof forwardedFor === 'string' && forwardedFor.length > 0) {
+    return forwardedFor.split(',')[0].trim();
+  }
+
+  const realIp = req.headers['x-real-ip'];
+  if (typeof realIp === 'string' && realIp.length > 0) {
+    return realIp;
+  }
+
+  const cfIp = req.headers['cf-connecting-ip'];
+  if (typeof cfIp === 'string' && cfIp.length > 0) {
+    return cfIp;
+  }
+
+  return req.ip || req.connection?.remoteAddress || 'unknown';
+};
+
+const getBucketType = (req) => {
+  if (req.method === 'POST' && req.path === '/api/auth/login') {
+    return 'login';
+  }
+  return 'default';
+};
+
+const shouldBypassRateLimit = (req) => RATE_LIMIT_BYPASS_PATHS.has(req.path);
 
 // In-memory fallback (existing logic)
 const ipMap = new Map();
 
 const inMemoryRateLimit = (req, res, next) => {
-  const ip = req.ip || req.connection.remoteAddress || 'unknown';
-  const now = Date.now();
-
-  if (!ipMap.has(ip)) {
-    ipMap.set(ip, { count: 1, resetTime: now + WINDOW_MS });
+  if (shouldBypassRateLimit(req)) {
     return next();
   }
 
-  const record = ipMap.get(ip);
+  const ip = getClientIp(req);
+  const bucketType = getBucketType(req);
+  const maxRequests = MAX_REQUESTS[bucketType] || MAX_REQUESTS.default;
+  const key = `${bucketType}:${ip}`;
+  const now = Date.now();
+
+  if (!ipMap.has(key)) {
+    ipMap.set(key, { count: 1, resetTime: now + WINDOW_MS });
+    return next();
+  }
+
+  const record = ipMap.get(key);
   if (now > record.resetTime) {
-    ipMap.set(ip, { count: 1, resetTime: now + WINDOW_MS });
+    ipMap.set(key, { count: 1, resetTime: now + WINDOW_MS });
     return next();
   }
 
   record.count++;
-  if (record.count > MAX_REQUESTS) {
+  if (record.count > maxRequests) {
     return res.status(429).json({ success: false, message: 'Too many requests' });
   }
 
@@ -30,8 +69,14 @@ const inMemoryRateLimit = (req, res, next) => {
 };
 
 const redisRateLimit = async (req, res, next) => {
-  const ip = req.ip || req.connection.remoteAddress || 'unknown';
-  const key = `ratelimit:${ip}`;
+  if (shouldBypassRateLimit(req)) {
+    return next();
+  }
+
+  const ip = getClientIp(req);
+  const bucketType = getBucketType(req);
+  const maxRequests = MAX_REQUESTS[bucketType] || MAX_REQUESTS.default;
+  const key = `ratelimit:${bucketType}:${ip}`;
   const now = Date.now();
   const windowStart = now - WINDOW_MS;
 
@@ -47,11 +92,11 @@ const redisRateLimit = async (req, res, next) => {
     const requestCount = results[2]; // zCard result
 
     // Set headers for client visibility
-    res.set('X-RateLimit-Limit', MAX_REQUESTS.toString());
-    res.set('X-RateLimit-Remaining', Math.max(0, MAX_REQUESTS - requestCount).toString());
+    res.set('X-RateLimit-Limit', maxRequests.toString());
+    res.set('X-RateLimit-Remaining', Math.max(0, maxRequests - requestCount).toString());
 
-    if (requestCount > MAX_REQUESTS) {
-      console.log(`[GATEWAY] Rate limit exceeded for ${ip}: ${requestCount}/${MAX_REQUESTS}`);
+    if (requestCount > maxRequests) {
+      console.log(`[GATEWAY] Rate limit exceeded for ${ip} (${bucketType}): ${requestCount}/${maxRequests}`);
       return res.status(429).json({
         success: false,
         message: 'Too many requests. Please try again later.',

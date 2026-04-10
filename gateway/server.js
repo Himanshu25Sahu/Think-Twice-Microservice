@@ -11,6 +11,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Respect x-forwarded-for/x-forwarded-proto when deployed behind a proxy (Vercel, Render, etc.)
+app.set('trust proxy', true);
+
 // Middleware
 app.use(
   cors({
