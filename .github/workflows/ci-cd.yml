@@ -75,6 +75,26 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed services
+        id: changes
+        run: |
+          changed=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
+          echo "Changed files:"
+          echo "$changed"
+
+          check() { echo "$changed" | grep -q "^$1" && echo "true" || echo "false"; }
+
+          echo "gateway=$(check 'gateway/')" >> $GITHUB_OUTPUT
+          echo "auth=$(check 'services/auth-service/')" >> $GITHUB_OUTPUT
+          echo "org=$(check 'services/org-service/')" >> $GITHUB_OUTPUT
+          echo "entry=$(check 'services/entry-service/')" >> $GITHUB_OUTPUT
+          echo "analytics=$(check 'services/analytics-service/')" >> $GITHUB_OUTPUT
+
       - name: Trigger Render deploy hooks
         env:
           RENDER_DEPLOY_HOOK_GATEWAY: ${{ secrets.RENDER_DEPLOY_HOOK_GATEWAY }}
@@ -82,13 +102,24 @@ jobs:
           RENDER_DEPLOY_HOOK_ORG: ${{ secrets.RENDER_DEPLOY_HOOK_ORG }}
           RENDER_DEPLOY_HOOK_ENTRY: ${{ secrets.RENDER_DEPLOY_HOOK_ENTRY }}
           RENDER_DEPLOY_HOOK_ANALYTICS: ${{ secrets.RENDER_DEPLOY_HOOK_ANALYTICS }}
+          CHANGED_GATEWAY: ${{ steps.changes.outputs.gateway }}
+          CHANGED_AUTH: ${{ steps.changes.outputs.auth }}
+          CHANGED_ORG: ${{ steps.changes.outputs.org }}
+          CHANGED_ENTRY: ${{ steps.changes.outputs.entry }}
+          CHANGED_ANALYTICS: ${{ steps.changes.outputs.analytics }}
         run: |
           trigger_hook() {
             local service="$1"
             local url="$2"
+            local changed="$3"
 
             if [ -z "$url" ]; then
               echo "Skipping ${service}: hook is not configured."
+              return 0
+            fi
+
+            if [ "$changed" != "true" ]; then
+              echo "Skipping ${service}: no changes detected."
               return 0
             fi
 
@@ -97,8 +128,8 @@ jobs:
             echo "Triggered ${service} successfully."
           }
 
-          trigger_hook "gateway" "$RENDER_DEPLOY_HOOK_GATEWAY"
-          trigger_hook "auth" "$RENDER_DEPLOY_HOOK_AUTH"
-          trigger_hook "org" "$RENDER_DEPLOY_HOOK_ORG"
-          trigger_hook "entry" "$RENDER_DEPLOY_HOOK_ENTRY"
-          trigger_hook "analytics" "$RENDER_DEPLOY_HOOK_ANALYTICS"
+          trigger_hook "gateway" "$RENDER_DEPLOY_HOOK_GATEWAY" "$CHANGED_GATEWAY"
+          trigger_hook "auth" "$RENDER_DEPLOY_HOOK_AUTH" "$CHANGED_AUTH"
+          trigger_hook "org" "$RENDER_DEPLOY_HOOK_ORG" "$CHANGED_ORG"
+          trigger_hook "entry" "$RENDER_DEPLOY_HOOK_ENTRY" "$CHANGED_ENTRY"
+          trigger_hook "analytics" "$RENDER_DEPLOY_HOOK_ANALYTICS" "$CHANGED_ANALYTICS"

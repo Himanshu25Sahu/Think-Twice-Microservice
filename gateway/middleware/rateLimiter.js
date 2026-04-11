@@ -33,7 +33,14 @@ const getBucketType = (req) => {
   return 'default';
 };
 
-const shouldBypassRateLimit = (req) => RATE_LIMIT_BYPASS_PATHS.has(req.path);
+const shouldBypassRateLimit = (req) => {
+  const normalizedPath = (req.path || '').replace(/\/$/, '');
+  return (
+    RATE_LIMIT_BYPASS_PATHS.has(normalizedPath) ||
+    normalizedPath.endsWith('/health') ||
+    normalizedPath.endsWith('/keepalive')
+  );
+};
 
 // In-memory fallback (existing logic)
 const ipMap = new Map();
