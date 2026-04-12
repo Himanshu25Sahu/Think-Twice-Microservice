@@ -4,6 +4,7 @@ import { emitEvent } from '../utils/eventEmitter.js';
 import cloudinary from '../utils/cloudinary.js';
 import crypto from 'crypto';
 import axios from 'axios';
+import { buildForwardHeaders } from '../../shared/traceHeaders.js';
 
 const sanitizeEntry = (entry) => {
   if (typeof entry.toObject === 'function') {
@@ -224,10 +225,9 @@ export const searchMentions = async (req, res) => {
     const orgService = process.env.ORG_SERVICE_URL || 'http://localhost:5003';
     const response = await axios.get(`${orgService}/org/${orgId}/members/search`, {
       params: { q },
-      headers: {
-        'x-trace-id': traceId,
+      headers: buildForwardHeaders(req, {
         'x-user-id': userId,
-      },
+      }),
     });
 
     res.json({
@@ -477,10 +477,9 @@ export const updateEntry = async (req, res) => {
       try {
         const orgService = process.env.ORG_SERVICE_URL || 'http://localhost:5003';
         const orgResponse = await axios.get(`${orgService}/org/${orgId}`, {
-          headers: {
-            'x-trace-id': traceId,
+          headers: buildForwardHeaders(req, {
             'x-user-id': userId,
-          },
+          }),
         });
 
         const userMember = orgResponse.data.data.members.find((m) => m.userId === userId);
@@ -606,10 +605,9 @@ export const deleteEntry = async (req, res) => {
       try {
         const orgService = process.env.ORG_SERVICE_URL || 'http://localhost:5003';
         const orgResponse = await axios.get(`${orgService}/org/${orgId}`, {
-          headers: {
-            'x-trace-id': traceId,
+          headers: buildForwardHeaders(req, {
             'x-user-id': userId,
-          },
+          }),
         });
 
         const userMember = orgResponse.data.data.members.find((m) => m.userId === userId);

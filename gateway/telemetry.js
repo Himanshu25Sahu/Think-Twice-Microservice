@@ -6,7 +6,7 @@ import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-node";
 
 const otelEnabled = (process.env.OTEL_ENABLED || "true").toLowerCase() !== "false";
 const jaegerEndpoint = process.env.JAEGER_ENDPOINT || "http://localhost:14268/api/traces";
-const serviceName = process.env.OTEL_SERVICE_NAME || "analytics-service";
+const serviceName = process.env.OTEL_SERVICE_NAME || "gateway";
 
 if (!otelEnabled) {
   console.log(`[telemetry] OpenTelemetry disabled for ${serviceName}`);

@@ -5,6 +5,7 @@ import slugify from 'slugify';
 import { randomBytes } from 'crypto';
 import axios from 'axios';
 import { withRetry } from '../utils/retry.js';
+import { buildForwardHeaders } from '../../shared/traceHeaders.js';
 
 const generateInviteCode = () => randomBytes(4).toString('hex').toUpperCase();
 
@@ -111,10 +112,9 @@ export const createOrganization = async (req, res) => {
         `${authService}/auth/add-org`,
         { userId, orgId: org._id.toString() },
         {
-          headers: {
-            'x-trace-id': traceId,
+          headers: buildForwardHeaders(req, {
             'Content-Type': 'application/json',
-          },
+          }),
           timeout: 5000,
         }
       ));
@@ -217,10 +217,9 @@ export const joinOrganization = async (req, res) => {
         `${authService}/auth/add-org`,
         { userId, orgId: org._id.toString() },
         {
-          headers: {
-            'x-trace-id': traceId,
+          headers: buildForwardHeaders(req, {
             'Content-Type': 'application/json',
-          },
+          }),
           timeout: 5000,
         }
       ));
@@ -328,10 +327,9 @@ export const getOrganization = async (req, res) => {
           const userResponse = await withRetry(() => axios.get(
             `${authService}/auth/me`,
             {
-              headers: {
-                'x-trace-id': traceId,
+              headers: buildForwardHeaders(req, {
                 'x-user-id': member.userId,
-              },
+              }),
               timeout: 5000,
             }
           ));
@@ -399,10 +397,9 @@ export const searchOrganizationMembers = async (req, res) => {
       org.members.map(async (member) => {
         try {
           const userResponse = await withRetry(() => axios.get(`${authService}/auth/me`, {
-            headers: {
-              'x-trace-id': traceId,
+            headers: buildForwardHeaders(req, {
               'x-user-id': member.userId,
-            },
+            }),
             timeout: 5000,
           }));
 
@@ -489,11 +486,10 @@ export const switchOrganization = async (req, res) => {
         `${authService}/auth/update-active-org`,
         { orgId: orgId.toString() },
         {
-          headers: {
-            'x-trace-id': traceId,
+          headers: buildForwardHeaders(req, {
             'x-user-id': userId,
             'Content-Type': 'application/json',
-          },
+          }),
           timeout: 5000,
         }
       ));
@@ -693,10 +689,9 @@ export const removeMember = async (req, res) => {
         `${authService}/auth/remove-org`,
         { userId: memberId, orgId: org._id.toString() },
         {
-          headers: {
-            'x-trace-id': traceId,
+          headers: buildForwardHeaders(req, {
             'Content-Type': 'application/json',
-          },
+          }),
           timeout: 5000,
         }
       ));
@@ -920,11 +915,10 @@ export const switchProject = async (req, res) => {
         `${authService}/auth/update-active-project`,
         { projectId: projectId.toString() },
         {
-          headers: {
-            'x-trace-id': traceId,
+          headers: buildForwardHeaders(req, {
             'x-user-id': userId,
             'Content-Type': 'application/json',
-          },
+          }),
           timeout: 5000,
         }
       ));

@@ -11,6 +11,15 @@
 - [x] No syntax errors detected
 - [x] All existing endpoints unchanged (backward compatible)
 
+### Tracing (gateway + services)
+- [x] Jaeger service added to `docker-compose.yml`
+- [x] Gateway telemetry bootstrap added (`gateway/telemetry.js`)
+- [x] Analytics telemetry bootstrap imported in startup path
+- [x] Shared trace header propagation helper created (`services/shared/traceHeaders.js`)
+- [x] W3C trace headers forwarded across gateway proxy routes
+- [x] Inter-service axios calls updated to forward trace context
+- [x] Unit tests added for shared trace header helper
+
 ### Frontend (client)
 - [x] Redux `entrySlice.js` - Added `resetCache` action
 - [x] Redux `entrySlice.js` - Added pagination state (`hasMore`, `cacheInvalidated`)
@@ -25,6 +34,33 @@
 ---
 
 ## Integration Testing
+
+### Tracing Validation Flow
+```
+Test T1: Jaeger Availability
+- Start stack with docker compose
+- Verify Jaeger UI at http://localhost:16686
+- Verify API returns service list at /api/services
+```
+
+```
+Test T2: Gateway Trace Header Echo
+- Call /api/health with custom x-trace-id and traceparent
+- Expected: response includes same x-trace-id header
+```
+
+```
+Test T3: Cross-Service Trace Chain
+- Trigger /entries and /org endpoints through gateway
+- Expected: Jaeger shows spans including gateway + downstream service
+- Expected: logs include same x-trace-id for correlated events
+```
+
+```
+Test T4: Automated Smoke
+- Run: ./scripts/verify-tracing.sh
+- Expected: Jaeger reachable, gateway trace headers work, service names visible
+```
 
 ### Cache Invalidation Flow
 ```

@@ -9,6 +9,19 @@ const ORG_SERVICE_URL = process.env.ORG_SERVICE_URL || 'http://localhost:5003';
 const ENTRY_SERVICE_URL = process.env.ENTRY_SERVICE_URL || 'http://localhost:5002';
 const ANALYTICS_SERVICE_URL = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:5004';
 
+const TRACE_CONTEXT_HEADERS = ['traceparent', 'tracestate', 'baggage'];
+
+const forwardTraceHeaders = (proxyReq, req) => {
+  proxyReq.setHeader('x-trace-id', req.traceId);
+
+  TRACE_CONTEXT_HEADERS.forEach((headerName) => {
+    const headerValue = req.headers[headerName];
+    if (headerValue) {
+      proxyReq.setHeader(headerName, headerValue);
+    }
+  });
+};
+
 // Auth routes — no authentication required
 router.use(
   '/auth',
@@ -19,8 +32,7 @@ router.use(
       '^/api/auth': '/auth',  // Convert /api/auth/login to /auth/login
     },
     onProxyReq: (proxyReq, req, res) => {
-      // Forward trace ID
-      proxyReq.setHeader('x-trace-id', req.traceId);
+      forwardTraceHeaders(proxyReq, req);
       
       // Forward body if present
       if (req.body) {
@@ -51,7 +63,7 @@ router.use(
       '^/api/org': '/org',  // Convert /api/org/... to /org/...
     },
     onProxyReq: (proxyReq, req, res) => {
-      proxyReq.setHeader('x-trace-id', req.traceId);
+      forwardTraceHeaders(proxyReq, req);
       proxyReq.setHeader('x-user-id', req.headers['x-user-id']);
       proxyReq.setHeader('x-user-email', req.headers['x-user-email']);
       proxyReq.setHeader('x-user-name', req.headers['x-user-name'] || '');
@@ -86,7 +98,7 @@ router.use(
       '^/api/entries': '/entries',  // Convert /api/entries/... to /entries/...
     },
     onProxyReq: (proxyReq, req, res) => {
-      proxyReq.setHeader('x-trace-id', req.traceId);
+      forwardTraceHeaders(proxyReq, req);
       proxyReq.setHeader('x-user-id', req.headers['x-user-id']);
       proxyReq.setHeader('x-user-email', req.headers['x-user-email']);
       proxyReq.setHeader('x-user-name', req.headers['x-user-name'] || '');
@@ -126,7 +138,7 @@ router.use(
       '^/api/analytics': '/analytics',  // Convert /api/analytics/... to /analytics/...
     },
     onProxyReq: (proxyReq, req, res) => {
-      proxyReq.setHeader('x-trace-id', req.traceId);
+      forwardTraceHeaders(proxyReq, req);
       proxyReq.setHeader('x-user-id', req.headers['x-user-id']);
       proxyReq.setHeader('x-user-email', req.headers['x-user-email']);
       proxyReq.setHeader('x-user-name', req.headers['x-user-name'] || '');
