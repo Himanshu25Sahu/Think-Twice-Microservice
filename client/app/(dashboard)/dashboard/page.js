@@ -91,6 +91,9 @@ export default function DashboardPage() {
     entry.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  const isInitialLoading = loading && entries.length === 0;
+  const isPaginating = loading && entries.length > 0;
+
   return (
     <>
       <style>{`
@@ -610,7 +613,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Loading skeletons (first page only) */}
-        {loading && page === 1 && (
+        {isInitialLoading && (
           <div className="db-grid">
             {[1,2,3,4,5,6].map((i) => (
               <div key={i} className="db-skeleton" />
@@ -644,7 +647,7 @@ export default function DashboardPage() {
         )}
 
         {/* Entries grid */}
-        {!loading && filteredEntries.length > 0 && (
+        {filteredEntries.length > 0 && (
           <>
             <div className="db-grid">
               {filteredEntries.map((entry) => {
@@ -716,6 +719,11 @@ export default function DashboardPage() {
                   </Link>
                 );
               })}
+
+              {/* Show placeholders only for incoming page items */}
+              {isPaginating && hasMore && [1, 2, 3].map((i) => (
+                <div key={`pagination-skeleton-${i}`} className="db-skeleton" />
+              ))}
             </div>
 
             {/* Pagination controls */}
@@ -740,41 +748,6 @@ export default function DashboardPage() {
 
             {/* Infinite scroll sentinel */}
             <div ref={endOfListRef} style={{ height: '20px', marginTop: '2rem' }} />
-
-            {/* Loading indicator for infinite scroll */}
-            {loading && page > 1 && (
-              <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                padding: '2rem',
-                gap: '0.5rem'
-              }}>
-                <div style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: '#818cf8',
-                  animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                  animationDelay: '0ms'
-                }} />
-                <div style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: '#818cf8',
-                  animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                  animationDelay: '200ms'
-                }} />
-                <div style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: '#818cf8',
-                  animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                  animationDelay: '400ms'
-                }} />
-              </div>
-            )}
           </>
         )}
       </div>
