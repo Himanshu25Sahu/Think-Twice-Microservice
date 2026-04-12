@@ -1,11 +1,19 @@
 import { redisClient } from '../utils/redisClient.js';
 
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const RATE_LIMIT_ENABLED = process.env.RATE_LIMIT_ENABLED !== 'false';
 const MAX_REQUESTS = {
-  login: 120,
-  default: 500,
+  login: Number(process.env.RATE_LIMIT_LOGIN_MAX || 1500),
+  default: Number(process.env.RATE_LIMIT_DEFAULT_MAX || 10000),
 };
-const RATE_LIMIT_BYPASS_PATHS = new Set(['/api/health', '/api/keepalive', '/health', '/keepalive']);
+const RATE_LIMIT_BYPASS_PATHS = new Set([
+  '/api/health',
+  '/api/keepalive',
+  '/health',
+  '/keepalive',
+  '/api/auth/google',
+  '/api/auth/google/callback',
+]);
 
 const getClientIp = (req) => {
   const forwardedFor = req.headers['x-forwarded-for'];
@@ -118,6 +126,10 @@ const redisRateLimit = async (req, res, next) => {
 };
 
 export const rateLimiter = (req, res, next) => {
+  if (!RATE_LIMIT_ENABLED) {
+    return next();
+  }
+
   // Use Redis if available, otherwise in-memory
   if (redisClient && redisClient.isOpen) {
     redisRateLimit(req, res, next);

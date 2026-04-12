@@ -16,6 +16,12 @@ const KEEPALIVE_INTERVAL_MS = Number(process.env.KEEPALIVE_INTERVAL_MS || 240000
 const KEEPALIVE_WAKE_RETRIES = Number(process.env.KEEPALIVE_WAKE_RETRIES || 1);
 const KEEPALIVE_RETRY_DELAY_MS = Number(process.env.KEEPALIVE_RETRY_DELAY_MS || 20000);
 const ENABLE_INTERNAL_KEEPALIVE = process.env.ENABLE_INTERNAL_KEEPALIVE === 'true';
+const KEEPALIVE_TOLERATE_WARNING_STATUS_CODES = new Set(
+  String(process.env.KEEPALIVE_TOLERATE_WARNING_STATUS_CODES || '429,502,503')
+    .split(',')
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isFinite(value))
+);
 
 // Respect x-forwarded-for/x-forwarded-proto when deployed behind a proxy (Vercel, Render, etc.)
 app.set('trust proxy', true);
@@ -248,30 +254,23 @@ const handleKeepalive = async (req, res) => {
 
   try {
     const results = await performKeepalive(traceId);
-    const allAlive = results.every((r) => r.status === 'alive');
+    const allAlive = results.every((r) => {
+      if (r.status === 'alive') return true;
+      if (r.status === 'warning' && KEEPALIVE_TOLERATE_WARNING_STATUS_CODES.has(r.statusCode)) {
+        return true;
+      }
+      return false;
+    });
 
+    // Minimal response — avoids "output too large" errors from cron services
     res.status(allAlive ? 200 : 207).json({
-      success: allAlive,
-      status: allAlive ? 'all services alive' : 'some services unreachable',
-      gateway: {
-        status: 'OK',
-        timestamp: new Date().toISOString(),
-      },
-      services: results,
-      traceId,
+      ok: allAlive,
+      ts: new Date().toISOString(),
+      services: results.map((r) => ({ name: r.service, status: r.status })),
     });
   } catch (error) {
     console.error(`[GATEWAY] ❌ Keepalive handler error:`, error.message);
-    res.status(500).json({
-      success: false,
-      status: 'error',
-      message: error.message,
-      gateway: {
-        status: 'ERROR',
-        timestamp: new Date().toISOString(),
-      },
-      traceId,
-    });
+    res.status(500).json({ ok: false, error: error.message });
   }
 };
 

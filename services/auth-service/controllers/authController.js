@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { createToken, getCookieOptions } from '../utils/jwtToken.js';
 
 const sanitizeUser = (user) => {
@@ -8,6 +9,37 @@ const sanitizeUser = (user) => {
   delete userObj.password;
   return userObj;
 };
+
+const getOAuthConfig = () => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const callbackUrl = process.env.GOOGLE_CALLBACK_URL;
+
+  if (!clientId || !clientSecret || !callbackUrl) {
+    return null;
+  }
+
+  return { clientId, clientSecret, callbackUrl };
+};
+
+const buildAuthRedirect = (state) => {
+  const oauth = getOAuthConfig();
+  if (!oauth) return null;
+
+  const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  authUrl.searchParams.set('client_id', oauth.clientId);
+  authUrl.searchParams.set('redirect_uri', oauth.callbackUrl);
+  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('scope', 'openid email profile');
+  authUrl.searchParams.set('access_type', 'offline');
+  authUrl.searchParams.set('prompt', 'select_account');
+  authUrl.searchParams.set('state', state);
+
+  return authUrl.toString();
+};
+
+const getFailureRedirectUrl = () => process.env.OAUTH_FAILURE_REDIRECT || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?oauth=error`;
+const getSuccessRedirectUrl = () => process.env.OAUTH_SUCCESS_REDIRECT || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?oauth=success`;
 
 export const register = async (req, res) => {
   try {
@@ -75,6 +107,114 @@ export const register = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+export const googleAuthStart = async (req, res) => {
+  const traceId = req.headers['x-trace-id'] || 'unknown';
+  const oauthUrl = buildAuthRedirect(traceId);
+
+  if (!oauthUrl) {
+    return res.status(500).json({
+      success: false,
+      message: 'Google OAuth is not configured',
+    });
+  }
+
+  console.log(`[AUTH] Starting Google OAuth flow trace=${traceId}`);
+  return res.redirect(oauthUrl);
+};
+
+export const googleAuthCallback = async (req, res) => {
+  const traceId = req.headers['x-trace-id'] || 'unknown';
+  const { code, error } = req.query;
+
+  if (error) {
+    console.error(`[AUTH] Google OAuth rejected: ${error} trace=${traceId}`);
+    return res.redirect(getFailureRedirectUrl());
+  }
+
+  if (!code) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing OAuth authorization code',
+    });
+  }
+
+  const oauth = getOAuthConfig();
+  if (!oauth) {
+    return res.status(500).json({
+      success: false,
+      message: 'Google OAuth is not configured',
+    });
+  }
+
+  try {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code: String(code),
+        client_id: oauth.clientId,
+        client_secret: oauth.clientSecret,
+        redirect_uri: oauth.callbackUrl,
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    if (!tokenRes.ok) {
+      const bodyText = await tokenRes.text();
+      console.error(`[AUTH] Google token exchange failed: ${tokenRes.status} ${bodyText} trace=${traceId}`);
+      return res.redirect(getFailureRedirectUrl());
+    }
+
+    const tokenData = await tokenRes.json();
+    const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+
+    if (!userInfoRes.ok) {
+      const bodyText = await userInfoRes.text();
+      console.error(`[AUTH] Google userinfo failed: ${userInfoRes.status} ${bodyText} trace=${traceId}`);
+      return res.redirect(getFailureRedirectUrl());
+    }
+
+    const userInfo = await userInfoRes.json();
+    if (!userInfo.email) {
+      console.error(`[AUTH] Google userinfo missing email trace=${traceId}`);
+      return res.redirect(getFailureRedirectUrl());
+    }
+
+    let user = await User.findOne({ email: userInfo.email.toLowerCase() }).select('+password');
+    let isNewUser = false;
+
+    if (!user) {
+      const tempPassword = crypto.randomBytes(32).toString('hex');
+      const hashedPassword = await bcryptjs.hash(tempPassword, 10);
+
+      user = new User({
+        name: userInfo.name || userInfo.email.split('@')[0],
+        email: userInfo.email.toLowerCase(),
+        password: hashedPassword,
+      });
+
+      await user.save();
+      isNewUser = true;
+      console.log(`[AUTH] Created new Google user: ${user.email} trace=${traceId}`);
+    }
+
+    const token = createToken(user);
+    res.cookie('token', token, getCookieOptions());
+
+    const successUrl = isNewUser
+      ? `${getSuccessRedirectUrl()}&new=true`
+      : getSuccessRedirectUrl();
+
+    console.log(`[AUTH] Google ${isNewUser ? 'register' : 'login'} successful: ${user.email} trace=${traceId}`);
+    return res.redirect(successUrl);
+  } catch (err) {
+    console.error(`[AUTH] Google OAuth callback error: ${err.message} trace=${traceId}`);
+    return res.redirect(getFailureRedirectUrl());
   }
 };
 

@@ -12,6 +12,8 @@ router.use((req, res, next) => {
 
 router.post('/register', authController.register);
 router.post('/login', authController.login);
+router.get('/google', authController.googleAuthStart);
+router.get('/google/callback', authController.googleAuthCallback);
 router.post('/logout', authController.logout);
 router.get('/me', authController.getMe);
 router.put('/update-active-org', authController.updateActiveOrg);
