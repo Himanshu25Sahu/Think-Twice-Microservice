@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -10,12 +10,11 @@ import { Input } from '@/components/ui/Input';
 import { Toast } from '@/components/ui/Toast';
 import { OrgOnboarding } from '@/components/onboarding/OrgOnboarding';
 import { useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
 import { checkAuth } from '@/redux/slices/authSlice';
 import { fetchMyOrgs } from '@/redux/slices/orgSlice';
 import { initializeProjects } from '@/redux/slices/projectSlice';
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const dispatch = useDispatch();
   const router = useRouter();
   const { loading, error } = useSelector((state) => state.auth);
@@ -232,5 +231,13 @@ export default function RegisterPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-primary" />}>
+      <RegisterPageContent />
+    </Suspense>
   );
 }

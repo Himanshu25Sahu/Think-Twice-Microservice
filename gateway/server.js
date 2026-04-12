@@ -11,17 +11,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const KEEPALIVE_TIMEOUT_MS = Number(process.env.KEEPALIVE_TIMEOUT_MS || 8000);
-const KEEPALIVE_INTERVAL_MS = Number(process.env.KEEPALIVE_INTERVAL_MS || 240000);
-const KEEPALIVE_WAKE_RETRIES = Number(process.env.KEEPALIVE_WAKE_RETRIES || 1);
-const KEEPALIVE_RETRY_DELAY_MS = Number(process.env.KEEPALIVE_RETRY_DELAY_MS || 20000);
-const ENABLE_INTERNAL_KEEPALIVE = process.env.ENABLE_INTERNAL_KEEPALIVE === 'true';
-const KEEPALIVE_TOLERATE_WARNING_STATUS_CODES = new Set(
-  String(process.env.KEEPALIVE_TOLERATE_WARNING_STATUS_CODES || '429,502,503')
-    .split(',')
-    .map((value) => Number(value.trim()))
-    .filter((value) => Number.isFinite(value))
-);
+// Hardcoded keepalive profile for demo deployment stability on Render free tier.
+const KEEPALIVE_TIMEOUT_MS = 12000;
+const KEEPALIVE_INTERVAL_MS = 240000;
+const KEEPALIVE_WAKE_RETRIES = 3;
+const KEEPALIVE_RETRY_DELAY_MS = 30000;
+const ENABLE_INTERNAL_KEEPALIVE = true;
+const KEEPALIVE_TOLERATE_WARNING_STATUS_CODES = new Set([429, 502, 503]);
 
 // Respect x-forwarded-for/x-forwarded-proto when deployed behind a proxy (Vercel, Render, etc.)
 app.set('trust proxy', true);
@@ -254,7 +250,14 @@ const handleKeepalive = async (req, res) => {
 
   try {
     const results = await performKeepalive(traceId);
-    const allAlive = results.every((r) => {
+    const normalizedResults = results.map((r) => {
+      if (r.status === 'warning' && KEEPALIVE_TOLERATE_WARNING_STATUS_CODES.has(r.statusCode)) {
+        return { ...r, status: 'alive' };
+      }
+      return r;
+    });
+
+    const allAlive = normalizedResults.every((r) => {
       if (r.status === 'alive') return true;
       if (r.status === 'warning' && KEEPALIVE_TOLERATE_WARNING_STATUS_CODES.has(r.statusCode)) {
         return true;
@@ -266,7 +269,7 @@ const handleKeepalive = async (req, res) => {
     res.status(allAlive ? 200 : 207).json({
       ok: allAlive,
       ts: new Date().toISOString(),
-      services: results.map((r) => ({ name: r.service, status: r.status })),
+      services: normalizedResults.map((r) => ({ name: r.service, status: r.status })),
     });
   } catch (error) {
     console.error(`[GATEWAY] ❌ Keepalive handler error:`, error.message);

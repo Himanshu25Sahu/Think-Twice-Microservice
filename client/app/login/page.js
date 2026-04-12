@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
 import Link from 'next/link';
 import { checkAuth, login } from '@/redux/slices/authSlice';
 import { fetchMyOrgs } from '@/redux/slices/orgSlice';
@@ -13,7 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { Toast } from '@/components/ui/Toast';
 import { OrgOnboarding } from '@/components/onboarding/OrgOnboarding';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -243,5 +242,13 @@ export default function LoginPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-primary" />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
