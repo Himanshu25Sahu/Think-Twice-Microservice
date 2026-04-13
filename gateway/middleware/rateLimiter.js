@@ -13,6 +13,7 @@ const RATE_LIMIT_BYPASS_PATHS = new Set([
   '/keepalive',
   '/api/auth/google',
   '/api/auth/google/callback',
+  '/api/auth/login',
 ]);
 
 const getClientIp = (req) => {
