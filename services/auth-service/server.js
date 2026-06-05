@@ -18,7 +18,7 @@ const startServer = async () => {
     console.log('✅ MongoDB Connected');
 
     // Start server
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, "0.0.0.0",() => {
       console.log('\n' + '='.repeat(60));
       console.log('✅ AUTH SERVICE READY');
       console.log('='.repeat(60));

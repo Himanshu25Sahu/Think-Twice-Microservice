@@ -5,7 +5,7 @@ import slugify from 'slugify';
 import { randomBytes } from 'crypto';
 import axios from 'axios';
 import { withRetry } from '../utils/retry.js';
-import { buildForwardHeaders } from '../../shared/traceHeaders.js';
+import { buildForwardHeaders } from '../utils/traceHeaders.js';
 
 const generateInviteCode = () => randomBytes(4).toString('hex').toUpperCase();
 

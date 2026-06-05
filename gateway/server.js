@@ -92,13 +92,12 @@ const toOrigin = (rawUrl, fallback) => {
 };
 
 const buildServiceTargets = () => {
-  const defaults = {
-    'auth-service': 'http://localhost:5001',
-    'entry-service': 'http://localhost:5002',
-    'org-service': 'http://localhost:5003',
-    'analytics-service': 'http://localhost:5004',
-  };
-
+const defaults = {
+  'auth-service': 'http://auth-service:5001',
+  'entry-service': 'http://entry-service:5002',
+  'org-service': 'http://org-service:5003',
+  'analytics-service': 'http://analytics-service:5004',
+};
   const services = [
     { name: 'auth-service', env: process.env.AUTH_SERVICE_URL },
     { name: 'entry-service', env: process.env.ENTRY_SERVICE_URL },

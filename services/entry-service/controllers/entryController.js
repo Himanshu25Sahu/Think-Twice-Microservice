@@ -4,7 +4,7 @@ import { emitEvent } from '../utils/eventEmitter.js';
 import cloudinary from '../utils/cloudinary.js';
 import crypto from 'crypto';
 import axios from 'axios';
-import { buildForwardHeaders } from '../../shared/traceHeaders.js';
+import { buildForwardHeaders } from '../utils/traceHeaders.js';
 
 const sanitizeEntry = (entry) => {
   if (typeof entry.toObject === 'function') {

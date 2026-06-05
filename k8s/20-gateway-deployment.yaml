@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: think-twice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: gateway:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PORT
+              value: "5000"
+
+            # ✅ FIX: Add JWT_SECRET
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: think-twice-secrets
+                  key: JWT_SECRET
+
+            # ✅ FIX: Add Redis
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: think-twice-secrets
+                  key: REDIS_URL
+
+            # Service URLs
+            - name: AUTH_SERVICE_URL
+              value: "http://auth-service:5001"
+            - name: ORG_SERVICE_URL
+              value: "http://org-service:5003"
+            - name: ENTRY_SERVICE_URL
+              value: "http://entry-service:5002"
+            - name: ANALYTICS_SERVICE_URL
+              value: "http://analytics-service:5004"

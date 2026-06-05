@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: entry-service
+  namespace: think-twice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: entry-service
+  template:
+    metadata:
+      labels:
+        app: entry-service
+    spec:
+      containers:
+        - name: entry-service
+          image: entry-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5002
+          env:
+            - name: PORT
+              value: "5002"
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: think-twice-secrets
+                  key: ENTRY_MONGODB_URI
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: think-twice-secrets
+                  key: REDIS_URL
+            - name: ORG_SERVICE_URL
+              value: "http://org-service:5003"

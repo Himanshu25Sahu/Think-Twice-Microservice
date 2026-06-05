@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: think-twice-config
+  namespace: think-twice
+data:
+  AUTH_SERVICE_URL: "http://auth-service:5001"
+  ORG_SERVICE_URL: "http://org-service:5003"
+  ENTRY_SERVICE_URL: "http://entry-service:5002"
+  ANALYTICS_SERVICE_URL: "http://analytics-service:5004"
+  FRONTEND_URL: "http://localhost:3000"
+  JWT_EXPIRES_IN: "3d"
+  NODE_ENV: "production"

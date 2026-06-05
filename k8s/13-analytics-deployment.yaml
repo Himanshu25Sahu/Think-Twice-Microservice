@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: think-twice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+    spec:
+      containers:
+        - name: analytics-service
+          image: analytics-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5004
+          env:
+            - name: PORT
+              value: "5004"
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: think-twice-secrets
+                  key: ANALYTICS_MONGODB_URI
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: think-twice-secrets
+                  key: REDIS_URL
