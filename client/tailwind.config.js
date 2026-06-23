@@ -7,19 +7,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#0a0a0f',
-        card: '#12121a',
-        hover: '#1a1a27',
-        deep: '#0e0e15',
-        border: '#1e1e2e',
-        'border-light': '#2a2a3e',
-        accent: '#6366f1',
-        'accent-hover': '#818cf8',
+        primary: '#FCFBF7',     // warm ivory canvas
+        card: '#FFFFFF',        // surface
+        hover: '#F2EEE4',       // subtle hover surface
+        deep: '#F2EEE4',
+        border: '#E7E2D6',      // warm hairline
+        'border-light': '#D0C9BA',
+        accent: '#2563EB',      // cobalt
+        'accent-hover': '#1D4ED8',
       },
       textColor: {
-        primary: '#e4e4e7',
-        secondary: '#71717a',
-        muted: '#52525b',
+        primary: '#18181B',     // ink
+        secondary: '#52525B',
+        muted: '#71717A',
       },
       spacing: {
         sidebar: '16rem',

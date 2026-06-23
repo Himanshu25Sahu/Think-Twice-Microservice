@@ -102,7 +102,7 @@ export function OrgOnboarding() {
             className={`flex-1 py-2 rounded-lg font-medium transition ${
               tab === 'create'
                 ? 'bg-accent text-white'
-                : 'bg-[#1a1a27] text-secondary hover:text-primary'
+                : 'bg-[#F2EEE4] text-secondary hover:text-primary'
             }`}
           >
             Create New
@@ -112,7 +112,7 @@ export function OrgOnboarding() {
             className={`flex-1 py-2 rounded-lg font-medium transition ${
               tab === 'join'
                 ? 'bg-accent text-white'
-                : 'bg-[#1a1a27] text-secondary hover:text-primary'
+                : 'bg-[#F2EEE4] text-secondary hover:text-primary'
             }`}
           >
             Join Existing

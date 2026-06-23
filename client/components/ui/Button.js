@@ -14,10 +14,10 @@ export function Button({
   const baseClasses = 'rounded-lg font-medium transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2';
   
   const variants = {
-    primary: 'bg-indigo-600 hover:bg-indigo-500 text-white',
-    secondary: 'bg-[#1a1a27] border border-[#1e1e2e] text-zinc-300 hover:bg-[#252535]',
-    ghost: 'text-zinc-400 hover:bg-[#1a1a27]',
-    danger: 'bg-red-600/10 text-red-400 hover:bg-red-600/20 border border-red-500/20',
+    primary: 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white',
+    secondary: 'bg-white border border-[#E7E2D6] text-[#18181B] hover:bg-[#F2EEE4] hover:border-[#D0C9BA]',
+    ghost: 'text-[#52525B] hover:bg-[#F2EEE4]',
+    danger: 'bg-[#FEF2F2] text-[#DC2626] hover:bg-[#FEE2E2] border border-[#FECACA]',
   };
 
   const sizes = {

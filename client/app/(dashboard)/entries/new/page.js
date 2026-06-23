@@ -13,11 +13,11 @@ import { XIcon, PlusIcon } from '@/components/icons';
 const TYPES = ['architecture', 'debugging', 'feature', 'best-practice', 'incident'];
 
 const TYPE_META = {
-  architecture: { icon: '⬡', color: '#818cf8' },
-  debugging:    { icon: '⚡', color: '#f472b6' },
-  feature:      { icon: '◈',  color: '#34d399' },
-  'best-practice': { icon: '◎', color: '#fbbf24' },
-  incident:     { icon: '⚠',  color: '#f87171' },
+  architecture: { icon: '⬡', color: '#2563EB' },
+  debugging:    { icon: '⚡', color: '#DB2777' },
+  feature:      { icon: '◈',  color: '#16A34A' },
+  'best-practice': { icon: '◎', color: '#D97706' },
+  incident:     { icon: '⚠',  color: '#DC2626' },
 };
 
 export default function NewEntryPage() {
@@ -41,7 +41,7 @@ export default function NewEntryPage() {
     return (
       <div className="max-w-2xl">
         <h1 className="text-2xl font-bold text-primary mb-4">Create New Entry</h1>
-        <p className="text-center text-zinc-400">You don't have permission to create entries. Please contact your administrator.</p>
+        <p className="text-center text-[#71717A]">You don't have permission to create entries. Please contact your administrator.</p>
       </div>
     );
   }
@@ -50,7 +50,7 @@ export default function NewEntryPage() {
     return (
       <div className="max-w-2xl">
         <h1 className="text-2xl font-bold text-primary mb-4">Create New Entry</h1>
-        <p className="text-center text-zinc-400">Select or create a project before creating entries.</p>
+        <p className="text-center text-[#71717A]">Select or create a project before creating entries.</p>
       </div>
     );
   }
@@ -255,7 +255,7 @@ export default function NewEntryPage() {
           justify-content: space-between;
           margin-bottom: 2rem;
           padding-bottom: 1.25rem;
-          border-bottom: 1px solid #1a1a2a;
+          border-bottom: 1px solid #E7E2D6;
           gap: 1rem;
         }
 
@@ -263,24 +263,25 @@ export default function NewEntryPage() {
           font-family: 'DM Sans', sans-serif;
           font-size: 1.5rem;
           font-weight: 600;
-          color: #e4e4f0;
+          color: #18181B;
           letter-spacing: -0.02em;
           line-height: 1.2;
         }
 
         .ne-page-subtitle {
           font-size: 0.8125rem;
-          color: #666688;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
           margin-top: 0.25rem;
         }
 
         .ne-form-card {
-          background: #0d0d18;
-          border: 1px solid #1a1a2a;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
           border-radius: 1rem;
           overflow: hidden;
+          box-shadow: 0 8px 24px rgba(24,24,27,0.06);
         }
 
         .ne-form-inner {
@@ -293,7 +294,7 @@ export default function NewEntryPage() {
         /* Section dividers */
         .ne-section {
           padding: 1.375rem 0;
-          border-bottom: 1px solid #13131f;
+          border-bottom: 1px solid #E7E2D6;
         }
 
         .ne-section:first-child {
@@ -311,7 +312,7 @@ export default function NewEntryPage() {
           gap: 0.375rem;
           font-size: 0.75rem;
           font-weight: 500;
-          color: #8888aa;
+          color: #71717A;
           letter-spacing: 0.06em;
           text-transform: uppercase;
           font-family: 'DM Mono', monospace;
@@ -319,12 +320,12 @@ export default function NewEntryPage() {
         }
 
         .ne-label-required {
-          color: #6366f1;
+          color: #2563EB;
           font-size: 0.625rem;
         }
 
         .ne-label-optional {
-          color: #4a4a6a;
+          color: #A1A1AA;
           font-size: 0.6875rem;
           text-transform: none;
           letter-spacing: 0;
@@ -334,12 +335,12 @@ export default function NewEntryPage() {
 
         /* Input base */
         .ne-input {
-          background: #0a0a14;
-          border: 1px solid #1e1e30;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
           border-radius: 0.5rem;
           padding: 0.6875rem 0.875rem;
           font-size: 0.875rem;
-          color: #d4d4e8;
+          color: #18181B;
           outline: none;
           width: 100%;
           transition: border-color 160ms, box-shadow 160ms;
@@ -348,17 +349,17 @@ export default function NewEntryPage() {
         }
 
         .ne-input::placeholder {
-          color: #52527a;
+          color: #A1A1AA;
         }
 
         .ne-input:focus {
-          border-color: #3b3b5c;
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+          border-color: #2563EB;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
         }
 
         .ne-input.ne-error {
-          border-color: rgba(248, 113, 113, 0.5);
-          box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.06);
+          border-color: #FECACA;
+          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
         }
 
         .ne-input:disabled {
@@ -380,19 +381,19 @@ export default function NewEntryPage() {
           left: 0;
           right: 0;
           top: calc(100% + 0.35rem);
-          background: #101022;
-          border: 1px solid #26264a;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
           border-radius: 0.5rem;
           z-index: 20;
           overflow: hidden;
-          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+          box-shadow: 0 8px 24px rgba(24,24,27,0.06);
         }
 
         .ne-mention-option {
           width: 100%;
           border: none;
           background: transparent;
-          color: #d4d4e8;
+          color: #3F3F46;
           padding: 0.5rem 0.75rem;
           text-align: left;
           display: flex;
@@ -405,15 +406,15 @@ export default function NewEntryPage() {
         }
 
         .ne-mention-option:hover {
-          background: #1b1b33;
+          background: #F2EEE4;
         }
 
         .ne-mention-name {
-          color: #cfd0f6;
+          color: #18181B;
         }
 
         .ne-mention-username {
-          color: #7c7db0;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           font-size: 0.75rem;
         }
@@ -424,7 +425,7 @@ export default function NewEntryPage() {
           gap: 0.3125rem;
           margin-top: 0.375rem;
           font-size: 0.75rem;
-          color: #f87171;
+          color: #DC2626;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
         }
@@ -442,9 +443,9 @@ export default function NewEntryPage() {
           gap: 0.4375rem;
           padding: 0.4375rem 0.75rem;
           border-radius: 0.4375rem;
-          border: 1px solid #1e1e30;
-          background: #0a0a14;
-          color: #4b4b6a;
+          border: 1px solid #E7E2D6;
+          background: #FFFFFF;
+          color: #71717A;
           font-size: 0.8125rem;
           font-family: 'DM Sans', sans-serif;
           font-weight: 400;
@@ -454,16 +455,16 @@ export default function NewEntryPage() {
         }
 
         .ne-type-btn:hover {
-          border-color: #2e2e48;
-          color: #8888aa;
-          background: #0f0f1c;
+          border-color: #D0C9BA;
+          color: #3F3F46;
+          background: #F2EEE4;
         }
 
         .ne-type-btn.active {
-          background: #0f0f20;
-          border-color: var(--type-color, #6366f1);
-          color: var(--type-color, #6366f1);
-          box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.1) inset, 0 0 12px rgba(99, 102, 241, 0.05);
+          background: #FFFFFF;
+          border-color: var(--type-color, #2563EB);
+          color: var(--type-color, #2563EB);
+          box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12) inset;
         }
 
         .ne-type-icon {
@@ -487,7 +488,7 @@ export default function NewEntryPage() {
         .ne-array-index {
           font-family: 'DM Mono', monospace;
           font-size: 0.6875rem;
-          color: #52527a;
+          color: #A1A1AA;
           text-align: right;
           flex-shrink: 0;
           user-select: none;
@@ -500,7 +501,7 @@ export default function NewEntryPage() {
           border-radius: 0.375rem;
           border: none;
           background: transparent;
-          color: #3b3b52;
+          color: #A1A1AA;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -510,8 +511,8 @@ export default function NewEntryPage() {
         }
 
         .ne-remove-btn:hover {
-          background: rgba(248, 113, 113, 0.08);
-          color: #f87171;
+          background: #FEF2F2;
+          color: #DC2626;
         }
 
         .ne-add-btn {
@@ -523,7 +524,7 @@ export default function NewEntryPage() {
           border-radius: 0.375rem;
           border: none;
           background: transparent;
-          color: #3d3d5c;
+          color: #71717A;
           font-size: 0.8125rem;
           font-family: 'DM Sans', sans-serif;
           cursor: pointer;
@@ -531,8 +532,8 @@ export default function NewEntryPage() {
         }
 
         .ne-add-btn:hover {
-          color: #6366f1;
-          background: rgba(99, 102, 241, 0.06);
+          color: #2563EB;
+          background: rgba(37, 99, 235, 0.08);
         }
 
         /* Tags */
@@ -548,11 +549,11 @@ export default function NewEntryPage() {
           align-items: center;
           gap: 0.3125rem;
           padding: 0.25rem 0.4375rem 0.25rem 0.625rem;
-          background: #12122a;
-          border: 1px solid #22224a;
+          background: rgba(37, 99, 235, 0.08);
+          border: 1px solid rgba(37, 99, 235, 0.12);
           border-radius: 9999px;
           font-size: 0.75rem;
-          color: #7878aa;
+          color: #2563EB;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
         }
@@ -566,7 +567,7 @@ export default function NewEntryPage() {
           border-radius: 9999px;
           border: none;
           background: transparent;
-          color: #4b4b6a;
+          color: #71717A;
           cursor: pointer;
           transition: color 140ms, background 140ms;
           padding: 0;
@@ -574,8 +575,8 @@ export default function NewEntryPage() {
         }
 
         .ne-tag-remove:hover {
-          color: #f87171;
-          background: rgba(248, 113, 113, 0.1);
+          color: #DC2626;
+          background: #FEF2F2;
         }
 
         /* Image upload - multiple */
@@ -592,8 +593,8 @@ export default function NewEntryPage() {
           border-radius: 0.625rem;
           overflow: hidden;
           aspect-ratio: 4 / 3;
-          border: 1px solid #1e1e30;
-          background: #0a0a12;
+          border: 1px solid #E7E2D6;
+          background: #F2EEE4;
         }
 
         .ne-image-preview {
@@ -608,9 +609,9 @@ export default function NewEntryPage() {
           position: absolute;
           top: 0.375rem;
           right: 0.375rem;
-          background: rgba(10, 10, 20, 0.9);
+          background: rgba(255, 255, 255, 0.9);
           backdrop-filter: blur(4px);
-          color: #a0a0b0;
+          color: #18181B;
           padding: 0.25rem 0.5rem;
           border-radius: 9999px;
           font-size: 0.75rem;
@@ -647,17 +648,17 @@ export default function NewEntryPage() {
           position: relative;
           width: 100%;
           padding: 2rem;
-          border: 2px dashed #22223a;
+          border: 2px dashed #D0C9BA;
           border-radius: 0.625rem;
-          background: rgba(13, 13, 24, 0.5);
+          background: #F2EEE4;
           cursor: pointer;
           transition: all 140ms;
           margin-bottom: 0.5rem;
         }
 
         .ne-file-input-label:hover {
-          border-color: #818cf8;
-          background: rgba(129, 140, 248, 0.05);
+          border-color: #2563EB;
+          background: rgba(37, 99, 235, 0.08);
         }
 
         .ne-file-input {
@@ -672,7 +673,7 @@ export default function NewEntryPage() {
         .ne-file-input-text {
           display: block;
           text-align: center;
-          color: #4b4b6a;
+          color: #71717A;
           font-size: 0.875rem;
           font-family: 'DM Sans', sans-serif;
           text-transform: slightly-small;
@@ -680,13 +681,13 @@ export default function NewEntryPage() {
 
         .ne-file-hint {
           font-size: 0.75rem;
-          color: #666688;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           margin: 0;
           font-weight: 300;
         }
-          background: #12121e;
-          color: #8888aa;
+          background: #F2EEE4;
+          color: #3F3F46;
           font-size: 0.8125rem;
           font-family: 'DM Sans', sans-serif;
           font-weight: 500;
@@ -695,9 +696,9 @@ export default function NewEntryPage() {
         }
 
         .ne-file-input::file-selector-button:hover {
-          background: #1a1a2e;
-          border-color: #3b3b5c;
-          color: #a8a8cc;
+          background: #E7E2D6;
+          border-color: #D0C9BA;
+          color: #18181B;
         }
 
         /* DOS / DONTS two-col */
@@ -713,7 +714,7 @@ export default function NewEntryPage() {
           gap: 0.375rem;
           font-size: 0.75rem;
           font-weight: 500;
-          color: #8888aa;
+          color: #71717A;
           letter-spacing: 0.06em;
           text-transform: uppercase;
           font-family: 'DM Mono', monospace;
@@ -727,15 +728,15 @@ export default function NewEntryPage() {
           flex-shrink: 0;
         }
 
-        .ne-dos-dot.green { background: #34d399; }
-        .ne-dos-dot.red   { background: #f87171; }
+        .ne-dos-dot.green { background: #16A34A; }
+        .ne-dos-dot.red   { background: #DC2626; }
 
         /* Footer */
         .ne-footer {
           display: flex;
           gap: 0.625rem;
           padding-top: 1.375rem;
-          border-top: 1px solid #13131f;
+          border-top: 1px solid #E7E2D6;
           margin-top: 1.375rem;
         }
 
@@ -743,9 +744,9 @@ export default function NewEntryPage() {
           flex: 1;
           padding: 0.6875rem 1rem;
           border-radius: 0.5rem;
-          border: 1px solid #1e1e30;
+          border: 1px solid #E7E2D6;
           background: transparent;
-          color: #8080a0;
+          color: #3F3F46;
           font-size: 0.875rem;
           font-family: 'DM Sans', sans-serif;
           font-weight: 500;
@@ -754,9 +755,9 @@ export default function NewEntryPage() {
         }
 
         .ne-btn-cancel:hover {
-          background: #0f0f1c;
-          border-color: #2a2a40;
-          color: #8888a8;
+          background: #F2EEE4;
+          border-color: #D0C9BA;
+          color: #18181B;
         }
 
         .ne-btn-cancel:disabled {
@@ -769,7 +770,7 @@ export default function NewEntryPage() {
           padding: 0.6875rem 1rem;
           border-radius: 0.5rem;
           border: none;
-          background: #6366f1;
+          background: #2563EB;
           color: white;
           font-size: 0.875rem;
           font-family: 'DM Sans', sans-serif;
@@ -783,7 +784,7 @@ export default function NewEntryPage() {
         }
 
         .ne-btn-submit:hover {
-          background: #7274f3;
+          background: #1D4ED8;
         }
 
         .ne-btn-submit:active {

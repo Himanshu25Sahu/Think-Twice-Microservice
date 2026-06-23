@@ -105,8 +105,8 @@ export default function Sidebar() {
           left: 0; top: 0;
           height: 100vh;
           width: 15rem;
-          background: #09090f;
-          border-right: 1px solid #13131e;
+          background: #FFFFFF;
+          border-right: 1px solid #E7E2D6;
           display: flex;
           flex-direction: column;
           font-family: 'DM Sans', sans-serif;
@@ -116,7 +116,7 @@ export default function Sidebar() {
         /* ── Logo ── */
         .sb-logo {
           padding: 1.25rem 1.25rem 1rem;
-          border-bottom: 1px solid #13131e;
+          border-bottom: 1px solid #E7E2D6;
           text-decoration: none;
           display: flex;
           align-items: center;
@@ -127,7 +127,7 @@ export default function Sidebar() {
           width: 1.75rem;
           height: 1.75rem;
           border-radius: 0.4rem;
-          background: linear-gradient(135deg, #3b3b7a 0%, #6366f1 100%);
+          background: #2563EB;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -138,14 +138,14 @@ export default function Sidebar() {
         .sb-logo-text {
           font-size: 0.9375rem;
           font-weight: 600;
-          color: #d4d4f0;
+          color: #18181B;
           letter-spacing: -0.02em;
         }
 
         /* ── Org switcher ── */
         .sb-org-section {
           padding: 0.75rem 0.875rem;
-          border-bottom: 1px solid #13131e;
+          border-bottom: 1px solid #E7E2D6;
         }
 
         .sb-org-btn {
@@ -163,16 +163,16 @@ export default function Sidebar() {
         }
 
         .sb-org-btn:hover {
-          background: #121220;
-          border-color: #1e1e30;
+          background: #F2EEE4;
+          border-color: #E7E2D6;
         }
 
         .sb-org-icon {
           width: 1.75rem;
           height: 1.75rem;
           border-radius: 0.375rem;
-          background: #1a1a2e;
-          border: 1px solid #252540;
+          background: rgba(37,99,235,0.08);
+          border: 1px solid #E7E2D6;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -180,7 +180,7 @@ export default function Sidebar() {
           font-size: 0.625rem;
           font-family: 'DM Mono', monospace;
           font-weight: 500;
-          color: #6366f1;
+          color: #2563EB;
           letter-spacing: 0;
         }
 
@@ -192,7 +192,7 @@ export default function Sidebar() {
         .sb-org-label {
           font-size: 0.6rem;
           font-family: 'DM Mono', monospace;
-          color: #505070;
+          color: #A1A1AA;
           letter-spacing: 0.08em;
           text-transform: uppercase;
           line-height: 1;
@@ -201,7 +201,7 @@ export default function Sidebar() {
         .sb-org-value {
           font-size: 0.8125rem;
           font-weight: 500;
-          color: #c0c0e0;
+          color: #18181B;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -209,18 +209,18 @@ export default function Sidebar() {
         }
 
         .sb-org-chevron {
-          color: #404060;
+          color: #A1A1AA;
           flex-shrink: 0;
           transition: transform 200ms, color 140ms;
         }
 
-        .sb-org-btn:hover .sb-org-chevron { color: #6060a0; }
+        .sb-org-btn:hover .sb-org-chevron { color: #2563EB; }
         .sb-org-chevron.open { transform: rotate(180deg); }
 
         .sb-org-dropdown {
           margin-top: 0.25rem;
-          background: #0f0f1a;
-          border: 1px solid #1e1e30;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
           border-radius: 0.5rem;
           overflow: hidden;
         }
@@ -236,13 +236,13 @@ export default function Sidebar() {
           cursor: pointer;
           font-size: 0.8125rem;
           font-family: 'DM Sans', sans-serif;
-          color: #a0a0c0;
+          color: #3F3F46;
           transition: background 120ms, color 120ms;
           text-align: left;
         }
 
-        .sb-org-item:hover { background: #161626; color: #d0d0f0; }
-        .sb-org-item.active { color: #8080f0; }
+        .sb-org-item:hover { background: #F2EEE4; color: #18181B; }
+        .sb-org-item.active { color: #1D4ED8; }
 
         /* ── Nav ── */
         .sb-nav {
@@ -263,19 +263,19 @@ export default function Sidebar() {
           text-decoration: none;
           font-size: 0.8375rem;
           font-weight: 400;
-          color: #666688;
+          color: #71717A;
           transition: background 130ms, color 130ms;
           position: relative;
         }
 
         .sb-nav-link:hover {
-          background: #111120;
-          color: #b0b0d8;
+          background: #F2EEE4;
+          color: #18181B;
         }
 
         .sb-nav-link.active {
-          background: #13132a;
-          color: #a0a0f0;
+          background: rgba(37,99,235,0.08);
+          color: #1D4ED8;
         }
 
         .sb-nav-link.active::before {
@@ -285,7 +285,7 @@ export default function Sidebar() {
           top: 20%;
           height: 60%;
           width: 2px;
-          background: #6366f1;
+          background: #2563EB;
           border-radius: 0 2px 2px 0;
         }
 
@@ -296,7 +296,7 @@ export default function Sidebar() {
 
         /* ── Bottom user area ── */
         .sb-bottom {
-          border-top: 1px solid #13131e;
+          border-top: 1px solid #E7E2D6;
           padding: 0.75rem 0.875rem;
           display: flex;
           flex-direction: column;
@@ -316,22 +316,22 @@ export default function Sidebar() {
         }
 
         .sb-user-card:hover {
-          background: #111120;
-          border-color: #1e1e30;
+          background: #F2EEE4;
+          border-color: #E7E2D6;
         }
 
         .sb-user-avatar {
           width: 1.875rem;
           height: 1.875rem;
           border-radius: 50%;
-          background: linear-gradient(135deg, #3b3b7a 0%, #6366f1 100%);
-          border: 1px solid rgba(99,102,241,0.25);
+          background: #2563EB;
+          border: 1px solid rgba(37,99,235,0.25);
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 0.6875rem;
           font-weight: 600;
-          color: #e0e0ff;
+          color: #FFFFFF;
           font-family: 'DM Mono', monospace;
           flex-shrink: 0;
         }
@@ -344,7 +344,7 @@ export default function Sidebar() {
         .sb-user-name {
           font-size: 0.8125rem;
           font-weight: 500;
-          color: #c0c0e0;
+          color: #18181B;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -355,7 +355,7 @@ export default function Sidebar() {
           font-size: 0.6875rem;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
-          color: #484868;
+          color: #A1A1AA;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -363,13 +363,13 @@ export default function Sidebar() {
         }
 
         .sb-user-arrow {
-          color: #303050;
+          color: #A1A1AA;
           flex-shrink: 0;
           transition: color 140ms, transform 140ms;
         }
 
         .sb-user-card:hover .sb-user-arrow {
-          color: #6366f1;
+          color: #2563EB;
           transform: translateX(2px);
         }
 
@@ -385,15 +385,15 @@ export default function Sidebar() {
           font-size: 0.8375rem;
           font-family: 'DM Sans', sans-serif;
           font-weight: 400;
-          color: #555570;
+          color: #71717A;
           transition: background 130ms, color 130ms;
           width: 100%;
           text-align: left;
         }
 
         .sb-logout-btn:hover {
-          background: #1f0e0e;
-          color: #f87171;
+          background: #FEF2F2;
+          color: #DC2626;
         }
       `}</style>
 

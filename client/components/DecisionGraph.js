@@ -35,10 +35,10 @@ const RELATION_LABELS = {
 
 function Node({ data }) {
   return (
-    <div className="px-4 py-3 rounded-lg border-2 bg-slate-800 border-slate-600 shadow-lg">
+    <div className="px-4 py-3 rounded-lg border-2 bg-white border-[#E7E2D6] shadow-[0_8px_24px_rgba(24,24,27,0.08)]">
       <Handle type="target" position={Position.Top} />
-      <div className="text-xs font-bold text-slate-300 mb-1">{data.type}</div>
-      <div className="text-sm text-slate-100 font-medium truncate max-w-xs">{data.label}</div>
+      <div className="text-xs font-bold text-[#71717A] mb-1">{data.type}</div>
+      <div className="text-sm text-[#18181B] font-medium truncate max-w-xs">{data.label}</div>
       <Handle type="source" position={Position.Bottom} />
     </div>
   );
@@ -145,11 +145,11 @@ export default function DecisionGraph() {
         ...node,
         style: {
           ...node.style,
-          border: isSource ? '2px solid #22c55e' : isTarget ? '2px solid #60a5fa' : undefined,
+          border: isSource ? '2px solid #16A34A' : isTarget ? '2px solid #2563EB' : undefined,
           boxShadow: isSource
-            ? '0 0 0 3px rgba(34,197,94,0.25)'
+            ? '0 0 0 3px rgba(22,163,74,0.20)'
             : isTarget
-              ? '0 0 0 3px rgba(96,165,250,0.22)'
+              ? '0 0 0 3px rgba(37,99,235,0.18)'
               : undefined,
         },
       };
@@ -289,8 +289,8 @@ export default function DecisionGraph() {
 
   if (loading) {
     return (
-      <div className="w-full h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-slate-300">
+      <div className="w-full h-screen bg-[#FCFBF7] flex items-center justify-center">
+        <div className="text-[#3F3F46]">
           <div className="animate-spin text-2xl mb-4">⚙️</div>
           <p>Loading decision graph...</p>
         </div>
@@ -300,10 +300,10 @@ export default function DecisionGraph() {
 
   if (error) {
     return (
-      <div className="w-full h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-slate-400">
+      <div className="w-full h-screen bg-[#FCFBF7] flex items-center justify-center">
+        <div className="text-[#71717A]">
           <p className="mb-2">❌ {error}</p>
-          <Link href="/login" className="text-blue-400 hover:underline text-sm">
+          <Link href="/login" className="text-[#2563EB] hover:underline text-sm">
             Return to dashboard
           </Link>
         </div>
@@ -312,10 +312,10 @@ export default function DecisionGraph() {
   }
 
   return (
-    <div className="w-full h-screen bg-slate-900 flex">
+    <div className="w-full h-screen bg-[#FCFBF7] flex">
       <div className="flex-1 relative">
         {selectedEdge && (
-          <div className="absolute top-4 left-4 z-20 bg-slate-800/95 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-200 shadow-lg">
+          <div className="absolute top-4 left-4 z-20 bg-white/95 border border-[#E7E2D6] rounded-lg px-3 py-2 text-xs text-[#3F3F46] shadow-[0_8px_24px_rgba(24,24,27,0.08)]">
             <div className="mb-2">
               Selected relation: <span className="font-semibold">{RELATION_LABELS[selectedEdge.data?.type] || selectedEdge.data?.type}</span>
             </div>
@@ -344,49 +344,49 @@ export default function DecisionGraph() {
           minZoom={0.2}
           maxZoom={1.8}
         >
-          <Background className="bg-slate-950" />
-          <Controls className="bg-slate-800 border-slate-700" />
-          <MiniMap className="bg-slate-800 border-slate-700" />
+          <Background className="bg-[#FCFBF7]" color="#E7E2D6" />
+          <Controls className="bg-white border-[#E7E2D6]" />
+          <MiniMap className="bg-white border-[#E7E2D6]" maskColor="rgba(242,238,228,0.6)" nodeColor="#D0C9BA" />
         </ReactFlow>
       </div>
 
-      <div className="w-80 bg-slate-800 border-l border-slate-700 overflow-y-auto">
-        <div className="p-6 border-b border-slate-700">
-          <h2 className="text-xl font-bold text-slate-100 mb-4">Decision Graph</h2>
+      <div className="w-80 bg-white border-l border-[#E7E2D6] overflow-y-auto">
+        <div className="p-6 border-b border-[#E7E2D6]">
+          <h2 className="text-xl font-bold text-[#18181B] mb-4">Decision Graph</h2>
 
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-slate-700 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-slate-200">{allNodes.length}</div>
-              <div className="text-xs text-slate-400 mt-1">Decisions</div>
+            <div className="bg-[#F2EEE4] p-4 rounded-lg">
+              <div className="text-2xl font-bold text-[#18181B]">{allNodes.length}</div>
+              <div className="text-xs text-[#71717A] mt-1">Decisions</div>
             </div>
-            <div className="bg-slate-700 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-slate-200">{filteredEdges.length}</div>
-              <div className="text-xs text-slate-400 mt-1">Relations</div>
+            <div className="bg-[#F2EEE4] p-4 rounded-lg">
+              <div className="text-2xl font-bold text-[#18181B]">{filteredEdges.length}</div>
+              <div className="text-xs text-[#71717A] mt-1">Relations</div>
             </div>
           </div>
 
           <div className="mb-6">
-            <label className="block text-xs font-semibold text-slate-300 mb-3 uppercase">
+            <label className="block text-xs font-semibold text-[#3F3F46] mb-3 uppercase">
               Filter Relations
             </label>
             <div className="space-y-2">
               <div
-                className="flex items-center gap-2 p-2 hover:bg-slate-700 rounded cursor-pointer"
+                className="flex items-center gap-2 p-2 hover:bg-[#F2EEE4] rounded cursor-pointer"
                 onClick={() => setFilterType('all')}
               >
-                <div className="w-3 h-3 rounded-full bg-slate-500"></div>
-                <span className={`text-sm ${filterType === 'all' ? 'text-slate-100 font-semibold' : 'text-slate-400'}`}>
+                <div className="w-3 h-3 rounded-full bg-[#A1A1AA]"></div>
+                <span className={`text-sm ${filterType === 'all' ? 'text-[#18181B] font-semibold' : 'text-[#71717A]'}`}>
                   All Relations
                 </span>
               </div>
               {Object.entries(RELATION_COLORS).map(([key, color]) => (
                 <div
                   key={key}
-                  className="flex items-center gap-2 p-2 hover:bg-slate-700 rounded cursor-pointer"
+                  className="flex items-center gap-2 p-2 hover:bg-[#F2EEE4] rounded cursor-pointer"
                   onClick={() => setFilterType(key)}
                 >
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }}></div>
-                  <span className={`text-sm ${filterType === key ? 'text-slate-100 font-semibold' : 'text-slate-400'}`}>
+                  <span className={`text-sm ${filterType === key ? 'text-[#18181B] font-semibold' : 'text-[#71717A]'}`}>
                     {RELATION_LABELS[key]}
                   </span>
                 </div>
@@ -394,7 +394,7 @@ export default function DecisionGraph() {
             </div>
           </div>
 
-          <div className="mb-6 pb-6 border-t border-slate-700 pt-6">
+          <div className="mb-6 pb-6 border-t border-[#E7E2D6] pt-6">
             {!isCreatingRelation ? (
               <button
                 onClick={() => {
@@ -408,27 +408,27 @@ export default function DecisionGraph() {
                 ➕ Create Relation
               </button>
             ) : (
-              <div className="bg-slate-700 p-4 rounded-lg">
+              <div className="bg-[#F2EEE4] p-4 rounded-lg">
                 {relationError && (
-                  <div className="mb-3 bg-red-500/10 border border-red-500/30 text-red-300 text-xs rounded p-2">
+                  <div className="mb-3 bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] text-xs rounded p-2">
                     {relationError}
                   </div>
                 )}
 
                 {relationSuccess && (
-                  <div className="mb-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs rounded p-2">
+                  <div className="mb-3 bg-[#F0FDF4] border border-[#BBF7D0] text-[#16A34A] text-xs rounded p-2">
                     {relationSuccess}
                   </div>
                 )}
 
                 <div className="mb-3">
-                  <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase">
+                  <label className="block text-xs font-semibold text-[#3F3F46] mb-2 uppercase">
                     Relation Type
                   </label>
                   <select
                     value={relationType}
                     onChange={(e) => setRelationType(e.target.value)}
-                    className="w-full bg-slate-600 border border-slate-500 text-slate-100 px-3 py-2 rounded text-sm focus:outline-none focus:border-blue-500"
+                    className="w-full bg-white border border-[#E7E2D6] text-[#18181B] px-3 py-2 rounded text-sm focus:outline-none focus:border-[#2563EB]"
                     disabled={isSubmittingRelation || isDeletingRelation}
                   >
                     {Object.entries(RELATION_LABELS).map(([key, label]) => (
@@ -437,27 +437,27 @@ export default function DecisionGraph() {
                   </select>
                 </div>
 
-                <div className="mb-3 text-xs text-slate-300 bg-slate-800 border border-slate-600 rounded p-2">
+                <div className="mb-3 text-xs text-[#3F3F46] bg-white border border-[#E7E2D6] rounded p-2">
                   Click source node, then target node on the graph to create instantly.
                   Click the same source again to clear selection.
                 </div>
 
-                <div className="mb-3 text-xs text-slate-400">
-                  Source: <span className="text-green-300">{nodeOptions.find((n) => n.id === relationSourceId)?.label || 'Not selected'}</span>
+                <div className="mb-3 text-xs text-[#71717A]">
+                  Source: <span className="text-[#16A34A]">{nodeOptions.find((n) => n.id === relationSourceId)?.label || 'Not selected'}</span>
                 </div>
 
-                <div className="mb-3 text-xs text-slate-400">
-                  Target: <span className="text-blue-300">{nodeOptions.find((n) => n.id === relationTargetId)?.label || 'Not selected'}</span>
+                <div className="mb-3 text-xs text-[#71717A]">
+                  Target: <span className="text-[#2563EB]">{nodeOptions.find((n) => n.id === relationTargetId)?.label || 'Not selected'}</span>
                 </div>
 
                 <div className="mb-3">
-                  <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase">
+                  <label className="block text-xs font-semibold text-[#3F3F46] mb-2 uppercase">
                     Source Entry
                   </label>
                   <select
                     value={relationSourceId}
                     onChange={(e) => setRelationSourceId(e.target.value)}
-                    className="w-full bg-slate-600 border border-slate-500 text-slate-100 px-3 py-2 rounded text-sm focus:outline-none focus:border-blue-500"
+                    className="w-full bg-white border border-[#E7E2D6] text-[#18181B] px-3 py-2 rounded text-sm focus:outline-none focus:border-[#2563EB]"
                     disabled={isSubmittingRelation || isDeletingRelation}
                   >
                     <option value="">Select source</option>
@@ -468,13 +468,13 @@ export default function DecisionGraph() {
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase">
+                  <label className="block text-xs font-semibold text-[#3F3F46] mb-2 uppercase">
                     Target Entry
                   </label>
                   <select
                     value={relationTargetId}
                     onChange={(e) => setRelationTargetId(e.target.value)}
-                    className="w-full bg-slate-600 border border-slate-500 text-slate-100 px-3 py-2 rounded text-sm focus:outline-none focus:border-blue-500"
+                    className="w-full bg-white border border-[#E7E2D6] text-[#18181B] px-3 py-2 rounded text-sm focus:outline-none focus:border-[#2563EB]"
                     disabled={isSubmittingRelation || isDeletingRelation}
                   >
                     <option value="">Select target</option>
@@ -492,7 +492,7 @@ export default function DecisionGraph() {
                       setRelationTargetId('');
                       setRelationError('');
                     }}
-                    className="flex-1 bg-slate-600 hover:bg-slate-500 text-slate-200 px-3 py-2 rounded text-sm font-semibold transition-colors"
+                    className="flex-1 bg-[#F2EEE4] hover:bg-[#E7E2D6] text-[#3F3F46] px-3 py-2 rounded text-sm font-semibold transition-colors"
                     disabled={isSubmittingRelation || isDeletingRelation}
                   >
                     Cancel
@@ -523,24 +523,24 @@ export default function DecisionGraph() {
 
         {selectedNode ? (
           <div className="p-6">
-            <h3 className="font-bold text-slate-100 mb-4">Selected Decision</h3>
-            <div className="bg-slate-700 p-4 rounded-lg mb-4">
-              <div className="text-xs font-semibold text-slate-400 mb-2 uppercase">Type</div>
-              <div className="text-slate-100 text-sm mb-4">{selectedNode.data.type}</div>
+            <h3 className="font-bold text-[#18181B] mb-4">Selected Decision</h3>
+            <div className="bg-[#F2EEE4] p-4 rounded-lg mb-4">
+              <div className="text-xs font-semibold text-[#71717A] mb-2 uppercase">Type</div>
+              <div className="text-[#18181B] text-sm mb-4">{selectedNode.data.type}</div>
 
-              <div className="text-xs font-semibold text-slate-400 mb-2 uppercase">Title</div>
-              <div className="text-slate-100 text-sm mb-4">{selectedNode.data.label}</div>
+              <div className="text-xs font-semibold text-[#71717A] mb-2 uppercase">Title</div>
+              <div className="text-[#18181B] text-sm mb-4">{selectedNode.data.label}</div>
 
               <Link
                 href={`/entries/${selectedNode.id}`}
-                className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold transition-colors"
+                className="inline-block bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-2 rounded text-sm font-semibold transition-colors"
               >
                 View Full Entry →
               </Link>
             </div>
 
             <div>
-              <h4 className="font-semibold text-slate-100 mb-3">Impact Map</h4>
+              <h4 className="font-semibold text-[#18181B] mb-3">Impact Map</h4>
               <div className="space-y-2">
                 {selectedNodeEdges.length > 0 ? (
                   selectedNodeEdges.map((edge) => {
@@ -549,32 +549,32 @@ export default function DecisionGraph() {
                     const isOutgoing = edge.source === selectedNode.id;
 
                     return (
-                      <div key={edge.id} className="bg-slate-700 p-3 rounded text-sm">
+                      <div key={edge.id} className="bg-[#F2EEE4] p-3 rounded text-sm">
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <div className="flex items-center gap-2 min-w-0">
                             <div
                               className="w-2 h-2 rounded-full"
                               style={{ backgroundColor: RELATION_COLORS[edge.data?.type] }}
                             ></div>
-                            <span className="text-xs font-semibold text-slate-400 uppercase">
+                            <span className="text-xs font-semibold text-[#71717A] uppercase">
                               {isOutgoing ? '→' : '←'} {RELATION_LABELS[edge.data?.type]}
                             </span>
                           </div>
                           <button
                             onClick={() => deleteExistingRelation(edge)}
                             disabled={isDeletingRelation || isSubmittingRelation}
-                            className="text-[11px] text-red-300 hover:text-red-200 border border-red-500/30 hover:border-red-400/40 rounded px-2 py-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="text-[11px] text-[#DC2626] hover:text-[#B91C1C] border border-[#FECACA] hover:border-[#DC2626] rounded px-2 py-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Delete relation"
                           >
                             {isDeletingRelation ? 'Deleting...' : 'Delete'}
                           </button>
                         </div>
-                        <div className="text-slate-200">{relatedNode?.data.label}</div>
+                        <div className="text-[#3F3F46]">{relatedNode?.data.label}</div>
                       </div>
                     );
                   })
                 ) : (
-                  <div className="bg-slate-700 p-3 rounded text-sm text-slate-300">
+                  <div className="bg-[#F2EEE4] p-3 rounded text-sm text-[#3F3F46]">
                     No related decisions under current filter.
                   </div>
                 )}
@@ -582,9 +582,9 @@ export default function DecisionGraph() {
             </div>
           </div>
         ) : (
-          <div className="p-6 text-slate-400 text-sm">
+          <div className="p-6 text-[#71717A] text-sm">
             <p>Click on a decision node to view details and its impact map.</p>
-            {projectId ? <p className="mt-2 text-xs text-slate-500">Project: {projectId}</p> : null}
+            {projectId ? <p className="mt-2 text-xs text-[#A1A1AA]">Project: {projectId}</p> : null}
           </div>
         )}
       </div>

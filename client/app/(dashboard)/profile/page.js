@@ -9,11 +9,11 @@ import { ProfileSkeleton } from '@/components/ui/ProfileSkeleton';
 import { Badge } from '@/components/ui/Badge';
 
 const TYPE_META = {
-  architecture:    { icon: '⬡', color: '#818cf8' },
-  debugging:       { icon: '⚡', color: '#f472b6' },
-  feature:         { icon: '◈',  color: '#34d399' },
-  'best-practice': { icon: '◎', color: '#fbbf24' },
-  incident:        { icon: '⚠',  color: '#f87171' },
+  architecture:    { icon: '⬡', color: '#2563EB' },
+  debugging:       { icon: '⚡', color: '#DB2777' },
+  feature:         { icon: '◈',  color: '#16A34A' },
+  'best-practice': { icon: '◎', color: '#D97706' },
+  incident:        { icon: '⚠',  color: '#DC2626' },
 };
 
 export default function ProfilePage() {
@@ -101,10 +101,11 @@ export default function ProfilePage() {
 
         /* ── Card base ── */
         .pf-card {
-          background: #0d0d18;
-          border: 1px solid #1a1a2a;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
           border-radius: 1rem;
           overflow: hidden;
+          box-shadow: 0 8px 24px rgba(24,24,27,0.06);
         }
 
         .pf-card-inner {
@@ -114,7 +115,7 @@ export default function ProfilePage() {
         .pf-section-label {
           font-size: 0.6875rem;
           font-weight: 500;
-          color: #8888aa;
+          color: #71717A;
           letter-spacing: 0.07em;
           text-transform: uppercase;
           font-family: 'DM Mono', monospace;
@@ -132,33 +133,33 @@ export default function ProfilePage() {
           width: 3rem;
           height: 3rem;
           border-radius: 9999px;
-          background: linear-gradient(135deg, #3b3b7a 0%, #6366f1 100%);
+          background: #2563EB;
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 1rem;
           font-weight: 600;
-          color: #e0e0ff;
+          color: #FFFFFF;
           font-family: 'DM Mono', monospace;
           flex-shrink: 0;
-          border: 1px solid rgba(99,102,241,0.25);
+          border: 1px solid rgba(37,99,235,0.25);
         }
 
         .pf-user-name {
           font-size: 1.125rem;
           font-weight: 600;
-          color: #e4e4f0;
+          color: #18181B;
           letter-spacing: -0.015em;
           line-height: 1.25;
         }
 
         .pf-user-email {
           font-size: 0.8rem;
-          color: #7070988;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
           margin-top: 0.125rem;
-          color: #7878a0;
+          color: #71717A;
         }
 
         .pf-org-badge {
@@ -167,21 +168,21 @@ export default function ProfilePage() {
           gap: 0.3rem;
           margin-top: 0.375rem;
           padding: 0.1875rem 0.5rem;
-          background: #12122a;
-          border: 1px solid #22224a;
+          background: rgba(37,99,235,0.08);
+          border: 1px solid rgba(37,99,235,0.20);
           border-radius: 9999px;
           font-size: 0.6875rem;
-          color: #6060808;
+          color: #2563EB;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
-          color: #7070a0;
+          color: #2563EB;
         }
 
         .pf-org-dot {
           width: 0.3125rem;
           height: 0.3125rem;
           border-radius: 9999px;
-          background: #6366f1;
+          background: #2563EB;
           opacity: 0.7;
         }
 
@@ -190,7 +191,7 @@ export default function ProfilePage() {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 0;
-          border: 1px solid #1a1a2a;
+          border: 1px solid #E7E2D6;
           border-radius: 0.75rem;
           overflow: hidden;
         }
@@ -201,9 +202,9 @@ export default function ProfilePage() {
 
         .pf-stat-cell {
           padding: 1.125rem 1rem;
-          background: #0a0a14;
-          border-right: 1px solid #1a1a2a;
-          border-bottom: 1px solid #1a1a2a;
+          background: #FCFBF7;
+          border-right: 1px solid #E7E2D6;
+          border-bottom: 1px solid #E7E2D6;
           display: flex;
           flex-direction: column;
           gap: 0.3125rem;
@@ -218,30 +219,30 @@ export default function ProfilePage() {
         @media (max-width: 560px) {
           .pf-stat-cell:nth-child(2n) { border-right: none; }
           .pf-stat-cell:nth-last-child(-n+2) { border-bottom: none; }
-          .pf-stat-cell:nth-child(4n) { border-right: 1px solid #1a1a2a; }
+          .pf-stat-cell:nth-child(4n) { border-right: 1px solid #E7E2D6; }
         }
 
         .pf-stat-label {
           font-size: 0.6875rem;
-          color: #6060808;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
           letter-spacing: 0.04em;
-          color: #7070a0;
+          color: #71717A;
         }
 
         .pf-stat-value {
           font-size: 1.625rem;
           font-weight: 600;
-          color: #d4d4f0;
+          color: #18181B;
           letter-spacing: -0.02em;
           line-height: 1;
           font-family: 'DM Sans', sans-serif;
         }
 
-        .pf-stat-value.accent { color: #818cf8; }
-        .pf-stat-value.green  { color: #34d399; }
-        .pf-stat-value.red    { color: #f87171; }
+        .pf-stat-value.accent { color: #2563EB; }
+        .pf-stat-value.green  { color: #16A34A; }
+        .pf-stat-value.red    { color: #DC2626; }
 
         /* ── Entries list ── */
         .pf-entries-list {
@@ -260,7 +261,7 @@ export default function ProfilePage() {
           align-items: center;
           gap: 0.875rem;
           padding: 0.875rem 0;
-          border-bottom: 1px solid #13131f;
+          border-bottom: 1px solid #E7E2D6;
           transition: background 140ms;
           cursor: pointer;
         }
@@ -272,7 +273,7 @@ export default function ProfilePage() {
         }
 
         .pf-entry-link:hover .pf-entry-title {
-          color: #a8a8f0;
+          color: #2563EB;
         }
 
         .pf-entry-type-dot {
@@ -290,7 +291,7 @@ export default function ProfilePage() {
         .pf-entry-title {
           font-size: 0.9rem;
           font-weight: 500;
-          color: #c8c8e8;
+          color: #18181B;
           transition: color 140ms;
           white-space: nowrap;
           overflow: hidden;
@@ -300,15 +301,15 @@ export default function ProfilePage() {
 
         .pf-entry-preview {
           font-size: 0.775rem;
-          color: #6060808;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
           margin-top: 0.125rem;
-          color: #6868908;
-          color: #686898;
+          color: #71717A;
+          color: #71717A;
         }
 
         .pf-entry-pill {
@@ -327,13 +328,13 @@ export default function ProfilePage() {
         }
 
         .pf-entry-arrow {
-          color: #2e2e48;
+          color: #A1A1AA;
           flex-shrink: 0;
           transition: color 140ms, transform 140ms;
         }
 
         .pf-entry-link:hover .pf-entry-arrow {
-          color: #6366f1;
+          color: #2563EB;
           transform: translateX(2px);
         }
 
@@ -342,7 +343,7 @@ export default function ProfilePage() {
           padding: 1.5rem 0 0.5rem;
           text-align: center;
           font-size: 0.8125rem;
-          color: #7878a0;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
         }
@@ -357,16 +358,16 @@ export default function ProfilePage() {
           border-radius: 0.375rem;
           border: 1px solid transparent;
           background: transparent;
-          color: #555580;
+          color: #A1A1AA;
           cursor: pointer;
           flex-shrink: 0;
           transition: background 140ms, color 140ms, border-color 140ms;
         }
 
         .pf-delete-btn:hover {
-          background: #f8717120;
-          border-color: #f8717140;
-          color: #f87171;
+          background: #FEF2F2;
+          border-color: #FECACA;
+          color: #DC2626;
         }
 
         /* ── Confirm inline ── */
@@ -375,7 +376,7 @@ export default function ProfilePage() {
           align-items: center;
           gap: 0.5rem;
           padding: 0.625rem 0;
-          border-bottom: 1px solid #13131f;
+          border-bottom: 1px solid #E7E2D6;
         }
 
         .pf-confirm-row:last-child { border-bottom: none; }
@@ -384,16 +385,16 @@ export default function ProfilePage() {
           flex: 1;
           font-size: 0.775rem;
           font-family: 'DM Mono', monospace;
-          color: #f87171;
+          color: #DC2626;
           font-weight: 300;
         }
 
         .pf-confirm-yes {
           padding: 0.25rem 0.625rem;
           border-radius: 0.375rem;
-          border: 1px solid #f8717160;
-          background: #f8717115;
-          color: #f87171;
+          border: 1px solid #FECACA;
+          background: #FEF2F2;
+          color: #DC2626;
           font-size: 0.7rem;
           font-family: 'DM Mono', monospace;
           cursor: pointer;
@@ -401,21 +402,21 @@ export default function ProfilePage() {
         }
 
         .pf-confirm-yes:disabled { opacity: 0.5; cursor: not-allowed; }
-        .pf-confirm-yes:not(:disabled):hover { background: #f8717130; }
+        .pf-confirm-yes:not(:disabled):hover { background: #FDE3E3; }
 
         .pf-confirm-no {
           padding: 0.25rem 0.625rem;
           border-radius: 0.375rem;
-          border: 1px solid #2a2a40;
+          border: 1px solid #E7E2D6;
           background: transparent;
-          color: #7878a0;
+          color: #71717A;
           font-size: 0.7rem;
           font-family: 'DM Mono', monospace;
           cursor: pointer;
           transition: background 140ms;
         }
 
-        .pf-confirm-no:hover { background: #1a1a2a; }
+        .pf-confirm-no:hover { background: #F2EEE4; }
 
         /* ── Toast ── */
         .pf-toast {
@@ -432,15 +433,17 @@ export default function ProfilePage() {
         }
 
         .pf-toast.success {
-          background: #0d1f17;
-          border: 1px solid #34d39940;
-          color: #34d399;
+          background: #FFFFFF;
+          border: 1px solid rgba(22,163,74,0.35);
+          color: #16A34A;
+          box-shadow: 0 8px 24px rgba(24,24,27,0.06);
         }
 
         .pf-toast.error {
-          background: #1f0d0d;
-          border: 1px solid #f8717140;
-          color: #f87171;
+          background: #FEF2F2;
+          border: 1px solid #FECACA;
+          color: #DC2626;
+          box-shadow: 0 8px 24px rgba(24,24,27,0.06);
         }
       `}</style>
 
@@ -486,7 +489,7 @@ export default function ProfilePage() {
               </div>
               <div className="pf-stat-cell">
                 <span className="pf-stat-label">top type</span>
-                <span className="pf-stat-value" style={{ fontSize: '1rem', paddingTop: '0.25rem', color: '#a0a0c8' }}>
+                <span className="pf-stat-value" style={{ fontSize: '1rem', paddingTop: '0.25rem', color: '#3F3F46' }}>
                   {stats.favoriteType !== '-' && TYPE_META[stats.favoriteType]
                     ? `${TYPE_META[stats.favoriteType].icon} ${stats.favoriteType}`
                     : stats.favoriteType}
@@ -550,10 +553,10 @@ export default function ProfilePage() {
 
                             {/* Vote counts */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#34d399' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#16A34A' }}>
                                 ▲ {entry.upvotes?.length || 0}
                               </span>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#f87171' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#DC2626' }}>
                                 ▼ {entry.downvotes?.length || 0}
                               </span>
                             </div>
@@ -637,17 +640,17 @@ export default function ProfilePage() {
 
                             {/* Author name */}
                             {entry.authorName && (
-                              <span style={{ fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#7878a0', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                              <span style={{ fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#71717A', whiteSpace: 'nowrap', flexShrink: 0 }}>
                                 by {entry.authorName}
                               </span>
                             )}
 
                             {/* Vote counts */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#34d399' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#16A34A' }}>
                                 ▲ {entry.upvotes?.length || 0}
                               </span>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#f87171' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#DC2626' }}>
                                 ▼ {entry.downvotes?.length || 0}
                               </span>
                             </div>

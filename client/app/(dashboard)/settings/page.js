@@ -9,10 +9,10 @@ import { CopyIcon } from '@/components/icons';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 const ROLE_META = {
-  owner:  { color: '#fbbf24', bg: 'rgba(251,191,36,0.08)',  border: 'rgba(251,191,36,0.2)'  },
-  admin:  { color: '#a78bfa', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.2)' },
-  member: { color: '#818cf8', bg: 'rgba(129,140,248,0.08)', border: 'rgba(129,140,248,0.2)' },
-  viewer: { color: '#71717a', bg: 'rgba(113,113,122,0.08)', border: 'rgba(113,113,122,0.2)' },
+  owner:  { color: '#D97706', bg: 'rgba(217,119,6,0.10)',  border: 'rgba(217,119,6,0.25)'  },
+  admin:  { color: '#16A34A', bg: 'rgba(22,163,74,0.10)', border: 'rgba(22,163,74,0.25)' },
+  member: { color: '#2563EB', bg: 'rgba(37,99,235,0.10)', border: 'rgba(37,99,235,0.25)' },
+  viewer: { color: '#71717A', bg: 'rgba(113,113,122,0.10)', border: 'rgba(113,113,122,0.25)' },
 };
 
 function MemberAvatar({ name, isSelf }) {
@@ -21,12 +21,12 @@ function MemberAvatar({ name, isSelf }) {
     <div style={{
       width: '2.25rem', height: '2.25rem', borderRadius: '9999px', flexShrink: 0,
       background: isSelf
-        ? 'linear-gradient(135deg, #3b3b7a 0%, #6366f1 100%)'
-        : 'linear-gradient(135deg, #1e1e35 0%, #2a2a4a 100%)',
-      border: isSelf ? '1px solid rgba(99,102,241,0.3)' : '1px solid #1e1e30',
+        ? '#2563EB'
+        : '#F2EEE4',
+      border: isSelf ? '1px solid rgba(37,99,235,0.3)' : '1px solid #E7E2D6',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontSize: '0.75rem', fontWeight: 600,
-      color: isSelf ? '#e0e0ff' : '#8888aa',
+      color: isSelf ? '#FFFFFF' : '#71717A',
       fontFamily: "'DM Mono', monospace",
     }}>
       {initial}
@@ -105,13 +105,13 @@ export default function SettingsPage() {
         /* ── Page header ── */
         .st-page-header {
           padding-bottom: 1.25rem;
-          border-bottom: 1px solid #1a1a2a;
+          border-bottom: 1px solid #E7E2D6;
           margin-bottom: 0.25rem;
         }
 
         .st-page-subtitle {
           font-size: 0.8125rem;
-          color: #666688;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
           margin-top: 0.25rem;
@@ -119,10 +119,11 @@ export default function SettingsPage() {
 
         /* ── Card ── */
         .st-card {
-          background: #0d0d18;
-          border: 1px solid #1a1a2a;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
           border-radius: 1rem;
           overflow: hidden;
+          box-shadow: 0 8px 24px rgba(24,24,27,0.06);
         }
 
         .st-card-header {
@@ -136,12 +137,12 @@ export default function SettingsPage() {
         .st-card-title {
           font-size: 0.6875rem;
           font-weight: 500;
-          color: #8888aa;
+          color: #71717A;
           letter-spacing: 0.07em;
           text-transform: uppercase;
           font-family: 'DM Mono', monospace;
           padding-bottom: 1rem;
-          border-bottom: 1px solid #13131f;
+          border-bottom: 1px solid #E7E2D6;
           margin-bottom: 1.125rem;
         }
 
@@ -157,22 +158,22 @@ export default function SettingsPage() {
           align-items: center;
           justify-content: space-between;
           padding: 0.75rem 0;
-          border-bottom: 1px solid #13131f;
+          border-bottom: 1px solid #E7E2D6;
         }
 
         .st-info-row:last-child { border-bottom: none; }
 
         .st-info-label {
           font-size: 0.75rem;
-          color: #6060808;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
-          color: #7070a0;
+          color: #71717A;
         }
 
         .st-info-value {
           font-size: 0.875rem;
-          color: #c8c8e8;
+          color: #18181B;
           font-family: 'DM Sans', sans-serif;
           font-weight: 500;
           text-align: right;
@@ -181,7 +182,7 @@ export default function SettingsPage() {
         /* ── Invite code ── */
         .st-invite-desc {
           font-size: 0.8125rem;
-          color: #7878a0;
+          color: #3F3F46;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
           line-height: 1.6;
@@ -193,8 +194,8 @@ export default function SettingsPage() {
           align-items: center;
           justify-content: space-between;
           gap: 0.75rem;
-          background: #0a0a14;
-          border: 1px solid #1e1e30;
+          background: #F2EEE4;
+          border: 1px solid #E7E2D6;
           border-radius: 0.5rem;
           padding: 0.75rem 1rem;
         }
@@ -203,7 +204,7 @@ export default function SettingsPage() {
           font-family: 'DM Mono', monospace;
           font-size: 0.9375rem;
           font-weight: 400;
-          color: #a8a8f0;
+          color: #2563EB;
           letter-spacing: 0.08em;
           word-break: break-all;
         }
@@ -214,9 +215,9 @@ export default function SettingsPage() {
           gap: 0.3125rem;
           padding: 0.375rem 0.625rem;
           border-radius: 0.375rem;
-          border: 1px solid #1e1e30;
-          background: #12121e;
-          color: #8080a8;
+          border: 1px solid #E7E2D6;
+          background: #FFFFFF;
+          color: #71717A;
           font-size: 0.6875rem;
           font-family: 'DM Mono', monospace;
           cursor: pointer;
@@ -226,20 +227,20 @@ export default function SettingsPage() {
         }
 
         .st-copy-btn:hover {
-          background: #1a1a2e;
-          border-color: #3b3b5c;
-          color: #c0c0e0;
+          background: #F2EEE4;
+          border-color: #D0C9BA;
+          color: #18181B;
         }
 
         .st-copy-btn.copied {
-          color: #34d399;
-          border-color: rgba(52,211,153,0.3);
-          background: rgba(52,211,153,0.06);
+          color: #16A34A;
+          border-color: rgba(22,163,74,0.3);
+          background: rgba(22,163,74,0.08);
         }
 
         .st-invite-note {
           font-size: 0.725rem;
-          color: #4a4a6a;
+          color: #A1A1AA;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
           margin-top: 0.625rem;
@@ -257,7 +258,7 @@ export default function SettingsPage() {
           align-items: center;
           gap: 0.875rem;
           padding: 0.875rem 0;
-          border-bottom: 1px solid #13131f;
+          border-bottom: 1px solid #E7E2D6;
           transition: background 140ms;
         }
 
@@ -271,7 +272,7 @@ export default function SettingsPage() {
         .st-member-name {
           font-size: 0.875rem;
           font-weight: 500;
-          color: #c8c8e8;
+          color: #18181B;
           font-family: 'DM Sans', sans-serif;
           white-space: nowrap;
           overflow: hidden;
@@ -280,11 +281,11 @@ export default function SettingsPage() {
 
         .st-member-joined {
           font-size: 0.6875rem;
-          color: #5050708;
+          color: #A1A1AA;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
           margin-top: 0.125rem;
-          color: #606080;
+          color: #71717A;
         }
 
         .st-member-actions {
@@ -308,12 +309,12 @@ export default function SettingsPage() {
         }
 
         .st-role-select {
-          background: #0a0a14;
-          border: 1px solid #1e1e30;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
           border-radius: 0.375rem;
           font-size: 0.75rem;
           padding: 0.3125rem 0.5rem;
-          color: #a0a0c0;
+          color: #3F3F46;
           font-family: 'DM Mono', monospace;
           outline: none;
           cursor: pointer;
@@ -321,7 +322,7 @@ export default function SettingsPage() {
         }
 
         .st-role-select:focus {
-          border-color: #3b3b5c;
+          border-color: #2563EB;
         }
 
         .st-remove-btn {
@@ -329,7 +330,7 @@ export default function SettingsPage() {
           border-radius: 0.375rem;
           border: 1px solid transparent;
           background: transparent;
-          color: #5a3a3a;
+          color: #A1A1AA;
           font-size: 0.6875rem;
           font-family: 'DM Mono', monospace;
           cursor: pointer;
@@ -337,9 +338,9 @@ export default function SettingsPage() {
         }
 
         .st-remove-btn:hover {
-          background: rgba(248,113,113,0.08);
-          border-color: rgba(248,113,113,0.2);
-          color: #f87171;
+          background: #FEF2F2;
+          border-color: #FECACA;
+          color: #DC2626;
         }
       `}</style>
 

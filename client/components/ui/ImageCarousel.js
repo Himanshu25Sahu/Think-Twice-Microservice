@@ -112,8 +112,8 @@ export function ImageCarousel({ images = [] }) {
           aspect-ratio: 16 / 9;
           border-radius: 0.75rem;
           overflow: hidden;
-          background: #0a0a12;
-          border: 1px solid #1a1a2a;
+          background: #F2EEE4;
+          border: 1px solid #E7E2D6;
         }
 
         .ic-image {
@@ -128,10 +128,10 @@ export function ImageCarousel({ images = [] }) {
           position: absolute;
           top: 0.75rem;
           right: 0.75rem;
-          background: rgba(10, 10, 18, 0.8);
+          background: rgba(255, 255, 255, 0.8);
           backdrop-filter: blur(8px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: #a0a0b0;
+          border: 1px solid #E7E2D6;
+          color: #18181B;
           padding: 0.375rem 0.75rem;
           border-radius: 0.375rem;
           font-size: 0.8125rem;
@@ -144,10 +144,10 @@ export function ImageCarousel({ images = [] }) {
           position: absolute;
           top: 50%;
           transform: translateY(-50%);
-          background: rgba(10, 10, 18, 0.6);
+          background: rgba(255, 255, 255, 0.7);
           backdrop-filter: blur(8px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: #a0a0b0;
+          border: 1px solid #E7E2D6;
+          color: #18181B;
           width: 2.5rem;
           height: 2.5rem;
           border-radius: 0.5rem;
@@ -161,9 +161,9 @@ export function ImageCarousel({ images = [] }) {
         }
 
         .ic-nav:hover {
-          background: rgba(10, 10, 18, 0.9);
-          border-color: rgba(255, 255, 255, 0.2);
-          color: #f0f0f8;
+          background: rgba(255, 255, 255, 0.95);
+          border-color: #D0C9BA;
+          color: #18181B;
         }
 
         .ic-nav-prev {
@@ -191,21 +191,21 @@ export function ImageCarousel({ images = [] }) {
           width: 0.5rem;
           height: 0.5rem;
           border-radius: 50%;
-          background: rgba(160, 160, 176, 0.3);
-          border: 1px solid rgba(160, 160, 176, 0.5);
+          background: #D0C9BA;
+          border: 1px solid #D0C9BA;
           cursor: pointer;
           transition: all 0.2s ease;
           padding: 0;
         }
 
         .ic-dot:hover {
-          background: rgba(160, 160, 176, 0.5);
-          border-color: rgba(160, 160, 176, 0.7);
+          background: #A1A1AA;
+          border-color: #A1A1AA;
         }
 
         .ic-dot-active {
-          background: #818cf8;
-          border-color: #6366f1;
+          background: #2563EB;
+          border-color: #2563EB;
         }
 
         /* Mobile optimizations */

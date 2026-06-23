@@ -7,11 +7,11 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 
 const TYPE_META = {
-  architecture:    { icon: '⬡', color: '#818cf8' },
-  debugging:       { icon: '⚡', color: '#f472b6' },
-  feature:         { icon: '◈',  color: '#34d399' },
-  'best-practice': { icon: '◎', color: '#fbbf24' },
-  incident:        { icon: '⚠',  color: '#f87171' },
+  architecture:    { icon: '⬡', color: '#2563EB' },
+  debugging:       { icon: '⚡', color: '#DB2777' },
+  feature:         { icon: '◈',  color: '#16A34A' },
+  'best-practice': { icon: '◎', color: '#D97706' },
+  incident:        { icon: '⚠',  color: '#DC2626' },
 };
 
 export default function DashboardPage() {
@@ -118,7 +118,7 @@ export default function DashboardPage() {
           justify-content: space-between;
           gap: 1.25rem;
           padding-bottom: 1.5rem;
-          border-bottom: 1px solid #1a1a2a;
+          border-bottom: 1px solid #E7E2D6;
           margin-bottom: 1.5rem;
           flex-wrap: wrap;
         }
@@ -127,14 +127,14 @@ export default function DashboardPage() {
           font-family: 'DM Sans', sans-serif;
           font-size: 1.5rem;
           font-weight: 600;
-          color: #e4e4f0;
+          color: #18181B;
           letter-spacing: -0.02em;
           line-height: 1.2;
         }
 
         .db-subtitle {
           font-size: 0.8125rem;
-          color: #666688;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
           margin-top: 0.25rem;
@@ -151,19 +151,19 @@ export default function DashboardPage() {
           left: 0.75rem;
           top: 50%;
           transform: translateY(-50%);
-          color: #4a4a6a;
+          color: #A1A1AA;
           pointer-events: none;
           display: flex;
           align-items: center;
         }
 
         .db-search {
-          background: #0a0a14;
-          border: 1px solid #1e1e30;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
           border-radius: 0.5rem;
           padding: 0.6rem 0.875rem 0.6rem 2.25rem;
           font-size: 0.8125rem;
-          color: #d4d4e8;
+          color: #3F3F46;
           outline: none;
           width: 260px;
           transition: border-color 160ms, box-shadow 160ms;
@@ -171,12 +171,12 @@ export default function DashboardPage() {
         }
 
         .db-search::placeholder {
-          color: #52527a;
+          color: #A1A1AA;
         }
 
         .db-search:focus {
-          border-color: #3b3b5c;
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+          border-color: #2563EB;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
         }
 
         @media (max-width: 580px) {
@@ -191,7 +191,7 @@ export default function DashboardPage() {
           flex-wrap: wrap;
           gap: 0.4375rem;
           padding-bottom: 1.5rem;
-          border-bottom: 1px solid #13131f;
+          border-bottom: 1px solid #E7E2D6;
           margin-bottom: 1.75rem;
         }
 
@@ -201,29 +201,29 @@ export default function DashboardPage() {
           gap: 0.375rem;
           padding: 0.375rem 0.75rem;
           border-radius: 0.4375rem;
-          border: 1px solid #1e1e30;
-          background: #0a0a14;
-          color: #6666888;
+          border: 1px solid #E7E2D6;
+          background: #FFFFFF;
+          color: #71717A;
           font-size: 0.8rem;
           font-family: 'DM Sans', sans-serif;
           font-weight: 400;
           cursor: pointer;
           transition: all 150ms;
           white-space: nowrap;
-          color: #8888aa;
+          color: #71717A;
         }
 
         .db-filter-btn:hover {
-          border-color: #2e2e48;
-          color: #aaaacc;
-          background: #0f0f1c;
+          border-color: #D0C9BA;
+          color: #3F3F46;
+          background: #F2EEE4;
         }
 
         .db-filter-btn.active {
-          background: #0f0f20;
-          border-color: #6366f1;
-          color: #818cf8;
-          box-shadow: 0 0 0 1px rgba(99,102,241,0.1) inset, 0 0 12px rgba(99,102,241,0.05);
+          background: rgba(37,99,235,0.08);
+          border-color: #2563EB;
+          color: #2563EB;
+          box-shadow: 0 0 0 1px rgba(37,99,235,0.1) inset;
         }
 
         .db-filter-icon {
@@ -253,8 +253,8 @@ export default function DashboardPage() {
         }
 
         .db-card {
-          background: #0d0d18;
-          border: 1px solid #1a1a2a;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
           border-radius: 0.875rem;
           padding: 1.125rem;
           height: 100%;
@@ -273,14 +273,14 @@ export default function DashboardPage() {
           border-radius: 0.875rem;
           opacity: 0;
           transition: opacity 200ms;
-          background: radial-gradient(ellipse at top left, rgba(99,102,241,0.04) 0%, transparent 70%);
+          background: radial-gradient(ellipse at top left, rgba(37,99,235,0.04) 0%, transparent 70%);
           pointer-events: none;
         }
 
         .db-card:hover {
-          border-color: #2e2e4a;
-          background: #0f0f1e;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(99,102,241,0.06);
+          border-color: #D0C9BA;
+          background: #FFFFFF;
+          box-shadow: 0 8px 24px rgba(24,24,27,0.06);
           transform: translateY(-1px);
         }
 
@@ -313,7 +313,7 @@ export default function DashboardPage() {
           width: 1.625rem;
           height: 1.625rem;
           border-radius: 9999px;
-          background: rgba(99,102,241,0.08);
+          background: rgba(37,99,235,0.08);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -327,14 +327,14 @@ export default function DashboardPage() {
         }
 
         .db-card-arrow svg {
-          color: #818cf8;
+          color: #2563EB;
         }
 
         /* Card title */
         .db-card-title {
           font-size: 0.9375rem;
           font-weight: 600;
-          color: #d4d4e8;
+          color: #18181B;
           line-height: 1.4;
           margin-bottom: 0.5rem;
           display: -webkit-box;
@@ -345,26 +345,26 @@ export default function DashboardPage() {
         }
 
         .db-card:hover .db-card-title {
-          color: #a8a8f0;
+          color: #2563EB;
         }
 
         /* Card preview */
         .db-card-preview {
           font-size: 0.8125rem;
-          color: #6060808;
+          color: #71717A;
           line-height: 1.55;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
           margin-bottom: 0.875rem;
-          color: #7878a0;
+          color: #71717A;
           flex-grow: 1;
           transition: color 160ms;
         }
 
         .db-card:hover .db-card-preview {
-          color: #9090b8;
+          color: #3F3F46;
         }
 
         /* Tags */
@@ -379,24 +379,24 @@ export default function DashboardPage() {
           display: inline-flex;
           align-items: center;
           padding: 0.1875rem 0.5rem;
-          background: #12122a;
-          border: 1px solid #22224a;
+          background: #F2EEE4;
+          border: 1px solid #E7E2D6;
           border-radius: 9999px;
           font-size: 0.6875rem;
-          color: #7878aa;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
           transition: border-color 160ms;
         }
 
         .db-card:hover .db-tag {
-          border-color: rgba(99,102,241,0.25);
+          border-color: rgba(37,99,235,0.25);
         }
 
         .db-tag-more {
           background: transparent;
-          border-color: #1a1a30;
-          color: #4a4a6a;
+          border-color: #E7E2D6;
+          color: #A1A1AA;
         }
 
         /* Card footer */
@@ -405,33 +405,33 @@ export default function DashboardPage() {
           align-items: center;
           justify-content: space-between;
           padding-top: 0.75rem;
-          border-top: 1px solid #13131f;
+          border-top: 1px solid #E7E2D6;
           margin-top: auto;
           transition: border-color 160ms;
         }
 
         .db-card:hover .db-card-footer {
-          border-color: rgba(99,102,241,0.12);
+          border-color: rgba(37,99,235,0.12);
         }
 
         .db-card-author {
           font-size: 0.75rem;
-          color: #8888aa;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
         }
 
         .db-card-date {
           font-size: 0.6875rem;
-          color: #4a4a6a;
+          color: #A1A1AA;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
         }
 
         /* ── Skeleton ── */
         .db-skeleton {
-          background: #0d0d18;
-          border: 1px solid #1a1a2a;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
           border-radius: 0.875rem;
           height: 180px;
           position: relative;
@@ -442,7 +442,7 @@ export default function DashboardPage() {
           content: '';
           position: absolute;
           inset: 0;
-          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%);
+          background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.04) 50%, transparent 100%);
           animation: db-shimmer 1.4s infinite;
         }
 
@@ -470,20 +470,20 @@ export default function DashboardPage() {
         .db-empty-title {
           font-size: 1.0625rem;
           font-weight: 600;
-          color: #c4c4e0;
+          color: #18181B;
           margin-bottom: 0.375rem;
           font-family: 'DM Sans', sans-serif;
         }
 
         .db-empty-msg {
           font-size: 0.8125rem;
-          color: #6666888;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
           margin-bottom: 1.5rem;
           max-width: 320px;
           line-height: 1.6;
-          color: #7878a0;
+          color: #71717A;
         }
 
         .db-empty-cta {
@@ -492,7 +492,7 @@ export default function DashboardPage() {
           gap: 0.375rem;
           padding: 0.5625rem 1.125rem;
           border-radius: 0.5rem;
-          background: #6366f1;
+          background: #2563EB;
           color: white;
           font-size: 0.875rem;
           font-family: 'DM Sans', sans-serif;
@@ -502,7 +502,7 @@ export default function DashboardPage() {
         }
 
         .db-empty-cta:hover {
-          background: #7274f3;
+          background: #1D4ED8;
         }
 
         .db-empty-cta:active {
@@ -517,15 +517,15 @@ export default function DashboardPage() {
           gap: 0.75rem;
           margin-top: 2rem;
           padding-top: 1.5rem;
-          border-top: 1px solid #13131f;
+          border-top: 1px solid #E7E2D6;
         }
 
         .db-page-btn {
           padding: 0.5rem 1rem;
           border-radius: 0.5rem;
-          border: 1px solid #1e1e30;
+          border: 1px solid #E7E2D6;
           background: transparent;
-          color: #8080a8;
+          color: #71717A;
           font-size: 0.8125rem;
           font-family: 'DM Sans', sans-serif;
           font-weight: 500;
@@ -534,9 +534,9 @@ export default function DashboardPage() {
         }
 
         .db-page-btn:hover:not(:disabled) {
-          background: #0f0f1c;
-          border-color: #2a2a40;
-          color: #c0c0e0;
+          background: #F2EEE4;
+          border-color: #D0C9BA;
+          color: #18181B;
         }
 
         .db-page-btn:disabled {
@@ -553,17 +553,17 @@ export default function DashboardPage() {
         }
 
         .db-page-current {
-          color: #c0c0e0;
+          color: #18181B;
           font-weight: 400;
         }
 
         .db-page-sep {
-          color: #2e2e45;
+          color: #D0C9BA;
         }
 
         .db-page-total {
-          color: #5050708;
-          color: #606080;
+          color: #71717A;
+          color: #71717A;
         }
       `}</style>
 
@@ -672,9 +672,9 @@ export default function DashboardPage() {
                           {(entry.images && entry.images.length > 0) && (
                             <div style={{
                               fontSize: '0.6875rem',
-                              color: '#9999bb',
-                              background: 'rgba(153, 153, 187, 0.1)',
-                              border: '1px solid rgba(153, 153, 187, 0.3)',
+                              color: '#71717A',
+                              background: 'rgba(113, 113, 122, 0.1)',
+                              border: '1px solid rgba(113, 113, 122, 0.3)',
                               padding: '0.25rem 0.5rem',
                               borderRadius: '9999px',
                               fontFamily: "'DM Mono', monospace",
@@ -735,11 +735,11 @@ export default function DashboardPage() {
                   <span className="db-page-total">{total}</span>
                 </div>
                 {hasMore ? (
-                  <p style={{ fontSize: '0.8125rem', color: '#7878a0', marginLeft: '1rem' }}>
+                  <p style={{ fontSize: '0.8125rem', color: '#71717A', marginLeft: '1rem' }}>
                     Scroll to load more...
                   </p>
                 ) : (
-                  <p style={{ fontSize: '0.8125rem', color: '#5050708', marginLeft: '1rem' }}>
+                  <p style={{ fontSize: '0.8125rem', color: '#A1A1AA', marginLeft: '1rem' }}>
                     No more entries
                   </p>
                 )}

@@ -34,7 +34,7 @@ export default function AuthGuard({ children }) {
   if (!ready) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-zinc-400">Loading...</div>
+        <div className="text-[#71717A]">Loading...</div>
       </div>
     );
   }

@@ -114,14 +114,14 @@ export function QuickDecisionEntry({ onSubmit }) {
 
   if (!isExpanded) {
     return (
-      <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-gray-800 mb-6">
+      <div className="bg-white rounded-2xl p-6 border border-[#E7E2D6] mb-6">
         <div className="flex items-center space-x-4">
           <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
             <span className="text-white font-medium">+</span>
           </div>
           <button
             onClick={() => setIsExpanded(true)}
-            className="flex-1 text-left text-gray-400 hover:text-white transition-colors"
+            className="flex-1 text-left text-gray-500 hover:text-gray-900 transition-colors"
           >
             Share a decision you&#39;re facing...
           </button>
@@ -131,7 +131,7 @@ export function QuickDecisionEntry({ onSubmit }) {
   }
 
   return (
-    <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-gray-800 mb-6">
+    <div className="bg-white rounded-2xl p-6 border border-[#E7E2D6] mb-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <input
@@ -139,7 +139,7 @@ export function QuickDecisionEntry({ onSubmit }) {
             placeholder="What decision are you facing?"
             value={formData.title}
             onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            className="w-full bg-[#0d0d0d] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-[#FCFBF7] border border-[#E7E2D6] rounded-xl px-4 py-3 text-[#18181B] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
         </div>
@@ -149,7 +149,7 @@ export function QuickDecisionEntry({ onSubmit }) {
             placeholder="Add some context about your situation..."
             value={formData.description}
             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-            className="w-full bg-[#0d0d0d] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full bg-[#FCFBF7] border border-[#E7E2D6] rounded-xl px-4 py-3 text-[#18181B] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             rows={3}
             required
           />
@@ -157,11 +157,11 @@ export function QuickDecisionEntry({ onSubmit }) {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-gray-400 text-sm mb-2">Category</label>
+            <label className="block text-gray-600 text-sm mb-2">Category</label>
             <select
               value={formData.category}
               onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-              className="w-full bg-[#0d0d0d] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-[#FCFBF7] border border-[#E7E2D6] rounded-xl px-4 py-3 text-[#18181B] focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
               <option value="career">Career</option>
@@ -175,7 +175,7 @@ export function QuickDecisionEntry({ onSubmit }) {
           </div>
 
           <div>
-            <label className="block text-gray-400 text-sm mb-2">
+            <label className="block text-gray-600 text-sm mb-2">
               Confidence: {formData.confidenceLevel}%
             </label>
             <input
@@ -191,31 +191,31 @@ export function QuickDecisionEntry({ onSubmit }) {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-gray-400 text-sm mb-2">Review Date *</label>
+            <label className="block text-gray-600 text-sm mb-2">Review Date *</label>
             <input
               type="date"
               value={formData.reviewDate}
               onChange={(e) => setFormData(prev => ({ ...prev, reviewDate: e.target.value }))}
-              className="w-full bg-[#0d0d0d] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-[#FCFBF7] border border-[#E7E2D6] rounded-xl px-4 py-3 text-[#18181B] focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
               min={today}
             />
           </div>
 
           <div>
-            <label className="block text-gray-400 text-sm mb-2">Expected Outcome</label>
+            <label className="block text-gray-600 text-sm mb-2">Expected Outcome</label>
             <input
               type="text"
               placeholder="What do you hope to achieve?"
               value={formData.expectedOutcome}
               onChange={(e) => setFormData(prev => ({ ...prev, expectedOutcome: e.target.value }))}
-              className="w-full bg-[#0d0d0d] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-[#FCFBF7] border border-[#E7E2D6] rounded-xl px-4 py-3 text-[#18181B] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-gray-400 text-sm mb-2">Options *</label>
+          <label className="block text-gray-600 text-sm mb-2">Options *</label>
           <div className="space-y-3">
             {formData.options.map((option, index) => (
               <div key={index} className="flex items-center space-x-2">
@@ -224,14 +224,14 @@ export function QuickDecisionEntry({ onSubmit }) {
                   placeholder={`Option ${index + 1}`}
                   value={option.title}
                   onChange={(e) => updateOption(index, "title", e.target.value)}
-                  className="flex-1 bg-[#0d0d0d] border border-gray-700 rounded-xl px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 bg-[#FCFBF7] border border-[#E7E2D6] rounded-xl px-4 py-2 text-[#18181B] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
                 {formData.options.length > 2 && (
                   <button
                     type="button"
                     onClick={() => removeOption(index)}
-                    className="text-red-400 hover:text-red-300 p-2"
+                    className="text-red-600 hover:text-red-700 p-2"
                   >
                     ×
                   </button>
@@ -241,7 +241,7 @@ export function QuickDecisionEntry({ onSubmit }) {
             <button
               type="button"
               onClick={addOption}
-              className="text-blue-400 hover:text-blue-300 text-sm"
+              className="text-blue-600 hover:text-blue-700 text-sm"
             >
               + Add another option
             </button>
@@ -249,18 +249,18 @@ export function QuickDecisionEntry({ onSubmit }) {
         </div>
 
         <div>
-          <label className="block text-gray-400 text-sm mb-2">Tags</label>
+          <label className="block text-gray-600 text-sm mb-2">Tags</label>
           <div className="flex flex-wrap gap-2 mb-2">
             {formData.tags.map((tag, index) => (
               <span
                 key={index}
-                className="inline-flex items-center px-3 py-1 bg-blue-600/10 text-blue-400 rounded-full text-sm"
+                className="inline-flex items-center px-3 py-1 bg-blue-600/10 text-blue-700 rounded-full text-sm"
               >
                 {tag}
                 <button
                   type="button"
                   onClick={() => removeTag(tag)}
-                  className="ml-2 text-blue-300 hover:text-blue-200"
+                  className="ml-2 text-blue-500 hover:text-blue-700"
                 >
                   ×
                 </button>
@@ -277,7 +277,7 @@ export function QuickDecisionEntry({ onSubmit }) {
                 e.target.value = '';
               }
             }}
-            className="w-full bg-[#0d0d0d] border border-gray-700 rounded-xl px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-[#FCFBF7] border border-[#E7E2D6] rounded-xl px-4 py-2 text-[#18181B] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -287,9 +287,9 @@ export function QuickDecisionEntry({ onSubmit }) {
               type="checkbox"
               checked={formData.isPublic}
               onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
-              className="rounded border-gray-600 text-blue-500 focus:ring-blue-500"
+              className="rounded border-[#D0C9BA] text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-gray-400 text-sm">Make public</span>
+            <span className="text-gray-600 text-sm">Make public</span>
           </label>
 
           <label className="flex items-center space-x-2">
@@ -297,9 +297,9 @@ export function QuickDecisionEntry({ onSubmit }) {
               type="checkbox"
               checked={formData.seekingAdvice}
               onChange={(e) => setFormData(prev => ({ ...prev, seekingAdvice: e.target.checked }))}
-              className="rounded border-gray-600 text-blue-500 focus:ring-blue-500"
+              className="rounded border-[#D0C9BA] text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-gray-400 text-sm">Seeking advice</span>
+            <span className="text-gray-600 text-sm">Seeking advice</span>
           </label>
         </div>
 

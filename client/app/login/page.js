@@ -7,19 +7,38 @@ import Link from 'next/link';
 import { checkAuth, login } from '@/redux/slices/authSlice';
 import { fetchMyOrgs } from '@/redux/slices/orgSlice';
 import { initializeProjects } from '@/redux/slices/projectSlice';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Toast } from '@/components/ui/Toast';
 import { OrgOnboarding } from '@/components/onboarding/OrgOnboarding';
+
+const Spinner = ({ className = 'h-4 w-4' }) => (
+  <svg className={`animate-spin shrink-0 ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+  </svg>
+);
 
 function LoginPageContent() {
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { loading, error } = useSelector((state) => state.auth);
+  const { error } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [toast, setToast] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // `submitting` stays true across the whole login → orgs → projects → navigate flow,
+  // so the button shows one continuous loader instead of flickering off mid-way.
+  const [submitting, setSubmitting] = useState(false);
+
+  // After a successful login we hydrate the user's orgs + projects, then navigate.
+  const hydrateAndGo = async (userName) => {
+    const orgResult = await dispatch(fetchMyOrgs());
+    const preferredOrgId = orgResult.payload?.orgs?.find((org) => org._id === orgResult.payload?.preferredOrgId)?._id || orgResult.payload?.orgs?.[0]?._id;
+    if (preferredOrgId) {
+      await dispatch(initializeProjects(preferredOrgId));
+    }
+    setToast({ type: 'success', message: `Welcome back, ${userName}!` });
+    router.push('/dashboard'); // navigate immediately — keep `submitting` true until the route changes
+  };
 
   useEffect(() => {
     const oauthStatus = searchParams.get('oauth');
@@ -34,26 +53,18 @@ function LoginPageContent() {
 
     if (oauthStatus === 'success') {
       const isNewUser = searchParams.get('new') === 'true';
+      setSubmitting(true);
 
       dispatch(checkAuth()).then(async (authResult) => {
         if (authResult.meta.requestStatus === 'fulfilled') {
           if (isNewUser) {
-            // New Google user — show org onboarding instead of going to dashboard
             setToast({ type: 'success', message: `Welcome, ${authResult.payload.user.name}! Set up your organization.` });
-            setTimeout(() => setShowOnboarding(true), 900);
+            setTimeout(() => setShowOnboarding(true), 700);
             return;
           }
-
-          const orgResult = await dispatch(fetchMyOrgs());
-          const preferredOrgId = orgResult.payload?.orgs?.find((org) => org._id === orgResult.payload?.preferredOrgId)?._id || orgResult.payload?.orgs?.[0]?._id;
-
-          if (preferredOrgId) {
-            await dispatch(initializeProjects(preferredOrgId));
-          }
-
-          setToast({ type: 'success', message: `Welcome back, ${authResult.payload.user.name}!` });
-          setTimeout(() => router.push('/dashboard'), 900);
+          await hydrateAndGo(authResult.payload.user.name);
         } else {
+          setSubmitting(false);
           setToast({ type: 'error', message: 'Google sign in succeeded but session setup failed. Try again.' });
         }
       });
@@ -65,56 +76,42 @@ function LoginPageContent() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTestLogin = () => {
-    setFormData({ email: 'himpreetak@gmail.com', password: '123456' });
-    setTimeout(() => {
-      dispatch(login({ email: 'himpreetak@gmail.com', password: '123456' })).then(async (result) => {
-        if (result.meta.requestStatus === 'fulfilled') {
-          const orgResult = await dispatch(fetchMyOrgs());
-          const preferredOrgId = orgResult.payload?.orgs?.find((org) => org._id === orgResult.payload?.preferredOrgId)?._id || orgResult.payload?.orgs?.[0]?._id;
-          if (preferredOrgId) {
-            await dispatch(initializeProjects(preferredOrgId));
-          }
-          setToast({ type: 'success', message: `Welcome back, ${result.payload.user.name}!` });
-          setTimeout(() => router.push('/dashboard'), 1000);
-        } else {
-          setToast({ type: 'error', message: result.payload?.message || 'Login failed' });
-        }
-      });
-    }, 0);
+  const runLogin = async (credentials) => {
+    setSubmitting(true);
+    try {
+      const result = await dispatch(login(credentials));
+      if (result.meta.requestStatus === 'fulfilled') {
+        await hydrateAndGo(result.payload.user.name);
+      } else {
+        setToast({ type: 'error', message: result.payload?.message || 'Login failed' });
+        setSubmitting(false);
+      }
+    } catch (err) {
+      setToast({ type: 'error', message: 'An error occurred. Please try again.' });
+      setSubmitting(false);
+    }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
     if (!formData.email || !formData.password) {
       setToast({ type: 'error', message: 'Please fill in all fields' });
       return;
     }
+    runLogin(formData);
+  };
 
-    try {
-      const result = await dispatch(login(formData));
-      if (result.meta.requestStatus === 'fulfilled') {
-        // Fetch user's orgs after successful login
-        const orgResult = await dispatch(fetchMyOrgs());
-        const preferredOrgId = orgResult.payload?.orgs?.find((org) => org._id === orgResult.payload?.preferredOrgId)?._id || orgResult.payload?.orgs?.[0]?._id;
-        if (preferredOrgId) {
-          await dispatch(initializeProjects(preferredOrgId));
-        }
-        setToast({ type: 'success', message: `Welcome back, ${result.payload.user.name}!` });
-        setTimeout(() => router.push('/dashboard'), 1000);
-      } else {
-        setToast({ type: 'error', message: result.payload.message || 'Login failed' });
-      }
-    } catch (err) {
-      setToast({ type: 'error', message: 'An error occurred. Please try again.' });
-    }
+  const handleTestLogin = () => {
+    const demo = { email: 'himpreetak@gmail.com', password: '123456' };
+    setFormData(demo);
+    runLogin(demo);
   };
 
   const handleGoogleLogin = () => {
     if (typeof window === 'undefined') {
       return;
     }
+    setSubmitting(true);
     window.location.href = '/api/auth/google';
   };
 
@@ -122,46 +119,40 @@ function LoginPageContent() {
     return <OrgOnboarding />;
   }
 
+  const inputCls = 'w-full rounded-lg border border-[#E7E2D6] bg-white px-3.5 py-2.5 text-sm text-[#18181B] placeholder:text-zinc-400 outline-none transition-all focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 disabled:opacity-60';
+
   return (
-    <div className="min-h-screen bg-primary flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#FCFBF7] text-[#18181B] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600/15 border border-indigo-500/25 mb-4 text-3xl">
-            🧠
-          </div>
-          <h2 className="text-2xl font-bold text-primary tracking-tight">Think Twice</h2>
-          <p className="text-secondary mt-1 text-sm">Document. Debug. Decide.</p>
+          <Link href="/" className="inline-flex items-center justify-center gap-2 mb-3">
+            <span className="inline-block w-3 h-3 rounded-sm bg-[#2563EB]" />
+            <span className="text-2xl font-bold tracking-tight text-[#18181B]">Think Twice</span>
+          </Link>
+          <p className="text-zinc-500 text-sm">Document. Debug. Decide.</p>
         </div>
 
         {/* Login Form */}
-        <div className="card-base">
-          <h3 className="text-lg font-semibold text-primary mb-6">Welcome back</h3>
+        <div className="bg-white border border-[#E7E2D6] rounded-2xl p-7 shadow-[0_12px_40px_rgba(24,24,27,0.06)]">
+          <h3 className="text-lg font-semibold text-[#18181B] mb-6">Welcome back</h3>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Email"
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="your@email.com"
-              disabled={loading}
-            />
+            <div>
+              <label className="block text-sm font-medium text-[#27272A] mb-1.5">Email</label>
+              <input type="email" name="email" value={formData.email} onChange={handleChange}
+                placeholder="your@email.com" disabled={submitting} className={inputCls} />
+            </div>
 
-            <Input
-              label="Password"
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              disabled={loading}
-            />
+            <div>
+              <label className="block text-sm font-medium text-[#27272A] mb-1.5">Password</label>
+              <input type="password" name="password" value={formData.password} onChange={handleChange}
+                placeholder="••••••••" disabled={submitting} className={inputCls} />
+            </div>
 
             {error && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-600/10 border border-red-500/25 text-red-400 text-sm">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                 </svg>
@@ -169,21 +160,13 @@ function LoginPageContent() {
               </div>
             )}
 
-            <Button
-              type="submit"
-              variant="primary"
-              className="w-full mt-2"
-              loading={loading}
-            >
-              Sign In
-            </Button>
+            <button type="submit" disabled={submitting}
+              className="w-full mt-2 flex items-center justify-center gap-2 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-semibold px-4 py-2.5 transition-colors active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed">
+              {submitting ? (<><Spinner /> Signing in…</>) : 'Sign In'}
+            </button>
 
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="w-full mt-2 flex items-center justify-center gap-2 p-3 rounded-lg border border-border text-primary hover:border-indigo-400/60 hover:bg-indigo-600/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <button type="button" onClick={handleGoogleLogin} disabled={submitting}
+              className="w-full mt-2 flex items-center justify-center gap-2 p-2.5 rounded-lg border border-[#E7E2D6] bg-white text-[#18181B] text-sm hover:border-[#d0c9ba] hover:bg-[#FCFBF7] transition-all disabled:opacity-60 disabled:cursor-not-allowed">
               <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -195,38 +178,28 @@ function LoginPageContent() {
           </form>
 
           {/* Link to Register */}
-          <div className="mt-6 pt-5 border-t border-border text-center">
-            <p className="text-secondary text-sm">
+          <div className="mt-6 pt-5 border-t border-[#E7E2D6] text-center">
+            <p className="text-zinc-500 text-sm">
               Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-accent hover:underline font-medium">
+              <Link href="/register" className="text-[#1D4ED8] hover:underline font-medium">
                 Sign up
               </Link>
             </p>
           </div>
         </div>
 
-        {/* Test User Login */}
-        <button
-          type="button"
-          onClick={handleTestLogin}
-          disabled={loading}
-          className="mt-4 w-full flex items-center justify-center gap-2.5 p-3.5 rounded-xl bg-indigo-600/10 border border-indigo-500/25 text-indigo-300 text-sm font-medium hover:bg-indigo-600/20 hover:border-indigo-500/40 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? (
-            <>
-              <svg className="animate-spin h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-              </svg>
-              Signing in…
-            </>
+        {/* Demo Login */}
+        <button type="button" onClick={handleTestLogin} disabled={submitting}
+          className="mt-4 w-full flex items-center justify-center gap-2.5 p-3.5 rounded-xl bg-[#2563EB]/8 border border-[#2563EB]/25 text-[#1D4ED8] text-sm font-medium hover:bg-[#2563EB]/12 hover:border-[#2563EB]/40 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+          {submitting ? (
+            <><Spinner /> Signing in…</>
           ) : (
             <>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
-              Continue as Test User
+              View live demo — no signup
             </>
           )}
         </button>
@@ -247,7 +220,7 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-primary" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#FCFBF7]" />}>
       <LoginPageContent />
     </Suspense>
   );

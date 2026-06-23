@@ -10,7 +10,7 @@ export function Input({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-zinc-200 mb-2">
+        <label className="block text-sm font-medium text-[#27272A] mb-2">
           {label}
         </label>
       )}

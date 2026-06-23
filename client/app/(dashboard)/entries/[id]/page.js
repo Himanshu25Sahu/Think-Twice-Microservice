@@ -16,11 +16,11 @@ import { ArrowLeftIcon, TriangleUpIcon, EditIcon, TrashIcon } from '@/components
 import Link from 'next/link';
 
 const TYPE_META = {
-  architecture:    { icon: '⬡', color: '#818cf8' },
-  debugging:       { icon: '⚡', color: '#f472b6' },
-  feature:         { icon: '◈',  color: '#34d399' },
-  'best-practice': { icon: '◎', color: '#fbbf24' },
-  incident:        { icon: '⚠',  color: '#f87171' },
+  architecture:    { icon: '⬡', color: '#2563EB' },
+  debugging:       { icon: '⚡', color: '#DB2777' },
+  feature:         { icon: '◈',  color: '#16A34A' },
+  'best-practice': { icon: '◎', color: '#D97706' },
+  incident:        { icon: '⚠',  color: '#DC2626' },
 };
 
 export default function EntryDetailPage() {
@@ -228,7 +228,7 @@ export default function EntryDetailPage() {
           gap: 0.75rem;
           margin-bottom: 1.75rem;
           padding-bottom: 1.25rem;
-          border-bottom: 1px solid #1a1a2a;
+          border-bottom: 1px solid #E7E2D6;
         }
 
         .ed-back-btn {
@@ -238,9 +238,9 @@ export default function EntryDetailPage() {
           width: 2rem;
           height: 2rem;
           border-radius: 0.4375rem;
-          border: 1px solid #1e1e30;
-          background: #0a0a14;
-          color: #8080a8;
+          border: 1px solid #E7E2D6;
+          background: #FFFFFF;
+          color: #3F3F46;
           cursor: pointer;
           text-decoration: none;
           transition: background 140ms, border-color 140ms, color 140ms;
@@ -248,25 +248,26 @@ export default function EntryDetailPage() {
         }
 
         .ed-back-btn:hover {
-          background: #0f0f1c;
-          border-color: #2a2a40;
-          color: #c0c0e0;
+          background: #F2EEE4;
+          border-color: #D0C9BA;
+          color: #18181B;
         }
 
         .ed-page-title {
           font-size: 1.5rem;
           font-weight: 600;
-          color: #e4e4f0;
+          color: #18181B;
           letter-spacing: -0.02em;
           line-height: 1.2;
         }
 
         /* ── Card ── */
         .ed-card {
-          background: #0d0d18;
-          border: 1px solid #1a1a2a;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
           border-radius: 1rem;
           overflow: hidden;
+          box-shadow: 0 8px 24px rgba(24,24,27,0.06);
         }
 
         .ed-card-inner {
@@ -279,7 +280,7 @@ export default function EntryDetailPage() {
         /* ── Section ── */
         .ed-section {
           padding: 1.25rem 0;
-          border-bottom: 1px solid #13131f;
+          border-bottom: 1px solid #E7E2D6;
         }
 
         .ed-section:first-child { padding-top: 0; }
@@ -310,7 +311,7 @@ export default function EntryDetailPage() {
         .ed-entry-title {
           font-size: 1.375rem;
           font-weight: 600;
-          color: #e4e4f0;
+          color: #18181B;
           letter-spacing: -0.015em;
           line-height: 1.3;
         }
@@ -325,7 +326,7 @@ export default function EntryDetailPage() {
 
         .ed-vote-group {
           display: flex;
-          border: 1px solid #1e1e30;
+          border: 1px solid #E7E2D6;
           border-radius: 0.5rem;
           overflow: hidden;
         }
@@ -335,29 +336,29 @@ export default function EntryDetailPage() {
           align-items: center;
           gap: 0.3125rem;
           padding: 0.4375rem 0.6875rem;
-          background: #0a0a14;
+          background: #FFFFFF;
           border: none;
-          color: #7070988;
+          color: #3F3F46;
           font-size: 0.8125rem;
           font-family: 'DM Mono', monospace;
           cursor: pointer;
           transition: background 140ms, color 140ms;
-          color: #8080a8;
+          color: #3F3F46;
         }
 
         .ed-vote-btn:first-child {
-          border-right: 1px solid #1e1e30;
+          border-right: 1px solid #E7E2D6;
         }
 
         .ed-vote-btn:hover {
-          background: #0f0f1c;
+          background: #F2EEE4;
         }
 
-        .ed-vote-btn.up:hover   { color: #34d399; background: rgba(52,211,153,0.06); }
-        .ed-vote-btn.down:hover { color: #f87171; background: rgba(248,113,113,0.06); }
+        .ed-vote-btn.up:hover   { color: #16A34A; background: rgba(22,163,74,0.08); }
+        .ed-vote-btn.down:hover { color: #DC2626; background: rgba(220,38,38,0.08); }
 
-        .ed-vote-btn.up.active   { color: #34d399; background: rgba(52,211,153,0.1); }
-        .ed-vote-btn.down.active { color: #f87171; background: rgba(248,113,113,0.1); }
+        .ed-vote-btn.up.active   { color: #16A34A; background: rgba(22,163,74,0.1); }
+        .ed-vote-btn.down.active { color: #DC2626; background: rgba(220,38,38,0.1); }
 
         .ed-vote-icon-flip {
           display: inline-flex;
@@ -371,16 +372,16 @@ export default function EntryDetailPage() {
           width: 2rem;
           height: 2rem;
           border-radius: 0.4375rem;
-          border: 1px solid #1e1e30;
-          background: #0a0a14;
-          color: #7070988;
+          border: 1px solid #E7E2D6;
+          background: #FFFFFF;
+          color: #3F3F46;
           cursor: pointer;
           transition: background 140ms, border-color 140ms, color 140ms;
-          color: #8080a8;
+          color: #3F3F46;
         }
 
-        .ed-icon-btn.edit:hover  { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.3); color: #818cf8; }
-        .ed-icon-btn.trash:hover { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.3); color: #f87171; }
+        .ed-icon-btn.edit:hover  { background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.3); color: #2563EB; }
+        .ed-icon-btn.trash:hover { background: #FEF2F2; border-color: #FECACA; color: #DC2626; }
 
         /* ── Metadata strip ── */
         .ed-meta {
@@ -398,14 +399,14 @@ export default function EntryDetailPage() {
           font-weight: 300;
         }
 
-        .ed-meta-label { color: #4a4a6a; }
-        .ed-meta-value { color: #9090b8; }
+        .ed-meta-label { color: #A1A1AA; }
+        .ed-meta-value { color: #3F3F46; }
 
         /* ── Section label ── */
         .ed-label {
           font-size: 0.6875rem;
           font-weight: 500;
-          color: #8888aa;
+          color: #71717A;
           letter-spacing: 0.07em;
           text-transform: uppercase;
           font-family: 'DM Mono', monospace;
@@ -415,7 +416,7 @@ export default function EntryDetailPage() {
         /* ── Body text ── */
         .ed-body {
           font-size: 0.9rem;
-          color: #a8a8c8;
+          color: #3F3F46;
           line-height: 1.7;
           white-space: pre-wrap;
           font-family: 'DM Sans', sans-serif;
@@ -423,12 +424,12 @@ export default function EntryDetailPage() {
 
         /* ── Textarea (edit mode) ── */
         .ed-input {
-          background: #0a0a14;
-          border: 1px solid #1e1e30;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
           border-radius: 0.5rem;
           padding: 0.6875rem 0.875rem;
           font-size: 0.875rem;
-          color: #d4d4e8;
+          color: #18181B;
           outline: none;
           width: 100%;
           transition: border-color 160ms, box-shadow 160ms;
@@ -437,10 +438,10 @@ export default function EntryDetailPage() {
           resize: vertical;
         }
 
-        .ed-input::placeholder { color: #52527a; }
+        .ed-input::placeholder { color: #A1A1AA; }
         .ed-input:focus {
-          border-color: #3b3b5c;
-          box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
+          border-color: #2563EB;
+          box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
         }
 
         .ed-mention-wrap {
@@ -452,19 +453,19 @@ export default function EntryDetailPage() {
           left: 0;
           right: 0;
           top: calc(100% + 0.35rem);
-          background: #101022;
-          border: 1px solid #26264a;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
           border-radius: 0.5rem;
           z-index: 20;
           overflow: hidden;
-          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+          box-shadow: 0 8px 24px rgba(24,24,27,0.06);
         }
 
         .ed-mention-option {
           width: 100%;
           border: none;
           background: transparent;
-          color: #d4d4e8;
+          color: #3F3F46;
           padding: 0.5rem 0.75rem;
           text-align: left;
           display: flex;
@@ -477,15 +478,15 @@ export default function EntryDetailPage() {
         }
 
         .ed-mention-option:hover {
-          background: #1b1b33;
+          background: #F2EEE4;
         }
 
         .ed-mention-name {
-          color: #cfd0f6;
+          color: #18181B;
         }
 
         .ed-mention-username {
-          color: #7c7db0;
+          color: #71717A;
           font-family: 'DM Mono', monospace;
           font-size: 0.75rem;
         }
@@ -507,7 +508,7 @@ export default function EntryDetailPage() {
           gap: 0.375rem;
           font-size: 0.6875rem;
           font-weight: 500;
-          color: #8888aa;
+          color: #71717A;
           letter-spacing: 0.07em;
           text-transform: uppercase;
           font-family: 'DM Mono', monospace;
@@ -521,8 +522,8 @@ export default function EntryDetailPage() {
           flex-shrink: 0;
         }
 
-        .ed-dot.green { background: #34d399; }
-        .ed-dot.red   { background: #f87171; }
+        .ed-dot.green { background: #16A34A; }
+        .ed-dot.red   { background: #DC2626; }
 
         .ed-list {
           display: flex;
@@ -538,7 +539,7 @@ export default function EntryDetailPage() {
           gap: 0.5rem;
           align-items: flex-start;
           font-size: 0.875rem;
-          color: #a0a0c0;
+          color: #3F3F46;
           font-family: 'DM Sans', sans-serif;
           line-height: 1.55;
         }
@@ -550,8 +551,8 @@ export default function EntryDetailPage() {
           font-family: 'DM Mono', monospace;
         }
 
-        .ed-list-icon.green { color: #34d399; }
-        .ed-list-icon.red   { color: #f87171; }
+        .ed-list-icon.green { color: #16A34A; }
+        .ed-list-icon.red   { color: #DC2626; }
 
         /* ── Tags ── */
         .ed-tags {
@@ -564,11 +565,11 @@ export default function EntryDetailPage() {
           display: inline-flex;
           align-items: center;
           padding: 0.25rem 0.625rem;
-          background: #12122a;
-          border: 1px solid #22224a;
+          background: rgba(37, 99, 235, 0.08);
+          border: 1px solid rgba(37, 99, 235, 0.12);
           border-radius: 9999px;
           font-size: 0.6875rem;
-          color: #7878aa;
+          color: #2563EB;
           font-family: 'DM Mono', monospace;
           font-weight: 300;
         }
@@ -576,7 +577,7 @@ export default function EntryDetailPage() {
         /* ── Image ── */
         .ed-image {
           border-radius: 0.625rem;
-          border: 1px solid #1e1e30;
+          border: 1px solid #E7E2D6;
           max-width: 100%;
           display: block;
         }
@@ -586,7 +587,7 @@ export default function EntryDetailPage() {
           display: flex;
           gap: 0.625rem;
           padding-top: 1.25rem;
-          border-top: 1px solid #13131f;
+          border-top: 1px solid #E7E2D6;
           margin-top: 1.25rem;
         }
 
@@ -594,9 +595,9 @@ export default function EntryDetailPage() {
           flex: 1;
           padding: 0.6875rem 1rem;
           border-radius: 0.5rem;
-          border: 1px solid #1e1e30;
+          border: 1px solid #E7E2D6;
           background: transparent;
-          color: #8080a0;
+          color: #3F3F46;
           font-size: 0.875rem;
           font-family: 'DM Sans', sans-serif;
           font-weight: 500;
@@ -605,9 +606,9 @@ export default function EntryDetailPage() {
         }
 
         .ed-btn-cancel:hover {
-          background: #0f0f1c;
-          border-color: #2a2a40;
-          color: #c0c0e0;
+          background: #F2EEE4;
+          border-color: #D0C9BA;
+          color: #18181B;
         }
 
         .ed-btn-save {
@@ -615,7 +616,7 @@ export default function EntryDetailPage() {
           padding: 0.6875rem 1rem;
           border-radius: 0.5rem;
           border: none;
-          background: #6366f1;
+          background: #2563EB;
           color: white;
           font-size: 0.875rem;
           font-family: 'DM Sans', sans-serif;
@@ -628,7 +629,7 @@ export default function EntryDetailPage() {
           gap: 0.5rem;
         }
 
-        .ed-btn-save:hover  { background: #7274f3; }
+        .ed-btn-save:hover  { background: #1D4ED8; }
         .ed-btn-save:active { transform: scale(0.985); }
         .ed-btn-save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 

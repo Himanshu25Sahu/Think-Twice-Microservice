@@ -42,9 +42,9 @@ export function Toast({ message, type = 'info', duration = 3500, onClose }) {
   };
 
   const styles = {
-    info: 'bg-[#13131f] border-indigo-500/40 text-indigo-300',
-    success: 'bg-[#13131f] border-green-500/40 text-green-300',
-    error: 'bg-[#13131f] border-red-500/40 text-red-300',
+    info: 'bg-[#FFFFFF] border-[#E7E2D6] text-[#18181B]',
+    success: 'bg-[#F0FDF4] border-[#BBF7D0] text-[#15803D]',
+    error: 'bg-[#FEF2F2] border-[#FECACA] text-[#B91C1C]',
   };
 
   return (
@@ -55,8 +55,9 @@ export function Toast({ message, type = 'info', duration = 3500, onClose }) {
         transition: 'opacity 350ms ease, transform 350ms ease',
         opacity: visible && !leaving ? 1 : 0,
         transform: visible && !leaving ? 'translateY(0)' : 'translateY(12px)',
+        boxShadow: '0 8px 24px rgba(24,24,27,0.08)',
       }}
-      className={`fixed bottom-5 right-5 z-50 border rounded-xl px-4 py-3 flex items-center gap-3 shadow-lg shadow-black/40 min-w-[260px] max-w-sm ${styles[type]}`}
+      className={`fixed bottom-5 right-5 z-50 border rounded-xl px-4 py-3 flex items-center gap-3 min-w-[260px] max-w-sm ${styles[type]}`}
     >
       {icons[type]}
       <span className="text-sm font-medium flex-1">{message}</span>

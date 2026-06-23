@@ -71,7 +71,7 @@ export default function AnalyticsPage() {
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-400">{error}</p>
+        <p className="text-red-600">{error}</p>
       </div>
     );
   }
@@ -104,10 +104,10 @@ export default function AnalyticsPage() {
   ];
 
   const colorMap = {
-    indigo: 'bg-indigo-600/10 border-indigo-600/20 text-indigo-400',
-    cyan: 'bg-cyan-600/10 border-cyan-600/20 text-cyan-400',
-    amber: 'bg-amber-600/10 border-amber-600/20 text-amber-400',
-    green: 'bg-green-600/10 border-green-600/20 text-green-400',
+    indigo: 'bg-blue-600/10 border-blue-600/20 text-blue-700',
+    cyan: 'bg-cyan-600/10 border-cyan-600/20 text-cyan-700',
+    amber: 'bg-amber-600/10 border-amber-600/20 text-amber-700',
+    green: 'bg-green-600/10 border-green-600/20 text-green-700',
   };
 
   return (
@@ -145,9 +145,9 @@ export default function AnalyticsPage() {
                   {type.replace('-', ' ')}
                 </span>
                 <div className="flex items-center gap-2">
-                  <div className="w-32 bg-[#1a1a27] rounded-full h-2">
+                  <div className="w-32 bg-[#F2EEE4] rounded-full h-2">
                     <div
-                      className="bg-indigo-600 h-2 rounded-full"
+                      className="bg-[#2563EB] h-2 rounded-full"
                       style={{
                         width: `${
                           ((count / (metrics?.totalEntries || 1)) * 100) || 0
@@ -173,10 +173,10 @@ export default function AnalyticsPage() {
             {metrics.topContributors.map((contributor, idx) => (
               <div
                 key={contributor.userId}
-                className="flex items-center gap-3 p-3 rounded hover:bg-[#1a1a27] transition"
+                className="flex items-center gap-3 p-3 rounded hover:bg-[#F2EEE4] transition"
               >
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600/20 flex items-center justify-center">
-                  <span className="font-semibold text-indigo-400 text-sm">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600/15 flex items-center justify-center">
+                  <span className="font-semibold text-blue-700 text-sm">
                     {idx + 1}
                   </span>
                 </div>
