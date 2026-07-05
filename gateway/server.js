@@ -19,7 +19,9 @@ const KEEPALIVE_INTERVAL_MS = 240000;
 const KEEPALIVE_WAKE_RETRIES = 3;
 const KEEPALIVE_RETRY_DELAY_MS = 30000;
 const ENABLE_INTERNAL_KEEPALIVE = true;
-const KEEPALIVE_TOLERATE_WARNING_STATUS_CODES = new Set([429, 502, 503]);
+// Only tolerate genuine "service is up but throttling" responses as alive.
+// 502/503 mean the service is asleep/crash-looping, so they must stay dead in the report.
+const KEEPALIVE_TOLERATE_WARNING_STATUS_CODES = new Set([429]);
 
 // Respect x-forwarded-for/x-forwarded-proto when deployed behind a proxy (Vercel, Render, etc.)
 app.set('trust proxy', true);
