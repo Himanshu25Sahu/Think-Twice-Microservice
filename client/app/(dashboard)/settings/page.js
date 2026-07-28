@@ -90,8 +90,12 @@ export default function SettingsPage() {
           width: 100%;
           display: flex;
           justify-content: center;
-          padding: 0 1rem;
+          padding: 0;
           font-family: 'DM Sans', sans-serif;
+        }
+
+        @media (min-width: 640px) {
+          .st-outer { padding: 0 1rem; }
         }
 
         .st-root {
@@ -127,11 +131,16 @@ export default function SettingsPage() {
         }
 
         .st-card-header {
-          padding: 1.25rem 1.75rem 0;
+          padding: 1.125rem 1.125rem 0;
         }
 
         .st-card-body {
-          padding: 1rem 1.75rem 1.5rem;
+          padding: 1rem 1.125rem 1.25rem;
+        }
+
+        @media (min-width: 640px) {
+          .st-card-header { padding: 1.25rem 1.75rem 0; }
+          .st-card-body   { padding: 1rem 1.75rem 1.5rem; }
         }
 
         .st-card-title {
@@ -157,8 +166,10 @@ export default function SettingsPage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
+          gap: 0.75rem;
           padding: 0.75rem 0;
           border-bottom: 1px solid #E7E2D6;
+          flex-wrap: wrap;
         }
 
         .st-info-row:last-child { border-bottom: none; }
@@ -177,6 +188,8 @@ export default function SettingsPage() {
           font-family: 'DM Sans', sans-serif;
           font-weight: 500;
           text-align: right;
+          min-width: 0;
+          overflow-wrap: anywhere;
         }
 
         /* ── Invite code ── */
@@ -198,6 +211,7 @@ export default function SettingsPage() {
           border: 1px solid #E7E2D6;
           border-radius: 0.5rem;
           padding: 0.75rem 1rem;
+          flex-wrap: wrap;
         }
 
         .st-invite-code {
@@ -293,6 +307,27 @@ export default function SettingsPage() {
           align-items: center;
           gap: 0.5rem;
           flex-shrink: 0;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
+
+        /* Phones: let the member row wrap so role + actions get their own line
+           instead of squeezing the name to a couple of characters. */
+        @media (max-width: 560px) {
+          .st-member-row {
+            flex-wrap: wrap;
+            gap: 0.625rem 0.75rem;
+          }
+
+          .st-member-info { flex-basis: calc(100% - 3.125rem); }
+
+          .st-member-actions {
+            width: 100%;
+            justify-content: flex-start;
+          }
+
+          .st-role-select,
+          .st-remove-btn { padding-top: 0.5rem; padding-bottom: 0.5rem; }
         }
 
         .st-role-pill {

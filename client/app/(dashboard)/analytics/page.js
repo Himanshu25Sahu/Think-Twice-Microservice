@@ -111,23 +111,23 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           const colorClass = colorMap[stat.color];
           return (
             <div
               key={stat.label}
-              className={`card-base border ${colorClass} p-4`}
+              className={`card-base border ${colorClass} p-3 sm:p-4`}
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-secondary mb-1">{stat.label}</p>
-                  <p className="text-3xl font-bold text-primary">{stat.value}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="mb-1 text-xs text-secondary sm:text-sm">{stat.label}</p>
+                  <p className="truncate text-2xl font-bold text-primary sm:text-3xl">{stat.value}</p>
                 </div>
-                <Icon className="w-8 h-8 opacity-50" />
+                <Icon className="h-6 w-6 shrink-0 opacity-50 sm:h-8 sm:w-8" />
               </div>
             </div>
           );
@@ -140,14 +140,14 @@ export default function AnalyticsPage() {
           <h3 className="text-lg font-semibold text-primary mb-4">Entries by Type</h3>
           <div className="space-y-3">
             {Object.entries(metrics.entriesByType).map(([type, count]) => (
-              <div key={type} className="flex items-center justify-between">
-                <span className="text-secondary capitalize">
+              <div key={type} className="flex items-center justify-between gap-3">
+                <span className="min-w-0 shrink truncate text-sm capitalize text-secondary sm:text-base">
                   {type.replace('-', ' ')}
                 </span>
-                <div className="flex items-center gap-2">
-                  <div className="w-32 bg-[#F2EEE4] rounded-full h-2">
+                <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+                  <div className="h-2 w-full max-w-[8rem] shrink rounded-full bg-[#F2EEE4]">
                     <div
-                      className="bg-[#2563EB] h-2 rounded-full"
+                      className="h-2 rounded-full bg-[#2563EB]"
                       style={{
                         width: `${
                           ((count / (metrics?.totalEntries || 1)) * 100) || 0
@@ -155,7 +155,7 @@ export default function AnalyticsPage() {
                       }}
                     />
                   </div>
-                  <span className="text-primary font-semibold w-12 text-right">
+                  <span className="w-8 shrink-0 text-right font-semibold text-primary sm:w-12">
                     {count}
                   </span>
                 </div>
@@ -173,19 +173,19 @@ export default function AnalyticsPage() {
             {metrics.topContributors.map((contributor, idx) => (
               <div
                 key={contributor.userId}
-                className="flex items-center gap-3 p-3 rounded hover:bg-[#F2EEE4] transition"
+                className="flex items-center gap-3 rounded p-2 transition hover:bg-[#F2EEE4] sm:p-3"
               >
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600/15 flex items-center justify-center">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-600/15">
                   <span className="font-semibold text-blue-700 text-sm">
                     {idx + 1}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-primary font-medium truncate">
+                  <p className="truncate text-sm font-medium text-primary sm:text-base">
                     {getMemberName(contributor.userId)}{contributor.userId === user?._id ? ' (You)' : ''}
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="shrink-0 text-right">
                   <span className="text-sm font-semibold text-accent">
                     {contributor.count}
                   </span>

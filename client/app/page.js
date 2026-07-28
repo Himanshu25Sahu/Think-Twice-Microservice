@@ -62,15 +62,18 @@ export default function Home() {
         }
       `;
 
+  const sectionCls = 'px-4 sm:px-6 py-14 sm:py-20 md:py-24 border-t border-[#E7E2D6]';
+  const headingCls = 'text-2xl sm:text-3xl font-bold text-[#18181B] text-center';
+
   return (
     <div className="min-h-screen bg-[#FCFBF7] text-[#18181B]">
       <style dangerouslySetInnerHTML={{ __html: homeStyles }} />
 
       {/* ── NAVBAR ── */}
-      <nav className="sticky top-0 z-50 bg-[#FCFBF7]/85 backdrop-blur-md border-b border-[#E7E2D6] px-6 py-3.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <span className="flex items-center gap-2 font-bold text-xl select-none tracking-tight text-[#18181B]">
-            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#2563EB]" />
+      <nav className="sticky top-0 z-50 bg-[#FCFBF7]/85 backdrop-blur-md border-b border-[#E7E2D6] px-4 sm:px-6 py-3.5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2 font-bold text-lg sm:text-xl select-none tracking-tight text-[#18181B]">
+            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#2563EB] shrink-0" />
             Think Twice
           </span>
           {/* centre: quick proof points */}
@@ -83,11 +86,11 @@ export default function Home() {
             <span className="text-zinc-300">·</span>
             <span>Distributed tracing</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-zinc-600 hover:text-[#18181B] transition-colors px-3 py-1.5 rounded-lg hover:bg-black/5">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+            <Link href="/login" className="text-sm text-zinc-600 hover:text-[#18181B] transition-colors px-2.5 sm:px-3 py-1.5 rounded-lg hover:bg-black/5">
               Login
             </Link>
-            <Link href="/register" className="text-sm text-white bg-[#2563EB] hover:bg-[#1D4ED8] transition-colors rounded-lg px-4 py-1.5 font-medium">
+            <Link href="/register" className="whitespace-nowrap text-sm text-white bg-[#2563EB] hover:bg-[#1D4ED8] transition-colors rounded-lg px-3 sm:px-4 py-1.5 font-medium">
               Get Started
             </Link>
           </div>
@@ -95,22 +98,22 @@ export default function Home() {
       </nav>
 
       {/* ── HERO ── */}
-      <section className="relative px-6 pt-24 pb-20">
+      <section className="relative px-4 sm:px-6 pt-14 sm:pt-20 md:pt-24 pb-14 sm:pb-20">
         <div className="relative max-w-4xl mx-auto text-center">
           {/* Badge */}
-          <div className="fade-in-up inline-flex items-center gap-2 bg-[#2563EB]/10 text-[#1D4ED8] border border-[#2563EB]/20 rounded-full px-4 py-1.5 text-xs font-mono mb-8">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <div className="fade-in-up inline-flex items-center gap-2 bg-[#2563EB]/10 text-[#1D4ED8] border border-[#2563EB]/20 rounded-full px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-mono mb-6 sm:mb-8">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             Production-Grade Distributed System
           </div>
 
           {/* Headline */}
-          <h1 className="fade-in-up-1 text-5xl md:text-[3.8rem] font-bold tracking-tight text-[#18181B] leading-[1.08] mb-5">
+          <h1 className="fade-in-up-1 text-[1.75rem] sm:text-4xl md:text-5xl lg:text-[3.8rem] font-bold tracking-tight text-[#18181B] leading-[1.15] md:leading-[1.08] mb-5">
             Stop losing your team's decisions<br />
             <span className="text-[#2563EB]">in Slack and forgotten docs.</span>
           </h1>
 
           {/* Sub */}
-          <p className="fade-in-up-2 text-[1.05rem] text-zinc-600 max-w-2xl mx-auto mt-5 mb-4 leading-relaxed">
+          <p className="fade-in-up-2 text-[0.95rem] sm:text-[1.05rem] text-zinc-600 max-w-2xl mx-auto mt-5 mb-4 leading-relaxed">
             Think Twice is a structured knowledge base for engineering teams.<br className="hidden sm:block" />
             Log architecture decisions, document incidents, and capture what your team learns — so the next hire doesn't repeat the same mistakes.
           </p>
@@ -136,7 +139,7 @@ export default function Home() {
         </div>
 
         {/* ── STAT BAR ── */}
-        <div className="relative max-w-4xl mx-auto mt-16">
+        <div className="relative max-w-4xl mx-auto mt-10 sm:mt-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[#E7E2D6] rounded-2xl overflow-hidden border border-[#E7E2D6]">
             {[
               { num: '5',    label: 'Microservices',        sub: 'Independently deployable'    },
@@ -144,7 +147,7 @@ export default function Home() {
               { num: '6',    label: 'Entry Types',            sub: 'Decisions · Incidents · Features · Best Practices · Debug · Architecture' },
               { num: '4',    label: 'User Roles',               sub: 'Owner · Admin · Member · Viewer' },
             ].map((s) => (
-              <div key={s.label} className="bg-white px-6 py-5 text-center">
+              <div key={s.label} className="bg-white px-4 sm:px-6 py-4 sm:py-5 text-center">
                 <div className="stat-num text-2xl font-bold text-[#2563EB] mb-1">{s.num}</div>
                 <div className="text-xs font-semibold text-[#27272A] mb-0.5">{s.label}</div>
                 <div className="text-[10px] text-zinc-500 font-mono leading-tight">{s.sub}</div>
@@ -155,15 +158,15 @@ export default function Home() {
       </section>
 
       {/* ── WHAT IT DOES ── */}
-      <section className="px-6 py-20 border-t border-[#E7E2D6]">
+      <section className={sectionCls}>
         <div className="max-w-4xl mx-auto">
           <p className="text-xs uppercase tracking-[0.15em] text-zinc-500 text-center mb-3 font-mono">The Product</p>
-          <h2 className="text-3xl font-bold text-[#18181B] text-center mb-4">A smarter way to document what your team knows</h2>
-          <p className="text-zinc-600 text-center mb-14 max-w-lg mx-auto text-sm leading-relaxed">
+          <h2 className={`${headingCls} mb-4`}>A smarter way to document what your team knows</h2>
+          <p className="text-zinc-600 text-center mb-10 sm:mb-14 max-w-lg mx-auto text-sm leading-relaxed">
             Every team makes hundreds of decisions. Most of them are never written down.
             Think Twice changes that.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
             {[
               {
                 icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
@@ -194,24 +197,24 @@ export default function Home() {
       </section>
 
       {/* ── ARCHITECTURE DIAGRAM ── */}
-      <section id="architecture" className="px-6 py-24 border-t border-[#E7E2D6]">
+      <section id="architecture" className={sectionCls}>
         <div className="max-w-5xl mx-auto">
           <p className="text-xs uppercase tracking-[0.15em] text-zinc-500 text-center mb-3 font-mono">System Design</p>
-          <h2 className="text-3xl font-bold text-[#18181B] text-center mb-3">How the System is Built</h2>
-          <p className="text-zinc-600 text-center mb-14 max-w-lg mx-auto text-sm leading-relaxed">
+          <h2 className={`${headingCls} mb-3`}>How the System is Built</h2>
+          <p className="text-zinc-600 text-center mb-10 sm:mb-14 max-w-lg mx-auto text-sm leading-relaxed">
             Every service owns its database, exposes its own API, and fails independently.
             No shared state. No single point of failure.
           </p>
 
           {/* Diagram */}
-          <div className="bg-white border border-[#E7E2D6] rounded-2xl p-6 sm:p-8 shadow-[0_12px_40px_rgba(24,24,27,0.06)]">
+          <div className="bg-white border border-[#E7E2D6] rounded-2xl p-3 sm:p-8 shadow-[0_12px_40px_rgba(24,24,27,0.06)]">
             <SystemDiagram />
           </div>
         </div>
       </section>
 
       {/* ── TECH STACK ── */}
-      <section className="px-6 py-14 border-t border-[#E7E2D6]">
+      <section className="px-4 sm:px-6 py-10 sm:py-14 border-t border-[#E7E2D6]">
         <div className="max-w-5xl mx-auto">
           <p className="text-xs uppercase tracking-[0.15em] text-zinc-500 text-center mb-8 font-mono">Stack</p>
           <div className="flex flex-wrap justify-center gap-2.5">
@@ -241,10 +244,10 @@ export default function Home() {
       </section>
 
       {/* ── RELIABILITY PATTERNS ── */}
-      <section id="patterns" className="px-6 py-24 border-t border-[#E7E2D6]">
+      <section id="patterns" className={sectionCls}>
         <div className="max-w-5xl mx-auto">
           <p className="text-xs uppercase tracking-[0.15em] text-zinc-500 text-center mb-3 font-mono">Production Patterns</p>
-          <h2 className="text-3xl font-bold text-[#18181B] text-center mb-3">Enterprise Reliability Patterns</h2>
+          <h2 className={`${headingCls} mb-3`}>Enterprise Reliability Patterns</h2>
           <p className="text-zinc-600 text-center mb-4 max-w-xl mx-auto text-sm leading-relaxed">
             These are not academic concepts. They are implemented, tested, and handle real failure scenarios.
           </p>
@@ -255,7 +258,7 @@ export default function Home() {
             </a>
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
 
             {/* Circuit Breaker */}
             <div className="bg-white border border-[#E7E2D6] rounded-xl p-6 card-hover flex flex-col">
@@ -328,10 +331,10 @@ export default function Home() {
       </section>
 
       {/* ── FEATURES GRID ── */}
-      <section className="px-6 py-24 border-t border-[#E7E2D6]">
+      <section className={sectionCls}>
         <div className="max-w-5xl mx-auto">
           <p className="text-xs uppercase tracking-[0.15em] text-zinc-500 text-center mb-3 font-mono">Capabilities</p>
-          <h2 className="text-3xl font-bold text-[#18181B] text-center mb-14">Built for Engineering Teams</h2>
+          <h2 className={`${headingCls} mb-10 sm:mb-14`}>Built for Engineering Teams</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
@@ -379,14 +382,14 @@ export default function Home() {
       </section>
 
       {/* ── EVENT FLOW ── */}
-      <section className="px-6 py-24 border-t border-[#E7E2D6]">
+      <section className={sectionCls}>
         <div className="max-w-5xl mx-auto">
           <p className="text-xs uppercase tracking-[0.15em] text-zinc-500 text-center mb-3 font-mono">Async Pipeline</p>
-          <h2 className="text-3xl font-bold text-[#18181B] text-center mb-3">Why This Architecture Matters</h2>
+          <h2 className={`${headingCls} mb-3`}>Why This Architecture Matters</h2>
           <p className="text-zinc-600 text-center mb-3 max-w-lg mx-auto text-sm leading-relaxed">
             Most portfolio apps couple every operation synchronously — that does not scale.
           </p>
-          <p className="text-zinc-400 text-center mb-14 text-xs font-mono">
+          <p className="text-zinc-400 text-center mb-10 sm:mb-14 text-xs font-mono">
             Here is what happens when a user creates an entry:
           </p>
 
@@ -433,9 +436,9 @@ export default function Home() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="px-6 py-24 border-t border-[#E7E2D6]" style={{ background: 'linear-gradient(180deg, #FCFBF7 0%, #F2EEE4 100%)' }}>
+      <section className={sectionCls} style={{ background: 'linear-gradient(180deg, #FCFBF7 0%, #F2EEE4 100%)' }}>
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-[#18181B] mb-4">See the full picture.</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#18181B] mb-4">See the full picture.</h2>
           <p className="text-zinc-700 mb-3 leading-relaxed">
             Think Twice is open-source. Every pattern described on this page is readable, testable code.
           </p>
@@ -463,7 +466,7 @@ export default function Home() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="border-t border-[#E7E2D6] py-8 px-6">
+      <footer className="border-t border-[#E7E2D6] py-8 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 text-zinc-500 text-xs font-mono">
           <span>Built by Himanshu Sahu</span>
           <span className="hidden sm:inline text-zinc-300">&bull;</span>

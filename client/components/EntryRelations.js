@@ -65,33 +65,177 @@ export default function EntryRelations({ entryId, entries = [] }) {
   };
 
   return (
-    <div style={{ padding: '1.25rem 0', borderBottom: '1px solid #13131f' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#7878aa', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          Decision Relations
-        </p>
+    <div className="er-root">
+      <style>{`
+        .er-root {
+          padding: 1.25rem 0;
+          border-bottom: 1px solid #E7E2D6;
+        }
+
+        .er-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+          margin-bottom: 1rem;
+        }
+
+        .er-title {
+          font-size: 0.6875rem;
+          font-weight: 500;
+          color: #71717A;
+          letter-spacing: 0.07em;
+          text-transform: uppercase;
+          font-family: 'DM Mono', monospace;
+        }
+
+        .er-add-btn {
+          padding: 0.375rem 0.75rem;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
+          border-radius: 0.375rem;
+          color: #3F3F46;
+          font-size: 0.75rem;
+          font-family: inherit;
+          cursor: pointer;
+          transition: background 140ms, border-color 140ms, color 140ms;
+        }
+
+        .er-add-btn:hover {
+          background: #F2EEE4;
+          border-color: #D0C9BA;
+          color: #18181B;
+        }
+
+        .er-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.625rem;
+          margin-bottom: 1rem;
+        }
+
+        .er-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.5rem;
+          padding: 0.75rem;
+          border-radius: 0.5rem;
+        }
+
+        .er-item-body { flex: 1; min-width: 0; }
+
+        .er-item-label {
+          font-size: 0.6875rem;
+          font-weight: 600;
+          margin-bottom: 0.25rem;
+          font-family: 'DM Mono', monospace;
+        }
+
+        .er-item-title {
+          font-size: 0.875rem;
+          color: #18181B;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .er-remove {
+          flex-shrink: 0;
+          width: 1.875rem;
+          height: 1.875rem;
+          border-radius: 0.375rem;
+          background: transparent;
+          border: none;
+          color: #DC2626;
+          cursor: pointer;
+          font-size: 0.8125rem;
+          transition: background 140ms;
+        }
+
+        .er-remove:hover:not(:disabled) { background: #FEF2F2; }
+        .er-remove:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .er-empty {
+          font-size: 0.8125rem;
+          color: #71717A;
+          font-family: 'DM Mono', monospace;
+          font-weight: 300;
+          margin-bottom: 1rem;
+        }
+
+        .er-form {
+          padding: 1rem;
+          background: #FCFBF7;
+          border: 1px solid #E7E2D6;
+          border-radius: 0.5rem;
+        }
+
+        .er-field { margin-bottom: 0.75rem; }
+
+        .er-label {
+          display: block;
+          font-size: 0.75rem;
+          color: #71717A;
+          margin-bottom: 0.375rem;
+          font-weight: 500;
+        }
+
+        .er-select {
+          width: 100%;
+          padding: 0.5rem 0.625rem;
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
+          border-radius: 0.375rem;
+          color: #18181B;
+          font-size: 0.875rem;
+          font-family: inherit;
+          outline: none;
+        }
+
+        .er-select:focus { border-color: #2563EB; }
+
+        .er-actions { display: flex; gap: 0.5rem; }
+
+        .er-btn {
+          flex: 1;
+          padding: 0.5625rem;
+          border-radius: 0.375rem;
+          cursor: pointer;
+          font-size: 0.875rem;
+          font-family: inherit;
+          font-weight: 500;
+          transition: background 140ms, border-color 140ms;
+        }
+
+        .er-btn-cancel {
+          background: #FFFFFF;
+          border: 1px solid #E7E2D6;
+          color: #3F3F46;
+        }
+
+        .er-btn-cancel:hover { background: #F2EEE4; border-color: #D0C9BA; }
+
+        .er-btn-submit {
+          background: #2563EB;
+          border: none;
+          color: #FFFFFF;
+        }
+
+        .er-btn-submit:hover:not(:disabled) { background: #1D4ED8; }
+        .er-btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        @media (max-width: 560px) {
+          .er-actions { flex-direction: column-reverse; }
+          .er-add-btn { padding: 0.5rem 0.75rem; }
+        }
+      `}</style>
+
+      <div className="er-header">
+        <p className="er-title">Decision Relations</p>
         {!showAddForm && (
-          <button
-            onClick={() => setShowAddForm(true)}
-            style={{
-              padding: '0.35rem 0.75rem',
-              background: '#1f1f3a',
-              border: '1px solid #2a2a45',
-              borderRadius: '0.375rem',
-              color: '#8080a0',
-              fontSize: '0.75rem',
-              cursor: 'pointer',
-              transition: 'all 200ms',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#2a2a45';
-              e.target.style.color = '#c0c0e0';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = '#1f1f3a';
-              e.target.style.color = '#8080a0';
-            }}
-          >
+          <button type="button" onClick={() => setShowAddForm(true)} className="er-add-btn">
             + Add Relation
           </button>
         )}
@@ -99,43 +243,29 @@ export default function EntryRelations({ entryId, entries = [] }) {
 
       {/* Existing Relations */}
       {relations.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
+        <div className="er-list">
           {relations.map((relation) => {
             const config = RELATION_CONFIG[relation.type];
             return (
               <div
                 key={relation.targetEntryId}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.75rem',
-                  background: config.bg,
-                  border: `1px solid ${config.color}30`,
-                  borderRadius: '0.5rem',
-                }}
+                className="er-item"
+                style={{ background: config.bg, border: `1px solid ${config.color}30` }}
               >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.6875rem', color: config.color, fontWeight: 600, marginBottom: '0.25rem' }}>
+                <div className="er-item-body">
+                  <div className="er-item-label" style={{ color: config.color }}>
                     {config.label}
                   </div>
-                  <div style={{ fontSize: '0.875rem', color: '#d0d0e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div className="er-item-title">
                     {getEntryTitle(relation.targetEntryId)}
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => handleRemoveRelation(relation.targetEntryId)}
                   disabled={loading}
-                  style={{
-                    marginLeft: '0.5rem',
-                    padding: '0.35rem 0.5rem',
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#ef4444',
-                    cursor: 'pointer',
-                    fontSize: '0.75rem',
-                    opacity: loading ? 0.5 : 1,
-                  }}
+                  aria-label="Remove relation"
+                  className="er-remove"
                 >
                   ✕
                 </button>
@@ -144,37 +274,20 @@ export default function EntryRelations({ entryId, entries = [] }) {
           })}
         </div>
       ) : (
-        <p style={{ fontSize: '0.875rem', color: '#5858780', marginBottom: '1rem' }}>
+        <p className="er-empty">
           No relations yet. Add one to map decision impacts.
         </p>
       )}
 
       {/* Add Relation Form */}
       {showAddForm && (
-        <div
-          style={{
-            padding: '1rem',
-            background: '#0f0f22',
-            border: '1px solid #1e1e35',
-            borderRadius: '0.5rem',
-          }}
-        >
-          <div style={{ marginBottom: '0.75rem' }}>
-            <label style={{ display: 'block', fontSize: '0.75rem', color: '#7878aa', marginBottom: '0.375rem', fontWeight: 600 }}>
-              Select Entry
-            </label>
+        <div className="er-form">
+          <div className="er-field">
+            <label className="er-label">Select Entry</label>
             <select
               value={selectedTargetId}
               onChange={(e) => setSelectedTargetId(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                background: '#0a0a16',
-                border: '1px solid #1e1e30',
-                borderRadius: '0.375rem',
-                color: '#d0d0e8',
-                fontSize: '0.875rem',
-              }}
+              className="er-select"
             >
               <option value="">Choose an entry...</option>
               {entries
@@ -187,22 +300,12 @@ export default function EntryRelations({ entryId, entries = [] }) {
             </select>
           </div>
 
-          <div style={{ marginBottom: '0.75rem' }}>
-            <label style={{ display: 'block', fontSize: '0.75rem', color: '#7878aa', marginBottom: '0.375rem', fontWeight: 600 }}>
-              Relation Type
-            </label>
+          <div className="er-field">
+            <label className="er-label">Relation Type</label>
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                background: '#0a0a16',
-                border: '1px solid #1e1e30',
-                borderRadius: '0.375rem',
-                color: '#d0d0e8',
-                fontSize: '0.875rem',
-              }}
+              className="er-select"
             >
               {Object.entries(RELATION_CONFIG).map(([key, { label }]) => (
                 <option key={key} value={key}>
@@ -212,36 +315,15 @@ export default function EntryRelations({ entryId, entries = [] }) {
             </select>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button
-              onClick={() => setShowAddForm(false)}
-              style={{
-                flex: 1,
-                padding: '0.5rem',
-                background: 'transparent',
-                border: '1px solid #1e1e30',
-                borderRadius: '0.375rem',
-                color: '#8080a0',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-              }}
-            >
+          <div className="er-actions">
+            <button type="button" onClick={() => setShowAddForm(false)} className="er-btn er-btn-cancel">
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleAddRelation}
               disabled={!selectedTargetId || loading}
-              style={{
-                flex: 1,
-                padding: '0.5rem',
-                background: '#6366f1',
-                border: 'none',
-                borderRadius: '0.375rem',
-                color: 'white',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                opacity: !selectedTargetId || loading ? 0.5 : 1,
-              }}
+              className="er-btn er-btn-submit"
             >
               {loading ? 'Adding...' : 'Add Relation'}
             </button>

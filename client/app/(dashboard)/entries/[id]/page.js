@@ -212,8 +212,12 @@ export default function EntryDetailPage() {
           width: 100%;
           display: flex;
           justify-content: center;
-          padding: 0 1rem;
+          padding: 0;
           font-family: 'DM Sans', sans-serif;
+        }
+
+        @media (min-width: 640px) {
+          .ed-outer { padding: 0 1rem; }
         }
 
         .ed-root {
@@ -271,10 +275,14 @@ export default function EntryDetailPage() {
         }
 
         .ed-card-inner {
-          padding: 1.75rem;
+          padding: 1.125rem;
           display: flex;
           flex-direction: column;
           gap: 0;
+        }
+
+        @media (min-width: 640px) {
+          .ed-card-inner { padding: 1.75rem; }
         }
 
         /* ── Section ── */
@@ -643,6 +651,37 @@ export default function EntryDetailPage() {
         }
 
         @keyframes ed-spin { to { transform: rotate(360deg); } }
+
+        /* ── Phones ── */
+        @media (max-width: 640px) {
+          /* Title and the vote/edit/delete cluster each get a full line. */
+          .ed-title-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.875rem;
+          }
+
+          .ed-actions { flex-wrap: wrap; }
+
+          .ed-vote-group { flex: 1; }
+
+          .ed-vote-btn {
+            flex: 1;
+            justify-content: center;
+            padding: 0.5625rem 0.6875rem;
+          }
+
+          .ed-icon-btn { width: 2.25rem; height: 2.25rem; }
+
+          .ed-page-title { font-size: 1.25rem; }
+          .ed-entry-title { font-size: 1.125rem; }
+
+          .ed-meta { gap: 0.5rem 1rem; }
+
+          .ed-edit-footer { flex-direction: column-reverse; }
+          .ed-btn-cancel,
+          .ed-btn-save { width: 100%; }
+        }
       `}</style>
 
       <div className="ed-outer">

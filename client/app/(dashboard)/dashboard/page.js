@@ -182,7 +182,13 @@ export default function DashboardPage() {
         @media (max-width: 580px) {
           .db-search { width: 100%; }
           .db-search-wrap { width: 100%; }
-          .db-header { align-items: flex-start; }
+          .db-header {
+            align-items: stretch;
+            gap: 1rem;
+            padding-bottom: 1.125rem;
+            margin-bottom: 1.125rem;
+          }
+          .db-title { font-size: 1.25rem; }
         }
 
         /* ── Filter pills ── */
@@ -238,11 +244,13 @@ export default function DashboardPage() {
           gap: 1rem;
         }
 
-        @media (max-width: 1024px) {
+        /* The sidebar rail eats 15rem of the viewport at >=1024px, so three
+           columns only get comfortable around 1280px. */
+        @media (max-width: 1279px) {
           .db-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 680px) {
           .db-grid { grid-template-columns: 1fr; }
         }
 
@@ -564,6 +572,28 @@ export default function DashboardPage() {
         .db-page-total {
           color: #71717A;
           color: #71717A;
+        }
+
+        @media (max-width: 580px) {
+          .db-filters {
+            gap: 0.5rem;
+            padding-bottom: 1.125rem;
+            margin-bottom: 1.25rem;
+          }
+
+          .db-filter-btn { padding: 0.5rem 0.75rem; }
+
+          .db-card { padding: 1rem; }
+
+          .db-pagination {
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+          }
+
+          .db-pagination p { margin-left: 0 !important; }
+
+          .db-empty { padding: 2.5rem 1rem; }
         }
       `}</style>
 

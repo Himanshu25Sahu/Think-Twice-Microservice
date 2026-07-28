@@ -240,7 +240,11 @@ export default function NewEntryPage() {
           width: 100%;
           display: flex;
           justify-content: center;
-          padding: 0 1rem;
+          padding: 0;
+        }
+
+        @media (min-width: 640px) {
+          .ne-outer { padding: 0 1rem; }
         }
 
         .ne-root {
@@ -285,10 +289,14 @@ export default function NewEntryPage() {
         }
 
         .ne-form-inner {
-          padding: 1.75rem;
+          padding: 1.125rem;
           display: flex;
           flex-direction: column;
           gap: 0;
+        }
+
+        @media (min-width: 640px) {
+          .ne-form-inner { padding: 1.75rem; }
         }
 
         /* Section dividers */
@@ -814,6 +822,24 @@ export default function NewEntryPage() {
           .ne-dos-donts {
             grid-template-columns: 1fr;
           }
+
+          .ne-page-title { font-size: 1.25rem; }
+
+          /* Full-width dropzone gets shorter so the form stays scannable. */
+          .ne-file-input-label { padding: 1.5rem 1rem; }
+
+          .ne-images-preview-grid {
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+          }
+
+          .ne-footer { flex-direction: column-reverse; }
+
+          .ne-btn-cancel,
+          .ne-btn-submit { width: 100%; }
+
+          /* Roomier tap targets for the +/× controls. */
+          .ne-remove-btn { width: 2.25rem; height: 2.25rem; }
+          .ne-add-btn { padding: 0.5rem 0.625rem; }
         }
       `}</style>
 

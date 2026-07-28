@@ -122,7 +122,7 @@ function LoginPageContent() {
   const inputCls = 'w-full rounded-lg border border-[#E7E2D6] bg-white px-3.5 py-2.5 text-sm text-[#18181B] placeholder:text-zinc-400 outline-none transition-all focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 disabled:opacity-60';
 
   return (
-    <div className="min-h-screen bg-[#FCFBF7] text-[#18181B] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#FCFBF7] text-[#18181B] flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
 
         {/* Logo */}
@@ -135,7 +135,7 @@ function LoginPageContent() {
         </div>
 
         {/* Login Form */}
-        <div className="bg-white border border-[#E7E2D6] rounded-2xl p-7 shadow-[0_12px_40px_rgba(24,24,27,0.06)]">
+        <div className="bg-white border border-[#E7E2D6] rounded-2xl p-5 sm:p-7 shadow-[0_12px_40px_rgba(24,24,27,0.06)]">
           <h3 className="text-lg font-semibold text-[#18181B] mb-6">Welcome back</h3>
 
           <form onSubmit={handleSubmit} className="space-y-4">

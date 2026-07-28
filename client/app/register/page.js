@@ -128,7 +128,7 @@ function RegisterPageContent() {
         </div>
 
         {/* Registration Form */}
-        <div className="bg-white border border-[#E7E2D6] rounded-2xl p-7 shadow-[0_12px_40px_rgba(24,24,27,0.06)]">
+        <div className="bg-white border border-[#E7E2D6] rounded-2xl p-5 sm:p-7 shadow-[0_12px_40px_rgba(24,24,27,0.06)]">
           <h3 className="text-lg font-semibold text-[#18181B] mb-6">Create account</h3>
 
           <form onSubmit={handleSubmit} className="space-y-4">

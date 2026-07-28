@@ -87,8 +87,12 @@ export default function ProfilePage() {
           width: 100%;
           display: flex;
           justify-content: center;
-          padding: 0 1rem;
+          padding: 0;
           font-family: 'DM Sans', sans-serif;
+        }
+
+        @media (min-width: 640px) {
+          .pf-outer { padding: 0 1rem; }
         }
 
         .pf-root {
@@ -109,7 +113,11 @@ export default function ProfilePage() {
         }
 
         .pf-card-inner {
-          padding: 1.5rem 1.75rem;
+          padding: 1.25rem 1.125rem;
+        }
+
+        @media (min-width: 640px) {
+          .pf-card-inner { padding: 1.5rem 1.75rem; }
         }
 
         .pf-section-label {
@@ -127,6 +135,16 @@ export default function ProfilePage() {
           display: flex;
           align-items: center;
           gap: 1.125rem;
+          min-width: 0;
+        }
+
+        .pf-profile-row > div:last-child {
+          min-width: 0;
+        }
+
+        .pf-user-email,
+        .pf-user-name {
+          overflow-wrap: anywhere;
         }
 
         .pf-avatar {
@@ -268,6 +286,54 @@ export default function ProfilePage() {
 
         .pf-entry-row:last-child { border-bottom: none; }
 
+        .pf-entry-inner {
+          display: flex;
+          align-items: center;
+          gap: 0.875rem;
+          min-width: 0;
+        }
+
+        .pf-entry-votes {
+          display: flex;
+          align-items: center;
+          gap: 0.625rem;
+          flex-shrink: 0;
+        }
+
+        .pf-entry-vote {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          font-size: 0.725rem;
+          font-family: 'DM Mono', monospace;
+          font-weight: 300;
+        }
+
+        .pf-entry-vote.up   { color: #16A34A; }
+        .pf-entry-vote.down { color: #DC2626; }
+
+        .pf-entry-author {
+          font-size: 0.725rem;
+          font-family: 'DM Mono', monospace;
+          font-weight: 300;
+          color: #71717A;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+
+        /* Narrow screens: drop the decorations that push the title out of view.
+           Title + votes are what actually matter in this list. */
+        @media (max-width: 700px) {
+          .pf-entry-inner { gap: 0.625rem; }
+          .pf-entry-arrow { display: none; }
+          .pf-entry-author { display: none; }
+          .pf-entry-pill-label { display: none; }
+        }
+
+        @media (max-width: 420px) {
+          .pf-entry-pill { display: none; }
+        }
+
         .pf-entry-link:hover .pf-entry-row {
           background: transparent;
         }
@@ -377,6 +443,7 @@ export default function ProfilePage() {
           gap: 0.5rem;
           padding: 0.625rem 0;
           border-bottom: 1px solid #E7E2D6;
+          flex-wrap: wrap;
         }
 
         .pf-confirm-row:last-child { border-bottom: none; }
@@ -421,8 +488,10 @@ export default function ProfilePage() {
         /* ── Toast ── */
         .pf-toast {
           position: fixed;
-          bottom: 1.5rem;
-          right: 1.5rem;
+          bottom: 1rem;
+          right: 1rem;
+          left: 1rem;
+          text-align: center;
           padding: 0.625rem 1rem;
           border-radius: 0.5rem;
           font-size: 0.8rem;
@@ -444,6 +513,15 @@ export default function ProfilePage() {
           border: 1px solid #FECACA;
           color: #DC2626;
           box-shadow: 0 8px 24px rgba(24,24,27,0.06);
+        }
+
+        @media (min-width: 640px) {
+          .pf-toast {
+            left: auto;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            text-align: left;
+          }
         }
       `}</style>
 
@@ -532,9 +610,9 @@ export default function ProfilePage() {
                     }
 
                     return (
-                      <div key={entry._id} className="pf-entry-row" style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                      <div key={entry._id} className="pf-entry-row">
                         <Link href={`/entries/${entry._id}`} className="pf-entry-link" style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                          <div className="pf-entry-inner">
                             {/* Type dot */}
                             {meta && (
                               <span
@@ -552,13 +630,9 @@ export default function ProfilePage() {
                             </div>
 
                             {/* Vote counts */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#16A34A' }}>
-                                ▲ {entry.upvotes?.length || 0}
-                              </span>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#DC2626' }}>
-                                ▼ {entry.downvotes?.length || 0}
-                              </span>
+                            <div className="pf-entry-votes">
+                              <span className="pf-entry-vote up">▲ {entry.upvotes?.length || 0}</span>
+                              <span className="pf-entry-vote down">▼ {entry.downvotes?.length || 0}</span>
                             </div>
 
                             {/* Type pill */}
@@ -572,7 +646,7 @@ export default function ProfilePage() {
                                 }}
                               >
                                 <span>{meta.icon}</span>
-                                <span>{entry.type.replace('-', ' ')}</span>
+                                <span className="pf-entry-pill-label">{entry.type.replace('-', ' ')}</span>
                               </div>
                             )}
 
@@ -619,9 +693,9 @@ export default function ProfilePage() {
                     const meta = TYPE_META[entry.type];
 
                     return (
-                      <div key={entry._id} className="pf-entry-row" style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                      <div key={entry._id} className="pf-entry-row">
                         <Link href={`/entries/${entry._id}`} className="pf-entry-link" style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                          <div className="pf-entry-inner">
                             {/* Type dot */}
                             {meta && (
                               <span
@@ -640,19 +714,13 @@ export default function ProfilePage() {
 
                             {/* Author name */}
                             {entry.authorName && (
-                              <span style={{ fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#71717A', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                                by {entry.authorName}
-                              </span>
+                              <span className="pf-entry-author">by {entry.authorName}</span>
                             )}
 
                             {/* Vote counts */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#16A34A' }}>
-                                ▲ {entry.upvotes?.length || 0}
-                              </span>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', fontFamily: "'DM Mono', monospace", fontWeight: 300, color: '#DC2626' }}>
-                                ▼ {entry.downvotes?.length || 0}
-                              </span>
+                            <div className="pf-entry-votes">
+                              <span className="pf-entry-vote up">▲ {entry.upvotes?.length || 0}</span>
+                              <span className="pf-entry-vote down">▼ {entry.downvotes?.length || 0}</span>
                             </div>
 
                             {/* Type pill */}
@@ -666,7 +734,7 @@ export default function ProfilePage() {
                                 }}
                               >
                                 <span>{meta.icon}</span>
-                                <span>{entry.type.replace('-', ' ')}</span>
+                                <span className="pf-entry-pill-label">{entry.type.replace('-', ' ')}</span>
                               </div>
                             )}
 

@@ -111,6 +111,8 @@ export default function DecisionGraph() {
   const [relationError, setRelationError] = useState('');
   const [relationSuccess, setRelationSuccess] = useState('');
   const [selectedEdge, setSelectedEdge] = useState(null);
+  // Below `lg` the side panel is an overlay sheet so the canvas keeps the full width.
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const filteredEdges = useMemo(() => {
     if (filterType === 'all') {
@@ -255,6 +257,7 @@ export default function DecisionGraph() {
   const handleNodeClick = useCallback((event, node) => {
     setSelectedEdge(null);
     setSelectedNode(node);
+    setIsPanelOpen(true);
 
     if (!isCreatingRelation || isSubmittingRelation) {
       return;
@@ -287,10 +290,13 @@ export default function DecisionGraph() {
     setSelectedEdge(null);
   }, []);
 
+  // Fill the viewport below the sticky navbar, minus the page gutters.
+  const shellHeight = 'h-[calc(100dvh-6rem)] min-h-[26rem] sm:h-[calc(100dvh-7rem)]';
+
   if (loading) {
     return (
-      <div className="w-full h-screen bg-[#FCFBF7] flex items-center justify-center">
-        <div className="text-[#3F3F46]">
+      <div className={`w-full ${shellHeight} bg-[#FCFBF7] flex items-center justify-center`}>
+        <div className="text-[#3F3F46] text-center">
           <div className="animate-spin text-2xl mb-4">⚙️</div>
           <p>Loading decision graph...</p>
         </div>
@@ -300,8 +306,8 @@ export default function DecisionGraph() {
 
   if (error) {
     return (
-      <div className="w-full h-screen bg-[#FCFBF7] flex items-center justify-center">
-        <div className="text-[#71717A]">
+      <div className={`w-full ${shellHeight} bg-[#FCFBF7] flex items-center justify-center px-4`}>
+        <div className="text-[#71717A] text-center">
           <p className="mb-2">❌ {error}</p>
           <Link href="/login" className="text-[#2563EB] hover:underline text-sm">
             Return to dashboard
@@ -312,10 +318,10 @@ export default function DecisionGraph() {
   }
 
   return (
-    <div className="w-full h-screen bg-[#FCFBF7] flex">
-      <div className="flex-1 relative">
+    <div className={`relative flex w-full ${shellHeight} flex-col overflow-hidden rounded-xl border border-[#E7E2D6] bg-[#FCFBF7] lg:flex-row`}>
+      <div className="relative min-h-0 min-w-0 flex-1">
         {selectedEdge && (
-          <div className="absolute top-4 left-4 z-20 bg-white/95 border border-[#E7E2D6] rounded-lg px-3 py-2 text-xs text-[#3F3F46] shadow-[0_8px_24px_rgba(24,24,27,0.08)]">
+          <div className="absolute top-3 left-3 right-3 z-20 max-w-xs bg-white/95 border border-[#E7E2D6] rounded-lg px-3 py-2 text-xs text-[#3F3F46] shadow-[0_8px_24px_rgba(24,24,27,0.08)] sm:right-auto">
             <div className="mb-2">
               Selected relation: <span className="font-semibold">{RELATION_LABELS[selectedEdge.data?.type] || selectedEdge.data?.type}</span>
             </div>
@@ -346,15 +352,42 @@ export default function DecisionGraph() {
         >
           <Background className="bg-[#FCFBF7]" color="#E7E2D6" />
           <Controls className="bg-white border-[#E7E2D6]" />
-          <MiniMap className="bg-white border-[#E7E2D6]" maskColor="rgba(242,238,228,0.6)" nodeColor="#D0C9BA" />
+          {/* The minimap eats too much of a phone screen to be useful. */}
+          <MiniMap className="hidden bg-white border-[#E7E2D6] sm:block" maskColor="rgba(242,238,228,0.6)" nodeColor="#D0C9BA" />
         </ReactFlow>
+
+        {/* Mobile sheet toggle */}
+        <button
+          type="button"
+          onClick={() => setIsPanelOpen((open) => !open)}
+          className="absolute bottom-4 right-4 z-20 flex items-center gap-2 rounded-full bg-[#2563EB] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(24,24,27,0.18)] lg:hidden"
+        >
+          {isPanelOpen ? 'Hide details' : 'Details & filters'}
+        </button>
       </div>
 
-      <div className="w-80 bg-white border-l border-[#E7E2D6] overflow-y-auto">
-        <div className="p-6 border-b border-[#E7E2D6]">
-          <h2 className="text-xl font-bold text-[#18181B] mb-4">Decision Graph</h2>
+      {/* Side panel: bottom sheet under `lg`, permanent column at `lg` and up */}
+      <div
+        className={`absolute inset-x-0 bottom-0 z-30 max-h-[75%] overflow-y-auto overscroll-contain border-t border-[#E7E2D6] bg-white transition-transform duration-300 lg:static lg:h-full lg:max-h-none lg:w-80 lg:flex-shrink-0 lg:translate-y-0 lg:border-l lg:border-t-0 ${
+          isPanelOpen ? 'translate-y-0' : 'translate-y-full'
+        }`}
+      >
+        <div className="p-4 border-b border-[#E7E2D6] sm:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-bold text-[#18181B] sm:text-xl">Decision Graph</h2>
+            <button
+              type="button"
+              onClick={() => setIsPanelOpen(false)}
+              aria-label="Close panel"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E7E2D6] text-[#71717A] hover:bg-[#F2EEE4] hover:text-[#18181B] lg:hidden"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-2 gap-3 mb-6 sm:gap-4">
             <div className="bg-[#F2EEE4] p-4 rounded-lg">
               <div className="text-2xl font-bold text-[#18181B]">{allNodes.length}</div>
               <div className="text-xs text-[#71717A] mt-1">Decisions</div>
@@ -484,7 +517,7 @@ export default function DecisionGraph() {
                   </select>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => {
                       setIsCreatingRelation(false);
@@ -522,7 +555,7 @@ export default function DecisionGraph() {
         </div>
 
         {selectedNode ? (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h3 className="font-bold text-[#18181B] mb-4">Selected Decision</h3>
             <div className="bg-[#F2EEE4] p-4 rounded-lg mb-4">
               <div className="text-xs font-semibold text-[#71717A] mb-2 uppercase">Type</div>
@@ -582,9 +615,9 @@ export default function DecisionGraph() {
             </div>
           </div>
         ) : (
-          <div className="p-6 text-[#71717A] text-sm">
+          <div className="p-4 text-[#71717A] text-sm sm:p-6">
             <p>Click on a decision node to view details and its impact map.</p>
-            {projectId ? <p className="mt-2 text-xs text-[#A1A1AA]">Project: {projectId}</p> : null}
+            {projectId ? <p className="mt-2 break-all text-xs text-[#A1A1AA]">Project: {projectId}</p> : null}
           </div>
         )}
       </div>

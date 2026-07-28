@@ -10,6 +10,7 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -21,6 +22,29 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
+}
+
+/* Media never forces the page wider than the viewport. */
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+/* Long words / URLs shouldn't blow out narrow layouts. */
+h1, h2, h3, h4, h5, h6, p, li, td, th, dd, dt {
+  overflow-wrap: break-word;
+}
+
+/* iOS zooms the page when a focused control renders below 16px — pin form
+   controls to 16px on phones so tapping an input doesn't rescale the layout. */
+@media (max-width: 640px) {
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 ::-webkit-scrollbar {
@@ -171,6 +195,12 @@ select:-webkit-autofill {
 .card-base:hover {
   border-color: #D0C9BA;
   box-shadow: 0 12px 30px rgba(24, 24, 27, 0.06);
+}
+
+@media (max-width: 640px) {
+  .card-base {
+    padding: 1rem;
+  }
 }
 
 /* Tag Styles */

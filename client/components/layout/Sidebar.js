@@ -20,7 +20,7 @@ import {
   UserIcon
 } from '@/components/icons';
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen = false, onClose = () => {} }) {
   const dispatch = useDispatch();
   const router = useRouter();
   const pathname = usePathname();
@@ -44,12 +44,14 @@ export default function Sidebar() {
     await dispatch(initializeProjects(orgId));
     setIsOrgDropdownOpen(false);
     setIsProjectDropdownOpen(false);
+    onClose();
     router.push('/dashboard');
   };
 
   const handleSwitchProject = async (projectId) => {
     await dispatch(switchProject(projectId));
     setIsProjectDropdownOpen(false);
+    onClose();
     router.push('/dashboard');
   };
 
@@ -104,23 +106,105 @@ export default function Sidebar() {
           position: fixed;
           left: 0; top: 0;
           height: 100vh;
+          height: 100dvh;
           width: 15rem;
+          max-width: 85vw;
           background: #FFFFFF;
           border-right: 1px solid #E7E2D6;
           display: flex;
           flex-direction: column;
           font-family: 'DM Sans', sans-serif;
-          z-index: 40;
+          z-index: 60;
+          /* Off-canvas by default; the drawer slides in on mobile. */
+          transform: translateX(-100%);
+          transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
+          /* Landscape phones are short enough that logo + switchers + nav + footer
+             exceed the height — scroll the whole rail instead of squashing rows. */
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .sb-logo,
+        .sb-org-section,
+        .sb-bottom {
+          flex-shrink: 0;
+        }
+
+        .sb-root.is-open {
+          transform: translateX(0);
+          box-shadow: 0 12px 40px rgba(24,24,27,0.18);
+        }
+
+        /* Desktop: permanent rail, never transformed. Listed with .is-open too so
+           a drawer left open before a resize can't keep its overlay shadow. */
+        @media (min-width: 1024px) {
+          .sb-root,
+          .sb-root.is-open {
+            transform: none;
+            transition: none;
+            box-shadow: none;
+            max-width: none;
+          }
+        }
+
+        .sb-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(24, 24, 27, 0.45);
+          z-index: 50;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          animation: sb-fade 180ms ease;
+        }
+
+        @keyframes sb-fade {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+
+        @media (min-width: 1024px) {
+          .sb-backdrop { display: none; }
         }
 
         /* ── Logo ── */
         .sb-logo {
           padding: 1.25rem 1.25rem 1rem;
           border-bottom: 1px solid #E7E2D6;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .sb-logo-link {
           text-decoration: none;
           display: flex;
           align-items: center;
           gap: 0.5rem;
+          min-width: 0;
+        }
+
+        .sb-close {
+          margin-left: auto;
+          width: 2rem;
+          height: 2rem;
+          border-radius: 0.4375rem;
+          border: 1px solid #E7E2D6;
+          background: #FFFFFF;
+          color: #71717A;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: background 140ms, color 140ms;
+        }
+
+        .sb-close:hover { background: #F2EEE4; color: #18181B; }
+
+        @media (min-width: 1024px) {
+          .sb-close { display: none; }
         }
 
         .sb-logo-mark {
@@ -395,14 +479,46 @@ export default function Sidebar() {
           background: #FEF2F2;
           color: #DC2626;
         }
+
+        /* ── Touch targets: roomier rows on small screens ── */
+        @media (max-width: 1023px) {
+          .sb-nav-link,
+          .sb-logout-btn,
+          .sb-org-item {
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+          }
+
+          .sb-org-btn,
+          .sb-user-card {
+            padding-top: 0.6875rem;
+            padding-bottom: 0.6875rem;
+          }
+        }
       `}</style>
 
-      <div className="sb-root">
+      {isOpen && (
+        <button
+          type="button"
+          className="sb-backdrop"
+          aria-label="Close navigation menu"
+          onClick={onClose}
+        />
+      )}
+
+      <aside className={`sb-root ${isOpen ? 'is-open' : ''}`}>
         {/* Logo */}
-        <Link href="/dashboard" className="sb-logo">
-          <div className="sb-logo-mark">🧠</div>
-          <span className="sb-logo-text">Think Twice</span>
-        </Link>
+        <div className="sb-logo">
+          <Link href="/dashboard" className="sb-logo-link">
+            <div className="sb-logo-mark">🧠</div>
+            <span className="sb-logo-text">Think Twice</span>
+          </Link>
+          <button type="button" className="sb-close" onClick={onClose} aria-label="Close navigation menu">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
         {/* Org switcher */}
         <div className="sb-org-section">
@@ -481,6 +597,7 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={onClose}
                 className={`sb-nav-link ${isActive ? 'active' : ''}`}
               >
                 <Icon className="sb-nav-icon" style={{ width: 17, height: 17 }} />
@@ -492,7 +609,7 @@ export default function Sidebar() {
 
         {/* Bottom */}
         <div className="sb-bottom">
-          <Link href="/profile" className="sb-user-card">
+          <Link href="/profile" onClick={onClose} className="sb-user-card">
             <div className="sb-user-avatar">{initials}</div>
             <div className="sb-user-info">
               <p className="sb-user-name">{user?.name}</p>
@@ -508,7 +625,7 @@ export default function Sidebar() {
             <span>Log out</span>
           </button>
         </div>
-      </div>
+      </aside>
     </>
   );
 }

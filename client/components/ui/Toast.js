@@ -57,7 +57,7 @@ export function Toast({ message, type = 'info', duration = 3500, onClose }) {
         transform: visible && !leaving ? 'translateY(0)' : 'translateY(12px)',
         boxShadow: '0 8px 24px rgba(24,24,27,0.08)',
       }}
-      className={`fixed bottom-5 right-5 z-50 border rounded-xl px-4 py-3 flex items-center gap-3 min-w-[260px] max-w-sm ${styles[type]}`}
+      className={`fixed bottom-4 left-4 right-4 z-[70] flex items-center gap-3 rounded-xl border px-4 py-3 sm:left-auto sm:bottom-5 sm:right-5 sm:min-w-[260px] sm:max-w-sm ${styles[type]}`}
     >
       {icons[type]}
       <span className="text-sm font-medium flex-1">{message}</span>
