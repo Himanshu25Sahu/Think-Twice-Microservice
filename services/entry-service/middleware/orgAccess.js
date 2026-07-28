@@ -1,4 +1,4 @@
-import axios from 'axios';
+import orgClient from '../grpc/orgClient.js';
 import { getCache, setCache } from '../utils/redisClient.js';
 import { orgServiceBreaker } from '../utils/circuitBreaker.js';
 import { withRetry } from '../utils/retry.js';
@@ -63,16 +63,9 @@ export const orgAccess = async (req, res, next) => {
     } else {
       // Not in cache, call org-service
       try {
-        const orgService = process.env.ORG_SERVICE_URL || 'http://localhost:5003';
         const response = await orgServiceBreaker.execute(() =>
           withRetry(() =>
-            axios.get(`${orgService}/org/${orgId}`, {
-              headers: {
-                'x-trace-id': traceId,
-                'x-user-id': userId,
-              },
-              timeout: 5000,
-            }),
+            orgClient.getOrganization({ orgId, userId, traceId }),
             { maxRetries: 2, baseDelay: 100 }
           )
         );
@@ -149,13 +142,7 @@ export const orgAccess = async (req, res, next) => {
         return next();
       }
 
-      const orgService = process.env.ORG_SERVICE_URL || 'http://localhost:5003';
-      const projectResponse = await axios.get(`${orgService}/org/${orgId}/projects`, {
-        headers: {
-          'x-trace-id': traceId,
-          'x-user-id': userId,
-        },
-      });
+      const projectResponse = await orgClient.listProjects({ orgId, userId, traceId });
 
       const projects = projectResponse.data.data || [];
       const project = projects.find((item) => item._id === projectId);

@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package auth;
+
+// Client-side copy of the auth contract. Kept in sync with
+// services/auth-service/proto/auth.proto (vendored per service so it stays
+// inside each Docker build context).
+service AuthService {
+  rpc GetUser (GetUserRequest) returns (GetUserResponse);
+  rpc AddOrganization (OrgMembershipRequest) returns (MutationResponse);
+  rpc RemoveOrganization (OrgMembershipRequest) returns (MutationResponse);
+  rpc UpdateActiveOrg (UpdateActiveOrgRequest) returns (MutationResponse);
+  rpc UpdateActiveProject (UpdateActiveProjectRequest) returns (MutationResponse);
+}
+
+message GetUserRequest {
+  string user_id = 1;
+  string trace_id = 2;
+}
+
+message User {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message GetUserResponse {
+  bool found = 1;
+  User user = 2;
+}
+
+message OrgMembershipRequest {
+  string user_id = 1;
+  string org_id = 2;
+  string trace_id = 3;
+}
+
+message UpdateActiveOrgRequest {
+  string user_id = 1;
+  string org_id = 2;
+  string trace_id = 3;
+}
+
+message UpdateActiveProjectRequest {
+  string user_id = 1;
+  string project_id = 2;
+  string trace_id = 3;
+}
+
+message MutationResponse {
+  bool success = 1;
+  string message = 2;
+}

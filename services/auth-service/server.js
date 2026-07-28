@@ -1,5 +1,6 @@
 import app from './app.js';
 import connectDB from './database/connection.js';
+import { startAuthGrpcServer } from './grpc/authServer.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -29,6 +30,9 @@ const startServer = async () => {
       console.log('='.repeat(60));
       console.log('🎯 Ready to receive requests...\n');
     });
+
+    // Start gRPC server for internal service-to-service calls (org-service).
+    startAuthGrpcServer();
 
     // Log for any connection errors
     server.on('error', (err) => {

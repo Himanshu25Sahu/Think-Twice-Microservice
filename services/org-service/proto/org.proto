@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package org;
+
+// Internal org operations consumed by entry-service during access checks.
+// Mirrors GET /org/:orgId and GET /org/:orgId/projects.
+service OrgService {
+  rpc GetOrganization (GetOrganizationRequest) returns (GetOrganizationResponse);
+  rpc ListProjects (ListProjectsRequest) returns (ListProjectsResponse);
+}
+
+message GetOrganizationRequest {
+  string org_id = 1;
+  string user_id = 2;
+  string trace_id = 3;
+}
+
+message Member {
+  string user_id = 1;
+  string role = 2;
+}
+
+message Organization {
+  string id = 1;
+  string name = 2;
+  string owner = 3;
+  repeated Member members = 4;
+}
+
+message GetOrganizationResponse {
+  bool found = 1;
+  Organization organization = 2;
+}
+
+message ListProjectsRequest {
+  string org_id = 1;
+  string user_id = 2;
+  string trace_id = 3;
+}
+
+message Project {
+  string id = 1;
+  string name = 2;
+  string org_id = 3;
+}
+
+message ListProjectsResponse {
+  bool found = 1;
+  bool access_denied = 2;
+  repeated Project projects = 3;
+}
