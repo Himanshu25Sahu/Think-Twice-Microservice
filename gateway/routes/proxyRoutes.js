@@ -8,6 +8,7 @@ const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:5001'
 const ORG_SERVICE_URL = process.env.ORG_SERVICE_URL || 'http://localhost:5003';
 const ENTRY_SERVICE_URL = process.env.ENTRY_SERVICE_URL || 'http://localhost:5002';
 const ANALYTICS_SERVICE_URL = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:5004';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:5005';
 
 const TRACE_CONTEXT_HEADERS = ['traceparent', 'tracestate', 'baggage'];
 
@@ -157,6 +158,43 @@ router.use(
       res.status(503).json({
         success: false,
         message: 'Analytics service unavailable',
+      });
+    },
+  })
+);
+
+// AI routes — requires authentication.
+// Tenant scope is taken from the forwarded x-org-id header rather than the
+// request body, so a client cannot ask ai-service for another org's vectors.
+router.use(
+  '/ai',
+  verifyAuth,
+  createProxyMiddleware({
+    target: AI_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: {
+      '^/api/ai': '/ai',  // Convert /api/ai/search to /ai/search
+    },
+    onProxyReq: (proxyReq, req, res) => {
+      forwardTraceHeaders(proxyReq, req);
+      proxyReq.setHeader('x-user-id', req.headers['x-user-id']);
+      proxyReq.setHeader('x-user-email', req.headers['x-user-email']);
+      proxyReq.setHeader('x-user-name', req.headers['x-user-name'] || '');
+      proxyReq.setHeader('x-org-id', req.headers['x-org-id'] || '');
+      proxyReq.setHeader('x-project-id', req.headers['x-project-id'] || '');
+
+      if (req.body) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+    },
+    onError: (err, req, res) => {
+      console.error(`[GATEWAY] AI service error: ${err.message} trace=${req.traceId}`);
+      res.status(503).json({
+        success: false,
+        message: 'AI service unavailable',
       });
     },
   })

@@ -51,7 +51,7 @@ services:
       OTEL_ENABLED: "false"
       OTEL_SERVICE_NAME: auth-service
       JAEGER_ENDPOINT: http://jaeger:14268/api/traces
-      MONGODB_URI: mongodb://host.docker.internal:27017/tt-auth
+      MONGODB_URI: mongodb://mongodb:27017/tt-auth
       JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-in-production}
       JWT_EXPIRES_IN: 3d
     ports:
@@ -65,7 +65,8 @@ services:
 
   org-service:
     build:
-      context: ./services/org-service
+      context: ./services
+      dockerfile: org-service/Dockerfile
     container_name: tt-org
     environment:
       NODE_ENV: development
@@ -73,7 +74,7 @@ services:
       OTEL_ENABLED: "false"
       OTEL_SERVICE_NAME: org-service
       JAEGER_ENDPOINT: http://jaeger:14268/api/traces
-      MONGODB_URI: mongodb://host.docker.internal:27017/tt-orgs
+      MONGODB_URI: mongodb://mongodb:27017/tt-orgs
       REDIS_URL: redis://redis:6379
       AUTH_SERVICE_URL: http://auth-service:5001
     ports:
@@ -91,7 +92,8 @@ services:
 
   entry-service:
     build:
-      context: ./services/entry-service
+      context: ./services
+      dockerfile: entry-service/Dockerfile
     container_name: tt-entry
     environment:
       NODE_ENV: development
@@ -99,7 +101,7 @@ services:
       OTEL_ENABLED: "false"
       OTEL_SERVICE_NAME: entry-service
       JAEGER_ENDPOINT: http://jaeger:14268/api/traces
-      MONGODB_URI: mongodb://host.docker.internal:27017/tt-entries
+      MONGODB_URI: mongodb://mongodb:27017/tt-entries
       REDIS_URL: redis://redis:6379
       ORG_SERVICE_URL: http://org-service:5003
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
@@ -128,13 +130,47 @@ services:
       OTEL_ENABLED: "true"
       OTEL_SERVICE_NAME: analytics-service
       JAEGER_ENDPOINT: http://jaeger:14268/api/traces
-      MONGODB_URI: mongodb://host.docker.internal:27017/tt-analytics
+      MONGODB_URI: mongodb://mongodb:27017/tt-analytics
       REDIS_URL: redis://redis:6379
     ports:
       - "5004:5004"
     depends_on:
       jaeger:
         condition: service_started
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tt-network
+    restart: unless-stopped
+
+  ai-service:
+    build:
+      context: ./services/ai-service
+    container_name: tt-ai
+    environment:
+      PORT: 5005
+      MONGODB_URI: mongodb://mongodb:27017
+      AI_DB: tt-ai
+      ORGS_DB: tt-orgs
+      AUTH_DB: tt-auth
+      ENTRIES_DB: tt-entries
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: INFO
+      RERANK_ENABLED: "true"
+      # Ollama runs natively on the host: GPU passthrough into Docker on Windows
+      # is painful, and the model needs the GPU to be usable.
+      LLM_PROVIDER: ollama
+      OLLAMA_URL: http://host.docker.internal:11434
+      OLLAMA_MODEL: llama3.2:3b
+      CACHE_ENABLED: "true"
+      OTEL_ENABLED: "true"
+      OTEL_ENDPOINT: http://jaeger:4318/v1/traces
+      OTEL_SERVICE_NAME: ai-service
+    ports:
+      - "5005:5005"
+    depends_on:
       mongodb:
         condition: service_healthy
       redis:
@@ -159,6 +195,7 @@ services:
       ORG_SERVICE_URL: http://org-service:5003
       ENTRY_SERVICE_URL: http://entry-service:5002
       ANALYTICS_SERVICE_URL: http://analytics-service:5004
+      AI_SERVICE_URL: http://ai-service:5005
       REDIS_URL: redis://redis:6379
     ports:
       - "5000:5000"
@@ -175,6 +212,8 @@ services:
         condition: service_started
       analytics-service:
         condition: service_started
+      ai-service:
+        condition: service_started
     networks:
       - tt-network
     restart: unless-stopped
@@ -186,6 +225,9 @@ services:
         NEXT_PUBLIC_API_URL: http://gateway:5000
     container_name: tt-client
     environment:
+      # Consumed only by next.config.mjs rewrites(), which run server-side inside
+      # this container -- so this must be the Docker-internal hostname, not
+      # localhost. The browser only ever calls same-origin /api/*.
       - NEXT_PUBLIC_API_URL=http://gateway:5000
     ports:
       - "3000:3000"

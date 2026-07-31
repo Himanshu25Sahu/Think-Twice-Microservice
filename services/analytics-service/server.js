@@ -39,9 +39,21 @@ async function startServer() {
     // Import handlers
     const { startConsumer, onEntryCreated, onEntryDeleted, onEntryUpdated } = await import('./consumers/entryConsumer.js');
 
+    // Each consumer loop issues a *blocking* XREADGROUP. node-redis multiplexes
+    // every command over a single socket in FIFO order, so sharing one client
+    // means the first blocking read holds the connection for its full BLOCK
+    // timeout while the other consumers starve behind it in the queue. Give
+    // each listener its own connection.
+    const consumerClient = async (label) => {
+      const client = redisClient.duplicate();
+      client.on('error', (err) => console.error(`[ANALYTICS] Redis error (${label}):`, err.message));
+      await client.connect();
+      return client;
+    };
+
     // Entry created events
     startConsumer(
-      redisClient,
+      await consumerClient('entry:created'),
       'entry:created',
       'analytics-entry-created-group',
       'analytics-entry-created-consumer',
@@ -50,7 +62,7 @@ async function startServer() {
 
     // Entry updated events
     startConsumer(
-      redisClient,
+      await consumerClient('entry:updated'),
       'entry:updated',
       'analytics-entry-updated-group',
       'analytics-entry-updated-consumer',
@@ -59,7 +71,7 @@ async function startServer() {
 
     // Entry deleted events
     startConsumer(
-      redisClient,
+      await consumerClient('entry:deleted'),
       'entry:deleted',
       'analytics-entry-deleted-group',
       'analytics-entry-deleted-consumer',
@@ -67,7 +79,7 @@ async function startServer() {
     );
 
     // Org events consumer
-    startOrgConsumer(redisClient);
+    startOrgConsumer(await consumerClient('org:member.joined'));
 
     console.log(`[${SERVICE_NAME}] Ready to process events`);
     console.log(`[${SERVICE_NAME}] Service startup complete`);
