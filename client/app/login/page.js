@@ -9,6 +9,7 @@ import { fetchMyOrgs } from '@/redux/slices/orgSlice';
 import { initializeProjects } from '@/redux/slices/projectSlice';
 import { Toast } from '@/components/ui/Toast';
 import { OrgOnboarding } from '@/components/onboarding/OrgOnboarding';
+import { DEMO_CREDENTIALS, isGoogleOAuthEnabled } from '@/utils/demoAuth';
 
 const Spinner = ({ className = 'h-4 w-4' }) => (
   <svg className={`animate-spin shrink-0 ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
@@ -102,15 +103,23 @@ function LoginPageContent() {
   };
 
   const handleTestLogin = () => {
-    const demo = { email: 'himpreetak@gmail.com', password: '123456' };
-    setFormData(demo);
-    runLogin(demo);
+    setFormData(DEMO_CREDENTIALS);
+    runLogin(DEMO_CREDENTIALS);
   };
 
   const handleGoogleLogin = () => {
     if (typeof window === 'undefined') {
       return;
     }
+
+    // Without a verified consent screen the real redirect just dead-ends, so
+    // fall through to the demo account instead. Skips setFormData so the
+    // visible form isn't silently populated by a button that never mentions it.
+    if (!isGoogleOAuthEnabled()) {
+      runLogin(DEMO_CREDENTIALS);
+      return;
+    }
+
     setSubmitting(true);
     window.location.href = '/api/auth/google';
   };
@@ -175,6 +184,12 @@ function LoginPageContent() {
               </svg>
               Continue with Google
             </button>
+
+            {!isGoogleOAuthEnabled() && (
+              <p className="text-center text-xs text-zinc-400">
+                Signs you into a shared demo account — no Google account needed.
+              </p>
+            )}
           </form>
 
           {/* Link to Register */}
