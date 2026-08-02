@@ -32,6 +32,14 @@ canvas {
   max-width: 100%;
 }
 
+/* React Flow draws every edge into an unsized <svg> that paints outside its own
+   box via overflow: visible. Its container (.react-flow__edges) is 0px wide, so
+   the rule above resolves to max-width: 0 and collapses the SVG viewport — and a
+   zero-width SVG is not rendered at all, which silently hides all edge lines. */
+.react-flow svg {
+  max-width: none;
+}
+
 /* Long words / URLs shouldn't blow out narrow layouts. */
 h1, h2, h3, h4, h5, h6, p, li, td, th, dd, dt {
   overflow-wrap: break-word;
