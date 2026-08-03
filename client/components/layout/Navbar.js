@@ -15,6 +15,7 @@ export default function Navbar({ onMenuClick = () => {} }) {
     '/settings': 'Settings',
     '/profile': 'Profile',
     '/graph': 'Decision Graph',
+    '/ask': 'Ask',
   };
 
   const title = pageTitles[pathname] || 'Page';

@@ -1052,25 +1052,19 @@ export const getGraph = async (req, res) => {
       .select('_id title type projectId relations')
       .lean();
 
-    // Build nodes and edges
-    const nodes = entries.map((entry) => ({
-      id: entry._id.toString(),
-      data: {
-        label: entry.title,
-        type: entry.type,
-      },
-      type: 'default',
-    }));
-
+    // Edges are built first so that only entries actually taking part in a
+    // relation become nodes. A decision graph is about how decisions connect;
+    // rendering every unlinked entry as an isolated dot conveys nothing and,
+    // at a few thousand entries, is enough to lock up the browser.
+    const entryIds = new Set(entries.map((e) => e._id.toString()));
     const edgeIds = new Set();
     const edges = [];
     entries.forEach((entry) => {
       if (entry.relations && entry.relations.length > 0) {
         entry.relations.forEach((relation) => {
-          // Check if target entry exists in the project
-          const targetExists = entries.some(
-            (e) => e._id.toString() === relation.targetEntryId.toString()
-          );
+          // Set lookup rather than a scan per relation: the previous
+          // entries.some() made this O(entries x relations).
+          const targetExists = entryIds.has(relation.targetEntryId.toString());
 
           if (targetExists) {
             const edgeId = `${entry._id.toString()}-${relation.targetEntryId.toString()}-${relation.type}`;
@@ -1093,18 +1087,130 @@ export const getGraph = async (req, res) => {
       }
     });
 
+    // Keep only entries that appear at one end of an edge.
+    const connectedIds = new Set();
+    edges.forEach((edge) => {
+      connectedIds.add(edge.source);
+      connectedIds.add(edge.target);
+    });
+
+    let visibleEdges = edges;
+    let visibleIds = connectedIds;
+    let truncated = false;
+
+    // Even a fully connected graph has a practical rendering limit. Past it,
+    // keep the best-connected entries -- they are the hubs the graph exists to
+    // show -- and drop edges whose endpoints did not survive.
+    const MAX_NODES = 140;
+    if (connectedIds.size > MAX_NODES) {
+      // Truncate by whole connected components, never by individual nodes.
+      // Picking the highest-degree nodes and then discarding edges whose
+      // partner was cut shatters real clusters into disconnected pairs — the
+      // graph stays technically "connected" while losing the structure it
+      // exists to show.
+      const adjacency = new Map();
+      edges.forEach((edge) => {
+        if (!adjacency.has(edge.source)) adjacency.set(edge.source, []);
+        if (!adjacency.has(edge.target)) adjacency.set(edge.target, []);
+        adjacency.get(edge.source).push(edge.target);
+        adjacency.get(edge.target).push(edge.source);
+      });
+
+      const visited = new Set();
+      const components = [];
+      for (const startId of connectedIds) {
+        if (visited.has(startId)) continue;
+        const queue = [startId];
+        const group = [];
+        visited.add(startId);
+        while (queue.length) {
+          const current = queue.shift();
+          group.push(current);
+          for (const next of adjacency.get(current) || []) {
+            if (!visited.has(next)) {
+              visited.add(next);
+              queue.push(next);
+            }
+          }
+        }
+        components.push(group);
+      }
+
+      // Richest clusters first — those carry the most information per node.
+      components.sort((a, b) => b.length - a.length);
+
+      visibleIds = new Set();
+      for (const group of components) {
+        if (visibleIds.size + group.length > MAX_NODES) continue;
+        group.forEach((id) => visibleIds.add(id));
+      }
+
+      // Every component may individually exceed the cap — one densely linked
+      // cluster of 500 entries would otherwise be skipped and leave the graph
+      // empty. Walk outward from the best-connected entry instead, which keeps
+      // the result connected and still bounded.
+      if (visibleIds.size === 0 && components.length) {
+        const degree = new Map();
+        edges.forEach((edge) => {
+          degree.set(edge.source, (degree.get(edge.source) || 0) + 1);
+          degree.set(edge.target, (degree.get(edge.target) || 0) + 1);
+        });
+        const seed = [...components[0]].sort(
+          (a, b) => (degree.get(b) || 0) - (degree.get(a) || 0)
+        )[0];
+
+        const queue = [seed];
+        visibleIds.add(seed);
+        while (queue.length && visibleIds.size < MAX_NODES) {
+          const current = queue.shift();
+          for (const next of adjacency.get(current) || []) {
+            if (visibleIds.size >= MAX_NODES) break;
+            if (!visibleIds.has(next)) {
+              visibleIds.add(next);
+              queue.push(next);
+            }
+          }
+        }
+      }
+
+      visibleEdges = edges.filter(
+        (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target)
+      );
+      truncated = true;
+    }
+
+    const nodes = entries
+      .filter((entry) => visibleIds.has(entry._id.toString()))
+      .map((entry) => ({
+        id: entry._id.toString(),
+        data: {
+          label: entry.title,
+          type: entry.type,
+        },
+        type: 'default',
+      }));
+
     const result = {
       nodes,
-      edges,
+      edges: visibleEdges,
+      // Surfaced so the UI can explain why the graph is smaller than the entry
+      // count, rather than looking like data is missing.
+      stats: {
+        totalEntries: entries.length,
+        connectedEntries: connectedIds.size,
+        shownEntries: nodes.length,
+        truncated,
+      },
     };
 
     // Cache result for 60 seconds (shorter than entries since graph changes frequently)
     await setCache(graphCacheKey, result, 60);
 
-    console.log(`[ENTRY] Graph response: org=${orgId} project=${projectId} nodes=${nodes.length} edges=${edges.length} trace=${traceId}`);
-    if (edges.length > 0) {
-      console.log('[ENTRY] Edges:', JSON.stringify(edges.slice(0, 2), null, 2));
-    }
+    console.log(
+      `[ENTRY] Graph response: org=${orgId} project=${projectId} nodes=${nodes.length} ` +
+      `edges=${visibleEdges.length} connected=${connectedIds.size}/${entries.length} ` +
+      `truncated=${truncated} trace=${traceId}`
+    );
 
     res.json({
       success: true,

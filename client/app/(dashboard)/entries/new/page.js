@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { createEntry } from '@/redux/slices/entrySlice';
 import api from '@/services/api';
+import { findSimilar } from '@/services/aiService';
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Toast } from '@/components/ui/Toast';
@@ -76,6 +78,44 @@ export default function NewEntryPage() {
   const [mentionSuggestions, setMentionSuggestions] = useState([]);
   const [mentionField, setMentionField] = useState(null);
   const [mentionRange, setMentionRange] = useState(null);
+
+  // Duplicate detection: surface existing entries that already cover this
+  // ground, before the author writes the whole thing a second time.
+  const [similar, setSimilar] = useState([]);
+  const [similarDismissed, setSimilarDismissed] = useState(false);
+
+  useEffect(() => {
+    if (similarDismissed) return;
+
+    const title = formData.title.trim();
+    const what = formData.what.trim();
+    // Wait until there is enough signal to embed; a three-word title matches
+    // almost anything and the warning would just be noise.
+    if (title.length + what.length < 25) {
+      setSimilar([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      findSimilar({
+        title,
+        what,
+        why: formData.why,
+        limit: 3,
+        signal: controller.signal,
+      })
+        .then((data) => setSimilar(data.results || []))
+        // Duplicate detection is advisory: if it fails, the author should not
+        // be interrupted, so the panel simply stays hidden.
+        .catch(() => setSimilar([]));
+    }, 600);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [formData.title, formData.what, formData.why, similarDismissed]);
 
   const searchMentionUsers = async (query) => {
     if (!query || query.length < 1) {
@@ -312,6 +352,71 @@ export default function NewEntryPage() {
         .ne-section:last-child {
           border-bottom: none;
           padding-bottom: 0;
+        }
+
+        .ne-similar {
+          border: 1px solid #FDE68A;
+          background: #FFFBEB;
+          border-radius: 10px;
+          padding: 14px 16px;
+          margin-bottom: 4px;
+        }
+        .ne-similar-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .ne-similar-title {
+          font-family: 'DM Mono', monospace;
+          font-size: 12px;
+          font-weight: 500;
+          color: #92400E;
+        }
+        .ne-similar-dismiss {
+          border: 0;
+          background: transparent;
+          color: #B45309;
+          font-size: 18px;
+          line-height: 1;
+          cursor: pointer;
+          padding: 0 4px;
+        }
+        .ne-similar-hint {
+          font-size: 12px;
+          color: #A16207;
+          margin: 4px 0 10px;
+        }
+        .ne-similar-list {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .ne-similar-item {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 7px 10px;
+          border-radius: 6px;
+          background: #fff;
+          border: 1px solid #FDE68A;
+          text-decoration: none;
+          transition: border-color 0.15s;
+        }
+        .ne-similar-item:hover { border-color: #F59E0B; }
+        .ne-similar-item-title {
+          font-size: 13px;
+          color: #1F2937;
+        }
+        .ne-similar-meta {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: #9CA3AF;
+          white-space: nowrap;
         }
 
         .ne-label {
@@ -876,6 +981,44 @@ export default function NewEntryPage() {
                 <p className="ne-error-msg">⚑ {fieldErrors.title}</p>
               )}
             </div>
+
+            {/* Similar existing entries */}
+            {similar.length > 0 && !similarDismissed && (
+              <div className="ne-similar">
+                <div className="ne-similar-head">
+                  <span className="ne-similar-title">
+                    ✦ {similar.length} similar {similar.length === 1 ? 'entry' : 'entries'} already exist
+                  </span>
+                  <button
+                    type="button"
+                    className="ne-similar-dismiss"
+                    onClick={() => setSimilarDismissed(true)}
+                    aria-label="Dismiss similar entries"
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="ne-similar-hint">
+                  Worth a look before writing this up — you may want to link to one instead.
+                </p>
+                <ul className="ne-similar-list">
+                  {similar.map((hit) => (
+                    <li key={hit.entry_id}>
+                      <Link
+                        href={`/entries/${hit.entry_id}`}
+                        target="_blank"
+                        className="ne-similar-item"
+                      >
+                        <span className="ne-similar-item-title">{hit.title}</span>
+                        <span className="ne-similar-meta">
+                          {hit.author_name} · {hit.score.toFixed(2)}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Type */}
             <div className="ne-section">
