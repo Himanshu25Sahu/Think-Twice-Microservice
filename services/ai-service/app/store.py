@@ -30,6 +30,7 @@ class Store:
         self._client = AsyncMongoClient(settings.mongodb_uri, serverSelectionTimeoutMS=10000)
         await self._client.admin.command("ping")
         await self.vectors.create_index([("orgId", 1), ("projectId", 1)])
+        await self.conversations.create_index([("orgId", 1), ("userId", 1), ("updatedAt", -1)])
         log.info("mongo connected: %s", settings.mongodb_uri)
 
     async def close(self) -> None:
@@ -39,6 +40,10 @@ class Store:
     @property
     def vectors(self):
         return self._client[settings.ai_db][VECTORS]
+
+    @property
+    def conversations(self):
+        return self._client[settings.ai_db]["conversations"]
 
     @property
     def golden(self):

@@ -28,6 +28,35 @@ _INJECTION = re.compile(
 
 MAX_CONTEXT_CHARS = 6000
 
+# Retrieval always returns its top-k, however poor the match. Below this the
+# best hit is not about the question at all, and citing five unrelated entries
+# is worse than admitting there is nothing.
+MIN_RELEVANCE = 0.35
+
+# Conversational openers are not knowledge questions. Searching them returns
+# whatever happens to be nearest in vector space -- a random incident report --
+# and answering "these entries do not address a greeting" is a bad experience.
+# Matched only against short messages so a real question containing "hi"
+# ("what does the hiring runbook say?") is never swallowed.
+_SMALL_TALK = {
+    "hi", "hii", "hey", "hello", "yo", "sup", "hiya",
+    "good morning", "good afternoon", "good evening",
+    "thanks", "thank you", "thankyou", "ty", "cheers", "nice", "cool",
+    "ok", "okay", "k", "got it", "great", "awesome", "perfect",
+    "bye", "goodbye", "see ya", "test", "ping",
+}
+
+SMALL_TALK_REPLY = (
+    "Hello. Ask me anything about your team's entries — decisions, incidents, "
+    "debugging playbooks or conventions — and I'll answer from what's been "
+    "written down, with sources."
+)
+
+
+def is_small_talk(question: str) -> bool:
+    normalized = " ".join(question.lower().strip().strip("!?.,").split())
+    return normalized in _SMALL_TALK
+
 
 def sanitize(text: str) -> str:
     return _INJECTION.sub("[redacted]", text)
@@ -85,19 +114,42 @@ def extractive_answer(question: str, candidates: list[Candidate]) -> str:
     return "\n".join(lines)
 
 
-async def answer(question: str, candidates: list[Candidate]) -> dict:
+def format_history(history: list[dict]) -> str:
+    if not history:
+        return ""
+    lines = []
+    for message in history:
+        who = "User" if message["role"] == "user" else "You"
+        # Prior answers are truncated: they exist to resolve pronouns and
+        # follow-ups, not to be re-read in full.
+        lines.append(f"{who}: {message['content'][:600]}")
+    return "Earlier in this conversation:\n" + "\n".join(lines) + "\n\n"
+
+
+async def answer(
+    question: str, candidates: list[Candidate], history: list[dict] | None = None
+) -> dict:
     """Generate a grounded answer, degrading to extractive on any LLM failure."""
     context, sources = build_context(candidates)
 
-    if not candidates:
+    # Judge relevance on dense similarity rather than the fused or rerank score:
+    # cosine is bounded and interpretable, so one threshold behaves consistently
+    # regardless of which retrieval stages ran.
+    best = max((c.dense_score or 0.0) for c in candidates) if candidates else 0.0
+
+    if not candidates or best < MIN_RELEVANCE:
         return {
-            "answer": "No entries in this workspace look relevant to that question.",
+            "answer": (
+                "I couldn't find anything in your team's entries that covers that. "
+                "Try rephrasing, or check whether it's been written up yet."
+            ),
             "sources": [],
             "generated": False,
             "degraded": False,
         }
 
     prompt = (
+        f"{format_history(history or [])}"
         f"Team knowledge entries:\n\n{context}\n\n"
         f"Question: {question}\n\n"
         f"Answer using only the entries above, citing them as [n]."

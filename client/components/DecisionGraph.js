@@ -55,22 +55,95 @@ const edgeOptions = {
 
 const normalizeProjectId = (project) => (typeof project === 'object' ? project?._id : project);
 
-const layoutNodesGrid = (nodes = []) => {
+/**
+ * Lay out nodes by connected component rather than by array index.
+ *
+ * A grid keyed on index ignores the edges entirely, so related entries land
+ * arbitrarily far apart and the result reads as a wall of unrelated boxes —
+ * which is the opposite of what a decision graph is for. Grouping each
+ * connected component into its own cluster keeps edges short and makes the
+ * structure legible at a glance.
+ */
+const layoutNodesClustered = (nodes = [], edges = []) => {
   if (!nodes.length) {
     return [];
   }
 
-  const columns = Math.max(2, Math.ceil(Math.sqrt(nodes.length)));
-  const xGap = 260;
-  const yGap = 190;
+  const ids = new Set(nodes.map((n) => n.id));
+  const neighbours = new Map(nodes.map((n) => [n.id, []]));
+  edges.forEach((edge) => {
+    if (!ids.has(edge.source) || !ids.has(edge.target)) return;
+    neighbours.get(edge.source).push(edge.target);
+    neighbours.get(edge.target).push(edge.source);
+  });
 
-  return nodes.map((node, idx) => ({
-    ...node,
-    position: {
-      x: 80 + (idx % columns) * xGap,
-      y: 80 + Math.floor(idx / columns) * yGap,
-    },
-  }));
+  // Breadth-first sweep to collect connected components.
+  const seen = new Set();
+  const components = [];
+  for (const node of nodes) {
+    if (seen.has(node.id)) continue;
+    const queue = [node.id];
+    const group = [];
+    seen.add(node.id);
+    while (queue.length) {
+      const current = queue.shift();
+      group.push(current);
+      for (const next of neighbours.get(current) || []) {
+        if (!seen.has(next)) {
+          seen.add(next);
+          queue.push(next);
+        }
+      }
+    }
+    components.push(group);
+  }
+
+  // Biggest clusters first: the interesting structure should be what you land
+  // on, not something you have to hunt for.
+  components.sort((a, b) => b.length - a.length);
+
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const positioned = [];
+
+  // A node box is roughly this wide. The ring has to be big enough that
+  // neighbouring boxes do not touch, otherwise they overlap and cover the very
+  // edges the graph exists to show.
+  const NODE_FOOTPRINT = 270;
+  const ringRadius = (count) =>
+    count < 2 ? 0 : Math.max(190, (count * NODE_FOOTPRINT) / (2 * Math.PI));
+
+  const largestRadius = components.reduce(
+    (max, group) => Math.max(max, ringRadius(group.length)),
+    0
+  );
+  const clusterGap = largestRadius * 2 + 320;
+  const perRow = Math.max(1, Math.ceil(Math.sqrt(components.length)));
+
+  components.forEach((group, index) => {
+    const originX = 120 + (index % perRow) * clusterGap;
+    const originY = 120 + Math.floor(index / perRow) * clusterGap;
+
+    if (group.length === 1) {
+      positioned.push({ ...byId.get(group[0]), position: { x: originX, y: originY } });
+      return;
+    }
+
+    // Ring layout inside a cluster: every member stays equidistant from the
+    // centre, so edges within the cluster are short and do not cross the canvas.
+    const radius = ringRadius(group.length);
+    group.forEach((id, i) => {
+      const angle = (2 * Math.PI * i) / group.length;
+      positioned.push({
+        ...byId.get(id),
+        position: {
+          x: originX + radius * Math.cos(angle),
+          y: originY + radius * Math.sin(angle),
+        },
+      });
+    });
+  });
+
+  return positioned;
 };
 
 const styleEdges = (edges = []) => {
@@ -168,7 +241,7 @@ export default function DecisionGraph() {
 
     try {
       const data = await fetchGraph(activeOrg, activeProject);
-      const layoutedNodes = layoutNodesGrid(data.nodes || []);
+      const layoutedNodes = layoutNodesClustered(data.nodes || [], data.edges || []);
       const styledEdges = styleEdges(data.edges || []);
 
       setAllNodes(layoutedNodes);
@@ -346,8 +419,10 @@ export default function DecisionGraph() {
           onPaneClick={clearGraphSelection}
           fitView
           fitViewOptions={{ padding: 0.25 }}
-          onlyRenderVisibleElements
-          minZoom={0.2}
+          // onlyRenderVisibleElements culls edges whose endpoints sit outside
+          // the viewport, which makes connections vanish while panning. The
+          // node count is capped server-side, so the culling buys nothing.
+          minZoom={0.05}
           maxZoom={1.8}
         >
           <Background className="bg-[#FCFBF7]" color="#E7E2D6" />

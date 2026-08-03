@@ -6,9 +6,10 @@ from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from .cache import cache
-from .chat import answer as generate_answer
+from .chat import SMALL_TALK_REPLY, answer as generate_answer, is_small_talk
 from .config import settings
 from .consumer import consumer
+from . import conversations
 from .embedding import embedder
 from .evaluation import run_ablation
 from .index import index
@@ -54,6 +55,7 @@ class ChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
     limit: int = Field(default=5, ge=1, le=10)
     project_id: str | None = Field(default=None, alias="projectId")
+    conversation_id: str | None = Field(default=None, alias="conversationId")
 
     class Config:
         populate_by_name = True
@@ -180,44 +182,140 @@ async def similar(body: SimilarRequest, x_org_id: str | None = Header(default=No
 
 
 @router.post("/ai/chat")
-async def chat(body: ChatRequest, x_org_id: str | None = Header(default=None)):
+async def chat(
+    body: ChatRequest,
+    x_org_id: str | None = Header(default=None),
+    x_user_id: str | None = Header(default=None),
+):
     org_id = _require_org(x_org_id)
+    user_id = x_user_id or "anonymous"
     started = time.perf_counter()
 
-    with span("embed.query"):
-        query_vector = await asyncio.to_thread(embedder.embed_query, body.question)
+    conversation = None
+    if body.conversation_id:
+        conversation = await conversations.get(body.conversation_id, org_id, user_id)
+        if conversation is None:
+            raise HTTPException(status_code=404, detail="conversation not found")
+    else:
+        conversation = await conversations.create(
+            org_id, user_id, body.project_id, body.question
+        )
 
-    cached = cache.get(org_id, body.project_id, query_vector)
-    if cached is not None:
+    history = conversations.recent_turns(conversation)
+    await conversations.append(conversation["_id"], "user", body.question)
+
+    # Greetings and acknowledgements short-circuit before retrieval: there is
+    # nothing to search for, and answering them from entries produces citations
+    # to unrelated incidents.
+    if is_small_talk(body.question):
+        took = round((time.perf_counter() - started) * 1000, 2)
+        await conversations.append(
+            conversation["_id"], "assistant", SMALL_TALK_REPLY, sources=[],
+            meta={"generated": False, "degraded": False, "cached": False, "took_ms": took},
+        )
         return {
-            **cached,
-            "cached": True,
-            "took_ms": round((time.perf_counter() - started) * 1000, 2),
+            "success": True,
+            "answer": SMALL_TALK_REPLY,
+            "sources": [],
+            "generated": False,
+            "degraded": False,
+            "cached": False,
+            "conversation_id": str(conversation["_id"]),
+            "took_ms": took,
         }
 
-    result = await retrieve(
-        org_id=org_id,
-        query=body.question,
-        limit=body.limit,
-        project_id=body.project_id,
-        mode="hybrid",
-        rerank=True,
-        query_vector=query_vector,
-    )
-    payload = await generate_answer(body.question, result.candidates)
-    payload["success"] = True
-    payload["retrieval_ms"] = {k: round(v, 2) for k, v in result.timings.items()}
+    # A follow-up like "why?" is unsearchable alone; expand it with the previous
+    # question so retrieval has something to work with.
+    search_text = conversations.retrieval_query(body.question, history)
 
-    # Only cache real generations. Caching a degraded answer would keep serving
-    # it after the model comes back.
-    if payload.get("generated"):
-        cache.put(org_id, body.project_id, query_vector, payload)
+    with span("embed.query"):
+        query_vector = await asyncio.to_thread(embedder.embed_query, search_text)
+
+    # Only the first turn may be served from cache. A follow-up's retrieval
+    # query is expanded with the previous question, so a short reply like "hi"
+    # embeds almost identically to the question before it and would otherwise
+    # replay that answer verbatim.
+    cached = None if history else cache.get(org_id, body.project_id, query_vector)
+    if cached is not None:
+        payload = {**cached, "cached": True}
+    else:
+        result = await retrieve(
+            org_id=org_id,
+            query=search_text,
+            limit=body.limit,
+            project_id=body.project_id,
+            mode="hybrid",
+            rerank=True,
+            query_vector=query_vector,
+        )
+        payload = await generate_answer(body.question, result.candidates, history)
+        payload["retrieval_ms"] = {k: round(v, 2) for k, v in result.timings.items()}
+        payload["cached"] = False
+
+        # Only cache real generations. Caching a degraded answer would keep
+        # serving it after the model recovers. Follow-ups are not cached either:
+        # the same words can mean different things in different threads.
+        if payload.get("generated") and not history:
+            cache.put(org_id, body.project_id, query_vector, payload)
+
+    took = round((time.perf_counter() - started) * 1000, 2)
+    await conversations.append(
+        conversation["_id"],
+        "assistant",
+        payload.get("answer", ""),
+        sources=payload.get("sources", []),
+        meta={
+            "generated": payload.get("generated"),
+            "degraded": payload.get("degraded"),
+            "cached": payload.get("cached"),
+            "took_ms": took,
+        },
+    )
 
     return {
         **payload,
-        "cached": False,
-        "took_ms": round((time.perf_counter() - started) * 1000, 2),
+        "success": True,
+        "conversation_id": str(conversation["_id"]),
+        "took_ms": took,
     }
+
+
+@router.get("/ai/conversations")
+async def list_conversations(
+    x_org_id: str | None = Header(default=None),
+    x_user_id: str | None = Header(default=None),
+):
+    org_id = _require_org(x_org_id)
+    return {
+        "success": True,
+        "conversations": await conversations.list_for(org_id, x_user_id or "anonymous"),
+    }
+
+
+@router.get("/ai/conversations/{conversation_id}")
+async def get_conversation(
+    conversation_id: str,
+    x_org_id: str | None = Header(default=None),
+    x_user_id: str | None = Header(default=None),
+):
+    org_id = _require_org(x_org_id)
+    doc = await conversations.get(conversation_id, org_id, x_user_id or "anonymous")
+    if doc is None:
+        raise HTTPException(status_code=404, detail="conversation not found")
+    return {"success": True, "conversation": conversations.serialize(doc)}
+
+
+@router.delete("/ai/conversations/{conversation_id}")
+async def delete_conversation(
+    conversation_id: str,
+    x_org_id: str | None = Header(default=None),
+    x_user_id: str | None = Header(default=None),
+):
+    org_id = _require_org(x_org_id)
+    removed = await conversations.delete(conversation_id, org_id, x_user_id or "anonymous")
+    if not removed:
+        raise HTTPException(status_code=404, detail="conversation not found")
+    return {"success": True}
 
 
 @router.post("/ai/reindex")

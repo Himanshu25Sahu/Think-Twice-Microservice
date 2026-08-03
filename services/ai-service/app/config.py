@@ -40,9 +40,14 @@ class Settings(BaseSettings):
     rerank_top_n: int = 20
 
     # --- generation (phase 3) ---
-    llm_provider: str = "ollama"  # ollama | none
+    llm_provider: str = "ollama"  # ollama | groq | none
     ollama_url: str = "http://host.docker.internal:11434"
     ollama_model: str = "llama3.2:3b"
+    # Groq: hosted inference, free tier, no local RAM or VRAM cost. The
+    # deployable alternative to Ollama -- no free host can run a local model.
+    groq_api_key: str = ""
+    groq_url: str = "https://api.groq.com/openai/v1/chat/completions"
+    groq_model: str = "llama-3.3-70b-versatile"
     llm_timeout_s: float = 60.0
     # Circuit breaker: consecutive failures before opening, and how long the
     # circuit stays open before a trial request is allowed through.

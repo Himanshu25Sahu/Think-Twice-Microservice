@@ -166,4 +166,23 @@ async def retrieve(
             ) + tail
         timings["rerank_ms"] = (time.perf_counter() - t0) * 1000
 
+    # Collapse near-duplicates before returning. Knowledge bases accumulate
+    # entries covering the same ground, and surfacing five of them wastes the
+    # context budget and produces citations that all say the same thing. The
+    # highest-ranked copy wins; the others remain reachable by search.
+    ordered = _dedupe(ordered)
+
     return RetrievalResult(candidates=ordered[:limit], timings=timings, mode=mode)
+
+
+def _dedupe(candidates: list[Candidate]) -> list[Candidate]:
+    seen: set[str] = set()
+    out: list[Candidate] = []
+    for candidate in candidates:
+        key = " ".join((candidate.meta.get("title") or "").lower().split())
+        if key and key in seen:
+            continue
+        if key:
+            seen.add(key)
+        out.append(candidate)
+    return out

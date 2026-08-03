@@ -161,7 +161,10 @@ services:
       RERANK_ENABLED: "true"
       # Ollama runs natively on the host: GPU passthrough into Docker on Windows
       # is painful, and the model needs the GPU to be usable.
-      LLM_PROVIDER: ollama
+      # groq = hosted (deployable, no local RAM cost); ollama = local model.
+      LLM_PROVIDER: ${LLM_PROVIDER:-groq}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: llama-3.3-70b-versatile
       OLLAMA_URL: http://host.docker.internal:11434
       OLLAMA_MODEL: llama3.2:3b
       CACHE_ENABLED: "true"

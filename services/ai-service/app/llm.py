@@ -115,6 +115,61 @@ class OllamaProvider:
             raise RuntimeError(f"ollama generation failed: {exc}") from exc
 
 
+class GroqProvider:
+    """Hosted inference via Groq's OpenAI-compatible API.
+
+    Exists because no free host can run a local model, and because a laptop
+    running Docker cannot always spare the ~1GB of host RAM Ollama needs to
+    stage weights. Swapping providers is a config change: the circuit breaker,
+    degradation path, and semantic cache are all provider-agnostic.
+    """
+
+    name = "groq"
+
+    def __init__(self) -> None:
+        self.breaker = CircuitBreaker(settings.breaker_threshold, settings.breaker_cooldown_s)
+
+    async def available(self) -> bool:
+        return bool(settings.groq_api_key)
+
+    async def generate(self, prompt: str, system: str) -> str:
+        if not settings.groq_api_key:
+            raise RuntimeError("GROQ_API_KEY is not set")
+
+        self.breaker.check()
+        try:
+            async with httpx.AsyncClient(timeout=settings.llm_timeout_s) as client:
+                response = await client.post(
+                    settings.groq_url,
+                    headers={
+                        "Authorization": f"Bearer {settings.groq_api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": settings.groq_model,
+                        "messages": [
+                            {"role": "system", "content": system},
+                            {"role": "user", "content": prompt},
+                        ],
+                        # Grounded summarization of retrieved text, not creative
+                        # writing -- keep it close to deterministic.
+                        "temperature": 0.2,
+                        "max_tokens": 700,
+                    },
+                )
+                # A 429 is a rate limit, not a broken dependency. It still counts
+                # as a failure so the breaker backs off rather than hammering a
+                # quota that is already exhausted.
+                response.raise_for_status()
+                data = response.json()
+                answer = data["choices"][0]["message"]["content"].strip()
+            self.breaker.record_success()
+            return answer
+        except Exception as exc:
+            self.breaker.record_failure()
+            raise RuntimeError(f"groq generation failed: {exc}") from exc
+
+
 class NullProvider:
     """No generation configured. Chat falls back to extractive answers."""
 
@@ -131,6 +186,8 @@ class NullProvider:
 
 
 def build_provider():
+    if settings.llm_provider == "groq":
+        return GroqProvider()
     if settings.llm_provider == "ollama":
         return OllamaProvider()
     return NullProvider()
