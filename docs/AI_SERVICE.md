@@ -379,6 +379,28 @@ individually sufficient — the third is what actually bounds the blast radius.
 - [x] Phase 2 — hybrid retrieval, reranking, eval harness
 - [x] Phase 3 — RAG chat, circuit breaker, semantic cache, tracing
 
+## Deploying on a free tier
+
+Two things that only surfaced in production:
+
+**Never embed on the serving box.** Triggering `/ai/reindex` on a Render free
+instance repeatedly killed the container: embedding saturates the small CPU
+share, the platform's health check times out, and the process is restarted
+mid-run. Each attempt persisted its completed batches to Mongo, so the work
+wasn't lost — but the job never finished and the in-memory index stayed empty.
+
+Indexing is a batch job and doesn't belong on a request-serving instance.
+`scripts/backfill_remote.py` runs the same pipeline from any machine against any
+target database — 1,541 entries in **17 s** from a laptop versus never
+completing on the free tier. The service then only needs `POST /ai/warm` to load
+the vectors, which is cheap.
+
+**Disable reranking.** `RERANK_ENABLED=false` drops ~150 MB, which is what keeps
+the service inside a 512 MB instance. The ablation justifies it: reranking buys
++4.4pp Recall@1 for 11× the latency, and interactive search already skipped it.
+
+Memory measured locally: **371 MB with 5,028 vectors and the reranker loaded**.
+
 ### Known limitations
 
 - The ablation ran on 200 of 807 golden questions to keep the run under

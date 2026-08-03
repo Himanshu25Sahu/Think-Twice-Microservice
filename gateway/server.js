@@ -99,6 +99,7 @@ const buildServiceTargets = () => {
     'entry-service': 'http://localhost:5002',
     'org-service': 'http://localhost:5003',
     'analytics-service': 'http://localhost:5004',
+    'ai-service': 'http://localhost:5005',
   };
 
   const services = [
@@ -106,6 +107,10 @@ const buildServiceTargets = () => {
     { name: 'entry-service', env: process.env.ENTRY_SERVICE_URL },
     { name: 'org-service', env: process.env.ORG_SERVICE_URL },
     { name: 'analytics-service', env: process.env.ANALYTICS_SERVICE_URL },
+    // ai-service benefits most from this: a cold start also has to load the
+    // embedding model, so an unwarmed instance is slow well beyond the usual
+    // container spin-up.
+    { name: 'ai-service', env: process.env.AI_SERVICE_URL },
   ];
 
   return services.map((service) => {

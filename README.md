@@ -40,6 +40,18 @@ A multi-tenant knowledge logging platform for engineering teams. Document archit
 | Entry     | 5002 | MongoDB (tt-entries) | Knowledge entries CRUD, caching |
 | Org       | 5003 | MongoDB (tt-orgs) | Organization management, multi-tenancy |
 | Analytics | 5004 | MongoDB (tt-analytics) | Event-driven metrics aggregation |
+| AI        | 5005 | MongoDB (tt-ai) | Semantic search, duplicate detection, grounded Q&A ([docs](docs/AI_SERVICE.md)) |
+
+### AI service
+
+Python/FastAPI. Indexes entries off the same Redis Streams the analytics service
+consumes, then serves hybrid retrieval (BM25 + vector, fused with Reciprocal
+Rank Fusion, optionally cross-encoder reranked) and RAG chat grounded in the
+retrieved entries.
+
+Measured over an 807-question golden set: **MRR 0.57 → 0.78**, Recall@1
+0.53 → 0.77. Full ablation, design tradeoffs and failure analysis in
+[docs/AI_SERVICE.md](docs/AI_SERVICE.md).
 
 ## 🧩 Projects Inside Organizations
 
