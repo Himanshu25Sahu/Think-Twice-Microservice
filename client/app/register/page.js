@@ -9,6 +9,7 @@ import { fetchMyOrgs } from '@/redux/slices/orgSlice';
 import { initializeProjects } from '@/redux/slices/projectSlice';
 import { Toast } from '@/components/ui/Toast';
 import { OrgOnboarding } from '@/components/onboarding/OrgOnboarding';
+import { DEMO_CREDENTIALS, isGoogleOAuthEnabled } from '@/utils/demoAuth';
 
 const Spinner = ({ className = 'h-4 w-4' }) => (
   <svg className={`animate-spin shrink-0 ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
@@ -44,6 +45,14 @@ function RegisterPageContent() {
 
   const handleGoogleRegister = () => {
     if (typeof window === 'undefined') return;
+
+    // Same reasoning as the login page: no verified consent screen, so send
+    // visitors to the demo account rather than a Google error.
+    if (!isGoogleOAuthEnabled()) {
+      handleTestLogin();
+      return;
+    }
+
     setSubmitting(true);
     window.location.href = '/api/auth/google';
   };
@@ -51,7 +60,7 @@ function RegisterPageContent() {
   const handleTestLogin = async () => {
     setSubmitting(true);
     try {
-      const result = await dispatch(login({ email: 'himpreetak@gmail.com', password: '123456' }));
+      const result = await dispatch(login(DEMO_CREDENTIALS));
       if (result.meta.requestStatus === 'fulfilled') {
         const orgResult = await dispatch(fetchMyOrgs());
         const preferredOrgId = orgResult.payload?.orgs?.find((org) => org._id === orgResult.payload?.preferredOrgId)?._id || orgResult.payload?.orgs?.[0]?._id;
@@ -177,6 +186,12 @@ function RegisterPageContent() {
               </svg>
               Continue with Google
             </button>
+
+            {!isGoogleOAuthEnabled() && (
+              <p className="text-center text-xs text-zinc-400">
+                Signs you into a shared demo account — no Google account needed.
+              </p>
+            )}
           </form>
 
           {/* Link to Login */}
