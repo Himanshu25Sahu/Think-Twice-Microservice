@@ -24,4 +24,7 @@ COPY scripts ./scripts
 
 EXPOSE 5005
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5005"]
+# Shell form so $PORT is expanded at runtime. Hosts like Render assign a port
+# and expect the process to bind it; falling back to 5005 keeps docker-compose
+# and local runs unchanged.
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-5005}
