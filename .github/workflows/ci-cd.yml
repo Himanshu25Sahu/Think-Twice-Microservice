@@ -94,6 +94,7 @@ jobs:
           echo "org=$(check 'services/org-service/')" >> $GITHUB_OUTPUT
           echo "entry=$(check 'services/entry-service/')" >> $GITHUB_OUTPUT
           echo "analytics=$(check 'services/analytics-service/')" >> $GITHUB_OUTPUT
+          echo "ai=$(check 'services/ai-service/')" >> $GITHUB_OUTPUT
 
       - name: Trigger Render deploy hooks
         env:
@@ -102,34 +103,117 @@ jobs:
           RENDER_DEPLOY_HOOK_ORG: ${{ secrets.RENDER_DEPLOY_HOOK_ORG }}
           RENDER_DEPLOY_HOOK_ENTRY: ${{ secrets.RENDER_DEPLOY_HOOK_ENTRY }}
           RENDER_DEPLOY_HOOK_ANALYTICS: ${{ secrets.RENDER_DEPLOY_HOOK_ANALYTICS }}
+          RENDER_DEPLOY_HOOK_AI: ${{ secrets.RENDER_DEPLOY_HOOK_AI }}
           CHANGED_GATEWAY: ${{ steps.changes.outputs.gateway }}
           CHANGED_AUTH: ${{ steps.changes.outputs.auth }}
           CHANGED_ORG: ${{ steps.changes.outputs.org }}
           CHANGED_ENTRY: ${{ steps.changes.outputs.entry }}
           CHANGED_ANALYTICS: ${{ steps.changes.outputs.analytics }}
+          CHANGED_AI: ${{ steps.changes.outputs.ai }}
         run: |
+          # Deliberately not `set -e` per hook: aborting on the first failure
+          # hides the status of every service after it, which is exactly what
+          # made the last incident hard to diagnose. Every hook is attempted,
+          # results are summarised, and the step fails at the end if any failed.
+          FAILED=""
+          SUMMARY=""
+
+          record() { SUMMARY="${SUMMARY}\n$(printf '%-11s %s' "$1" "$2")"; }
+
           trigger_hook() {
             local service="$1"
             local url="$2"
             local changed="$3"
 
             if [ -z "$url" ]; then
-              echo "Skipping ${service}: hook is not configured."
+              echo "::warning::${service}: RENDER_DEPLOY_HOOK secret is not set — service will never auto-deploy."
+              record "$service" "SKIPPED (no secret configured)"
               return 0
             fi
 
             if [ "$changed" != "true" ]; then
-              echo "Skipping ${service}: no changes detected."
+              echo "${service}: no changes in this push, skipping."
+              record "$service" "skipped (unchanged)"
               return 0
             fi
 
-            echo "Triggering ${service} deploy hook..."
-            curl --fail --show-error --silent --request POST "$url"
-            echo "Triggered ${service} successfully."
+            # Log the service id so a wrong/stale hook is obvious from the log.
+            # The ?key=... query string is never printed.
+            local srv_id
+            srv_id=$(printf '%s' "$url" | sed -n 's|.*/deploy/\(srv-[a-z0-9]*\).*|\1|p')
+            [ -z "$srv_id" ] && srv_id="<unrecognised url format>"
+
+            echo "${service}: triggering deploy for ${srv_id} ..."
+
+            local status
+            status=$(curl --silent --show-error --output /tmp/hook_body \
+                          --write-out '%{http_code}' \
+                          --max-time 30 --retry 2 --retry-connrefused \
+                          --request POST "$url" || echo "000")
+
+            case "$status" in
+              2*)
+                echo "${service}: accepted (HTTP ${status}) for ${srv_id}"
+                record "$service" "OK ${status} ${srv_id}"
+                ;;
+              409)
+                # Render returns 409 both for "a deploy is already running" and
+                # for a suspended service. The first is harmless, the second
+                # means nothing is being deployed — so warn loudly rather than
+                # passing silently.
+                echo "::warning::${service}: HTTP 409 for ${srv_id} — deploy already in progress, or the service is SUSPENDED. Verify in Render."
+                record "$service" "WARN 409 ${srv_id} (in-progress or suspended)"
+                ;;
+              401|403)
+                echo "::error::${service}: HTTP ${status} for ${srv_id} — the deploy hook secret is invalid or revoked."
+                record "$service" "FAIL ${status} ${srv_id} (bad secret)"
+                FAILED="${FAILED} ${service}"
+                ;;
+              404)
+                echo "::error::${service}: HTTP 404 for ${srv_id} — the service no longer exists. The secret points at a deleted service."
+                record "$service" "FAIL 404 ${srv_id} (deleted service)"
+                FAILED="${FAILED} ${service}"
+                ;;
+              000)
+                echo "::error::${service}: could not reach Render (network error or timeout)."
+                record "$service" "FAIL network ${srv_id}"
+                FAILED="${FAILED} ${service}"
+                ;;
+              *)
+                echo "::error::${service}: unexpected HTTP ${status} for ${srv_id}"
+                echo "response body: $(head -c 300 /tmp/hook_body 2>/dev/null)"
+                record "$service" "FAIL ${status} ${srv_id}"
+                FAILED="${FAILED} ${service}"
+                ;;
+            esac
           }
 
-          trigger_hook "gateway" "$RENDER_DEPLOY_HOOK_GATEWAY" "$CHANGED_GATEWAY"
-          trigger_hook "auth" "$RENDER_DEPLOY_HOOK_AUTH" "$CHANGED_AUTH"
-          trigger_hook "org" "$RENDER_DEPLOY_HOOK_ORG" "$CHANGED_ORG"
-          trigger_hook "entry" "$RENDER_DEPLOY_HOOK_ENTRY" "$CHANGED_ENTRY"
+          echo "=== Triggering Render deploys for commit ${GITHUB_SHA::8} ==="
+
+          trigger_hook "gateway"   "$RENDER_DEPLOY_HOOK_GATEWAY"   "$CHANGED_GATEWAY"
+          trigger_hook "auth"      "$RENDER_DEPLOY_HOOK_AUTH"      "$CHANGED_AUTH"
+          trigger_hook "org"       "$RENDER_DEPLOY_HOOK_ORG"       "$CHANGED_ORG"
+          trigger_hook "entry"     "$RENDER_DEPLOY_HOOK_ENTRY"     "$CHANGED_ENTRY"
           trigger_hook "analytics" "$RENDER_DEPLOY_HOOK_ANALYTICS" "$CHANGED_ANALYTICS"
+          trigger_hook "ai"        "$RENDER_DEPLOY_HOOK_AI"        "$CHANGED_AI"
+
+          echo ""
+          echo "=== Deploy summary ==="
+          printf '%b\n' "$SUMMARY"
+
+          # Also surface the summary on the run's Summary tab, so a failure is
+          # readable without opening the raw logs.
+          {
+            echo "### Render deploy results"
+            echo ""
+            echo '```'
+            printf '%b\n' "$SUMMARY"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -n "$FAILED" ]; then
+            echo "::error::Deploy hooks failed for:${FAILED}"
+            exit 1
+          fi
+
+          echo "All triggered hooks accepted."
