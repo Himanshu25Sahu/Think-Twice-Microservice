@@ -263,7 +263,12 @@ export const getEntry = async (req, res) => {
       });
     }
 
-    if (entry.orgId !== orgId || !matchesProjectScope(entry.projectId, projectId, defaultProjectId)) {
+    // Reads authorise on org membership only. The active project is a UI
+    // filter, not a permission boundary -- any member can switch projects and
+    // read the same entries. Enforcing it here broke every cross-project deep
+    // link: search and the assistant return org-wide results, so a cited entry
+    // belonging to another project opened as "not found".
+    if (entry.orgId !== orgId) {
       return res.status(403).json({
         success: false,
         message: 'Access denied',

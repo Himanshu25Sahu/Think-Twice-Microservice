@@ -18,7 +18,12 @@ export default function Navbar({ onMenuClick = () => {} }) {
     '/ask': 'Ask',
   };
 
-  const title = pageTitles[pathname] || 'Page';
+  // Dynamic routes (/entries/<id>) have no exact match, so fall back to a
+  // prefix lookup before the generic label.
+  const title =
+    pageTitles[pathname] ||
+    (pathname?.startsWith('/entries/') ? 'Entry' : null) ||
+    'Page';
 
   return (
     <nav className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-border bg-card px-4 sm:gap-3 sm:px-6 lg:px-8">
