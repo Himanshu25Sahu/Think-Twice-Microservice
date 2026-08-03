@@ -14,6 +14,7 @@ import {
   ChartIcon,
   GraphIcon,
   SettingsIcon,
+  SparkIcon,
   LogoutIcon,
   ChevronDownIcon,
   CheckIcon,
@@ -88,6 +89,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
   const navItems = [
     { href: '/dashboard', label: 'Home', icon: HomeIcon },
     ...(userRole !== 'viewer' ? [{ href: '/entries/new', label: 'New Entry', icon: PlusIcon }] : []),
+    { href: '/ask', label: 'Ask', icon: SparkIcon },
     { href: '/graph', label: 'Decision Graph', icon: GraphIcon },
     { href: '/analytics', label: 'Analytics', icon: ChartIcon },
     { href: '/settings', label: 'Settings', icon: SettingsIcon },

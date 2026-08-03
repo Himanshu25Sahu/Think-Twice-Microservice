@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchEntries, setFilters, resetCache } from '@/redux/slices/entrySlice';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
+import { semanticSearch } from '@/services/aiService';
 
 const TYPE_META = {
   architecture:    { icon: '⬡', color: '#2563EB' },
@@ -23,6 +24,16 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const endOfListRef = useRef(null);
+
+  // 'keyword' uses the existing Mongo text search; 'semantic' queries
+  // ai-service. Kept as an explicit toggle rather than replacing keyword search
+  // outright -- the two fail in different ways, and being able to compare them
+  // side by side is useful.
+  const [searchMode, setSearchMode] = useState('keyword');
+  const [aiResults, setAiResults] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
+  const [aiTookMs, setAiTookMs] = useState(null);
   
   // Debounce search query (300ms delay)
   useEffect(() => {
@@ -31,6 +42,47 @@ export default function DashboardPage() {
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Semantic search. Runs only in semantic mode so keyword browsing costs
+  // nothing extra, and aborts in-flight requests so a fast typist cannot have
+  // an earlier response overwrite a later one.
+  useEffect(() => {
+    if (searchMode !== 'semantic' || !debouncedQuery.trim() || !activeOrg) {
+      setAiResults([]);
+      setAiError(null);
+      setAiTookMs(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    setAiLoading(true);
+    setAiError(null);
+
+    semanticSearch({
+      query: debouncedQuery,
+      limit: 12,
+      projectId: activeProject || undefined,
+      signal: controller.signal,
+    })
+      .then((data) => {
+        setAiResults(data.results || []);
+        setAiTookMs(data.took_ms ?? null);
+      })
+      .catch((err) => {
+        if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
+        setAiError(
+          err.response?.status === 503
+            ? 'Semantic search is unavailable right now.'
+            : 'Semantic search failed.'
+        );
+        setAiResults([]);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setAiLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [searchMode, debouncedQuery, activeOrg, activeProject]);
 
   // Fetch entries when org/project changes or filters change
   useEffect(() => {
@@ -94,6 +146,11 @@ export default function DashboardPage() {
   const isInitialLoading = loading && entries.length === 0;
   const isPaginating = loading && entries.length > 0;
 
+  // When semantic search is driving the view, the keyword list and its
+  // infinite-scroll pagination are hidden -- mixing two ranked lists would make
+  // the ordering meaningless.
+  const semanticActive = searchMode === 'semantic' && debouncedQuery.trim().length > 0;
+
   return (
     <>
       <style>{`
@@ -138,6 +195,51 @@ export default function DashboardPage() {
           font-family: 'DM Mono', monospace;
           font-weight: 300;
           margin-top: 0.25rem;
+        }
+
+        /* Search mode toggle */
+        .db-mode-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 14px;
+          flex-wrap: wrap;
+        }
+        .db-mode {
+          display: inline-flex;
+          border: 1px solid #E5E7EB;
+          border-radius: 8px;
+          overflow: hidden;
+          background: #fff;
+        }
+        .db-mode-btn {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          letter-spacing: 0.04em;
+          padding: 6px 14px;
+          border: 0;
+          background: transparent;
+          color: #6B7280;
+          cursor: pointer;
+          transition: background 0.15s, color 0.15s;
+        }
+        .db-mode-btn:hover { color: #111827; }
+        .db-mode-btn.active {
+          background: #2563EB;
+          color: #fff;
+        }
+        .db-mode-hint {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: #9CA3AF;
+        }
+        .db-score {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: #9CA3AF;
+          background: #F3F4F6;
+          border-radius: 4px;
+          padding: 2px 6px;
         }
 
         /* Search */
@@ -614,12 +716,37 @@ export default function DashboardPage() {
             </span>
             <input
               type="text"
-              placeholder="Search entries…"
+              placeholder={searchMode === 'semantic' ? 'Ask in your own words…' : 'Search entries…'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="db-search"
             />
           </div>
+        </div>
+
+        {/* Search mode toggle */}
+        <div className="db-mode-row">
+          <div className="db-mode">
+            {['keyword', 'semantic'].map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setSearchMode(mode)}
+                className={`db-mode-btn ${searchMode === mode ? 'active' : ''}`}
+                type="button"
+              >
+                {mode === 'semantic' ? '✦ Semantic' : 'Keyword'}
+              </button>
+            ))}
+          </div>
+          {searchMode === 'semantic' && (
+            <span className="db-mode-hint">
+              {aiLoading
+                ? 'searching…'
+                : aiTookMs !== null
+                ? `${aiResults.length} results in ${aiTookMs}ms`
+                : 'finds entries by meaning, not exact words'}
+            </span>
+          )}
         </div>
 
         {/* Filter pills */}
@@ -642,8 +769,75 @@ export default function DashboardPage() {
           })}
         </div>
 
+        {/* Semantic results */}
+        {semanticActive && (
+          <div className="db-ai">
+            {aiLoading && (
+              <div className="db-grid">
+                {[1, 2, 3].map((i) => <div key={i} className="db-skeleton" />)}
+              </div>
+            )}
+
+            {!aiLoading && aiError && (
+              <div className="db-empty">
+                <div className="db-empty-icon">⚠</div>
+                <h3 className="db-empty-title">{aiError}</h3>
+                <p className="db-empty-msg">Switch to keyword search to keep browsing.</p>
+              </div>
+            )}
+
+            {!aiLoading && !aiError && aiResults.length === 0 && (
+              <div className="db-empty">
+                <div className="db-empty-icon">🔍</div>
+                <h3 className="db-empty-title">Nothing close enough</h3>
+                <p className="db-empty-msg">
+                  No entry was semantically similar to “{debouncedQuery}”.
+                </p>
+              </div>
+            )}
+
+            {!aiLoading && !aiError && aiResults.length > 0 && (
+              <div className="db-grid">
+                {aiResults.map((hit, i) => {
+                  const meta = TYPE_META[hit.type];
+                  return (
+                    <Link key={hit.entry_id} href={`/entries/${hit.entry_id}`} className="db-card-link">
+                      <div className="db-card">
+                        <div className="db-card-top">
+                          <div
+                            className="db-type-pill"
+                            style={meta ? {
+                              color: meta.color,
+                              borderColor: `${meta.color}33`,
+                              background: `${meta.color}0f`,
+                            } : {}}
+                          >
+                            {meta && <span>{meta.icon}</span>}
+                            <span>{hit.type?.replace('-', ' ') || 'entry'}</span>
+                          </div>
+                          {/* Rank, not score: results are ordered by RRF
+                              fusion, whose values are not interpretable on
+                              their own the way a cosine similarity is. */}
+                          <span className="db-score" title="result rank">
+                            #{i + 1}
+                          </span>
+                        </div>
+                        <h3 className="db-card-title">{hit.title}</h3>
+                        <p className="db-card-body">{hit.snippet}</p>
+                        <div className="db-card-foot">
+                          <span>{hit.author_name}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Loading skeletons (first page only) */}
-        {isInitialLoading && (
+        {isInitialLoading && !semanticActive && (
           <div className="db-grid">
             {[1,2,3,4,5,6].map((i) => (
               <div key={i} className="db-skeleton" />
@@ -652,7 +846,7 @@ export default function DashboardPage() {
         )}
 
         {/* Empty state */}
-        {!loading && page === 1 && filteredEntries.length === 0 && (
+        {!loading && page === 1 && filteredEntries.length === 0 && !semanticActive && (
           <div className="db-empty">
             <div className="db-empty-icon">📚</div>
             <h3 className="db-empty-title">
@@ -677,7 +871,7 @@ export default function DashboardPage() {
         )}
 
         {/* Entries grid */}
-        {filteredEntries.length > 0 && (
+        {filteredEntries.length > 0 && !semanticActive && (
           <>
             <div className="db-grid">
               {filteredEntries.map((entry) => {
