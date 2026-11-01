@@ -278,7 +278,7 @@ const handleKeepalive = async (req, res) => {
     res.status(allAlive ? 200 : 207).json({
       ok: allAlive,
       ts: new Date().toISOString(),
-      services: normalizedResults.map((r) => ({ name: r.service, status: r.status })),
+      services: normalizedResults.map((r) => ({ name: r.service, status: r.status, url: r.checkedUrl })),
     });
   } catch (error) {
     console.error(`[GATEWAY] ❌ Keepalive handler error:`, error.message);
