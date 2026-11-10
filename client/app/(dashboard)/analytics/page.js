@@ -13,6 +13,7 @@ export default function AnalyticsPage() {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [live, setLive] = useState(false);
   const dispatch = useDispatch();
   const { orgDetails } = useSelector((state) => state.orgs);
   const { user } = useSelector((state) => state.auth);
@@ -53,6 +54,30 @@ export default function AnalyticsPage() {
     } else {
       setLoading(false);
     }
+  }, [activeOrg, activeProject]);
+
+  // Live updates: analytics-service pushes fresh metrics over Server-Sent
+  // Events whenever an entry is created/updated/deleted in this org.
+  // EventSource reconnects on its own if the connection drops.
+  useEffect(() => {
+    if (!activeOrg || typeof EventSource === 'undefined') return undefined;
+    const params = new URLSearchParams({ orgId: activeOrg });
+    if (activeProject) params.set('projectId', activeProject);
+    const source = new EventSource(`/api/analytics/stream?${params}`, { withCredentials: true });
+    source.addEventListener('metrics', (event) => {
+      try {
+        setMetrics(JSON.parse(event.data));
+        setError(null);
+      } catch {
+        // ignore a malformed frame; the next update replaces it
+      }
+    });
+    source.onopen = () => setLive(true);
+    source.onerror = () => setLive(false);
+    return () => {
+      source.close();
+      setLive(false);
+    };
   }, [activeOrg, activeProject]);
 
   const getTopCategory = () => {
@@ -112,6 +137,15 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      <div className="flex justify-end">
+        <span
+          className="inline-flex items-center gap-1.5 text-xs text-secondary"
+          title={live ? 'Metrics update in real time' : 'Reconnecting to live updates'}
+        >
+          <span className={`h-2 w-2 rounded-full ${live ? 'animate-pulse bg-emerald-500' : 'bg-gray-400'}`} />
+          {live ? 'Live' : 'Offline'}
+        </span>
+      </div>
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {stats.map((stat) => {

@@ -30,7 +30,6 @@ jobs:
             services/auth-service/package-lock.json
             services/org-service/package-lock.json
             services/entry-service/package-lock.json
-            services/analytics-service/package-lock.json
             services/decision-service/package-lock.json
             services/api-gateway/package-lock.json
 
@@ -44,9 +43,22 @@ jobs:
           npm ci --prefix services/auth-service
           npm ci --prefix services/org-service
           npm ci --prefix services/entry-service
-          npm ci --prefix services/analytics-service
           npm ci --prefix services/decision-service
           npm ci --prefix services/api-gateway
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: services/analytics-service/go.mod
+          cache-dependency-path: services/analytics-service/go.sum
+
+      - name: Analytics service (Go) - vet, test, build
+        working-directory: services/analytics-service
+        run: |
+          test -z "$(gofmt -l .)" || { echo "Run gofmt on:"; gofmt -l .; exit 1; }
+          go vet ./...
+          go test ./...
+          go build -o /dev/null .
 
       - name: Lint client
         run: npm run lint --prefix client

@@ -125,13 +125,10 @@ services:
       context: ./services/analytics-service
     container_name: tt-analytics
     environment:
-      NODE_ENV: development
       PORT: 5004
-      OTEL_ENABLED: "true"
-      OTEL_SERVICE_NAME: analytics-service
-      JAEGER_ENDPOINT: http://jaeger:14268/api/traces
       MONGODB_URI: mongodb://mongodb:27017/tt-analytics
       REDIS_URL: redis://redis:6379
+      ORG_SERVICE_URL: http://org-service:5003
     ports:
       - "5004:5004"
     depends_on:
